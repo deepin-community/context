@@ -1,0 +1,42 @@
+
+tlnet=${1:-/home/norbert/public_html/tlnet}
+
+basever=2020.03.10
+
+verstr=`date +%Y%m%d`
+pkg="context-${basever}.$verstr"
+orig="context_${basever}.$verstr.orig.tar.gz"
+
+if [ -r $pkg ] ; then
+  echo "already here: $pkg"
+  exit 1
+fi
+
+unpackone() {
+  what=$1
+  for i in "" .doc .source .i386-linux ; do
+    fn="$tlnet/archive/$what${i}.tar.xz"
+    if [ -r "$fn" ] ; then
+      echo "unpacking $fn"
+      tar -xf "$fn"
+    fi
+  done
+}
+
+echo "installing from $tlnet"
+
+mkdir $pkg
+cd $pkg
+unpackone context
+# remove win32 stubs
+rm -r texmf-dist/scripts/context/stubs/mswin/
+rm -r texmf-dist/scripts/context/stubs/win64/
+#
+# remove non-free files for the moment
+# replaced in TL already
+#rm -rf texmf-dist/tex/context/colors/icc/profiles/*
+
+cd ..
+
+GZIP=-9 tar -czf $orig $pkg
+

@@ -1,0 +1,42 @@
+Source: context
+Section: tex
+Priority: optional
+Maintainer: Debian TeX maintainers <debian-tex-maint@lists.debian.org>
+Uploaders: Norbert Preining <norbert@preining.info>
+Build-Depends: debhelper-compat (= 12)
+Build-Depends-Indep: tex-common (>= 6)
+Standards-Version: 4.2.1
+Vcs-Git: https://github.com/debian-tex/context.git
+Vcs-Browser: https://github.com/debian-tex/context
+
+Package: context
+Section: tex
+Architecture: all
+Depends: ruby | ruby-interpreter, texlive-binaries (>= 2019), texlive-base (>= 2019), texlive-metapost (>= 2019), lmodern (>= 2.004.4), tex-gyre, ${misc:Depends}
+Recommends: fonts-gfs-artemisia, fonts-gfs-baskerville, fonts-gfs-bodoni-classic, fonts-gfs-didot-classic, fonts-gfs-didot, fonts-gfs-olga, fonts-gfs-porson, fonts-gfs-gazis, fonts-gfs-neohellenic, fonts-gfs-solomos, fonts-gfs-theokritos, fonts-freefont, fonts-sil-gentium, context-modules
+Suggests: perl-tk, libxml-parser-perl, fontforge, context-nonfree
+Conflicts: texlive-context, tetex-bin (<< 2007), texlive-xetex (<< 2009)
+Replaces: texlive-context
+Provides: texlive-context
+Description: powerful TeX format
+ ConTeXt is a document-production system based, like LaTeX, on the TeX
+ typesetting system.  Whereas LaTeX insulates the writer from
+ typographical details, ConTeXt takes a complementary approach by
+ providing structured interfaces for handling typography, including
+ extensive support for colors, backgrounds, hyperlinks, presentations,
+ figure-text integration, and conditional compilation.  It gives the
+ user extensive control over formatting while making it easy to create
+ new layouts and styles without learning the TeX macro language.
+ ConTeXt's unified design averts the package clashes that can happen
+ with LaTeX.
+ .
+ ConTeXt also integrates MetaFun, a superset of MetaPost and a powerful
+ system for vector graphics.  MetaFun can be used as a stand-alone
+ system to produce figures, but its strength lies in enhancing ConTeXt
+ documents with accurate graphic elements.
+ .
+ ConTeXt allows the users to specify formatting commands in English,
+ Dutch, German, French, or Italian, and to use different typesetting
+ engines (PDFTeX, XeTeX, Aleph, and soon LuaTeX) without changing the
+ user interface.  ConTeXt is developed rapidly, often in response to
+ requests from the friendly user community.
