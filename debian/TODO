@@ -1,5 +1,5 @@
 * (still needed???)
-  work around the problem that a dynamically generated context format 
+  work around the problem that a dynamically generated context format
   based on xetex does not work:
   	texexec --xtx foo.tex
 		-> calls mktexfmt cont-en

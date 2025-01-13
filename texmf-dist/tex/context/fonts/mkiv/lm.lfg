@@ -1,81 +1,22 @@
 -- In order to be able to use beta math fonts, we use our own file name and
--- always remap.
-
-local kern_150 = { bottomright = { { kern = -150 } } }
-local kern_200 = { bottomright = { { kern = -200 } } }
+-- always remap (as there is no development we no longer do this).
 
 return {
     name = "latin modern",
     version = "1.00",
     comment = "Goodies that complement latin modern.",
-    author = "Hans Hagen",
+    author = "Hans Hagen & Mikael Sundqvist",
     copyright = "ConTeXt development team",
-    mathematics = {
-        tweaks = {
-            aftercopying = {
-                mathematics.tweaks.fixbadprime, -- prime is too low
-            --  mathematics.tweaks.fixoverline,
-            },
-        },
-        kerns = {
-            [0x1D449] = kern_150, --
-            [0x1D44A] = kern_200, -- 𝑊
-        },
-        dimensions = {
-            -- always applied
-         -- default = {
-         -- },
-            -- driven by 'mathdimensions' feature
-            default = {
-                -- the root is quite displaced
-                [0x221A] = {
-                    -- 73, -960, 853, 40
-                    yoffset = 960 - 40,
-                    height  = 960,
-                    depth   =  40,
-                },
-            -- [0xFE932] = { xoffset = 50, width = 290 }, -- used prime
-            -- [0x2032]  = { xoffset = 50, width = 290 }, -- prime
-            },
-            signs   = {
-                -- set dimensions
-             -- [0x00B1] = { -- ±
-             --     height = 500, depth = 0,
-             -- },
-             -- [0x2213] = { -- ∓
-             --     height = 500, depth = 0,
-             -- },
-                -- move in boundingbox
-                [0x00B1] = { -- ±
-                    yoffset =  100,
-                },
-                [0x2213] = { -- ∓
-                    yoffset = -100,
-                },
-            },
-        },
---         parameters = {
---             FractionNumeratorDisplayStyleShiftUp = function(value,target,original)
---                 local o = original.mathparameters.FractionNumeratorDisplayStyleShiftUp
---                 if o > 675 then
---                     o = 600
---                 else
---                     -- probably tuned
---                 end
---                 return o * target.parameters.factor
---             end,
---         }
-    },
-    filenames = {
-        ["latinmodern-math-regular.otf"] = {
-            "latinmodern-math.otf", -- the beta
-            "lmmath-regular.otf",
-            "latinmodernmath-regular.otf",
-            "lmmath-regular.otf",
-            "lmodernmath-regular.otf",
-            "lmodern-math.otf",
-        },
-    },
+ -- filenames = {
+ --     ["latinmodern-math-regular.otf"] = {
+ --         "latinmodern-math.otf", -- the beta
+ --         "lmmath-regular.otf",
+ --         "latinmodernmath-regular.otf",
+ --         "lmmath-regular.otf",
+ --         "lmodernmath-regular.otf",
+ --         "lmodern-math.otf",
+ --     },
+ -- },
     designsizes = {
         ["LMMathRoman-Regular"] = {
             ["4pt"]  = "LMMath5-Regular@lmroman5-math",
@@ -262,3 +203,4 @@ return {
         },
     }
 }
+

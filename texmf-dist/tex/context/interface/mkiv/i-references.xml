@@ -49,6 +49,16 @@
                 <cd:parameter name="prefix">
                     <cd:resolve name="value-referenceprefix"/>
                 </cd:parameter>
+                <!-- all margindata locations are possible -->
+                <cd:parameter name="labelalternative">
+                    <cd:resolve name="value-margindata"/>
+                </cd:parameter>
+                <cd:parameter name="labelstyle">
+                    <cd:resolve name="value-style"/>
+                </cd:parameter>
+                <cd:parameter name="labelcolor">
+                    <cd:constant type="cd:color"/>
+                </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
@@ -138,7 +148,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifelsereferencefound" level="system" category="references conditional" file="strc-ref.mkvi">
+    <cd:command name="doifelsereferencefound" level="system" category="references" keywords="conditional" file="strc-ref.mkvi">
         <cd:arguments>
             <cd:resolve name="argument-reference"/>
             <cd:resolve name="argument-true"/>
@@ -146,7 +156,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifreferencefoundelse" level="system" category="references conditional" file="strc-ref.mkvi">
+    <cd:command name="doifreferencefoundelse" level="system" category="references" keywords="conditional" file="strc-ref.mkvi">
         <cd:arguments>
             <cd:resolve name="argument-reference"/>
             <cd:resolve name="argument-true"/>
@@ -264,7 +274,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="docheckedpagestate" level="system" category="references" file="strc-ref.mkvi">
+    <cd:command name="doifcheckedpagestate" level="system" category="references" file="strc-ref.mkvi">
         <cd:arguments>
             <cd:resolve name="argument-reference"/>
             <cd:resolve name="argument-command"/>
@@ -411,7 +421,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifelseurldefined" level="system" category="references conditional" file="strc-ref.mkvi">
+    <cd:command name="doifelseurldefined" level="system" category="references" keywords="conditional" file="strc-ref.mkvi">
         <cd:arguments>
             <cd:resolve name="argument-name"/>
             <cd:resolve name="argument-true"/>
@@ -419,7 +429,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifurldefinedelse" level="system" category="references conditional" file="strc-ref.mkvi">
+    <cd:command name="doifurldefinedelse" level="system" category="references" keywords="conditional" file="strc-ref.mkvi">
         <cd:arguments>
             <cd:resolve name="argument-name"/>
             <cd:resolve name="argument-true"/>
@@ -427,7 +437,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifelsefiledefined" level="system" category="references conditional" file="strc-ref.mkvi">
+    <cd:command name="doifelsefiledefined" level="system" category="references" keywords="conditional" file="strc-ref.mkvi">
         <cd:arguments>
             <cd:resolve name="argument-name"/>
             <cd:resolve name="argument-true"/>
@@ -435,7 +445,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doiffiledefinedelse" level="system" category="references conditional" file="strc-ref.mkvi">
+    <cd:command name="doiffiledefinedelse" level="system" category="references" keywords="conditional" file="strc-ref.mkvi">
         <cd:arguments>
             <cd:resolve name="argument-name"/>
             <cd:resolve name="argument-true"/>
@@ -562,5 +572,19 @@
             </cd:assignments>
         </cd:arguments>
     </cd:command>
+
+    <cd:command name="referencepagestate" level="style" category="references" file="strc-ref.mkvi"/>
+
+    <cd:command name="referencepagedetail" level="style" category="references" file="strc-ref.mkvi"/>
+
+    <cd:command name="referencerealpage" level="style" category="references" file="strc-ref.mkvi"/>
+
+    <cd:command name="referencecolumnnumber" level="style" category="references" file="strc-ref.mkvi"/>
+
+    <cd:command name="tracedpagestate" level="style" category="references" file="strc-ref.mkvi"/>
+
+    <cd:command name="markreferencepage" level="style" category="references" file="strc-ref.mkvi"/>
+
+    <cd:command name="referencesymbol" level="style" category="references" file="strc-ref.mkvi"/>
 
 </cd:interface>

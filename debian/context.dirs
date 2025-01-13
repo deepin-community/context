@@ -1,0 +1,4 @@
+usr/share/texmf/web2c
+var/lib/texmf/web2c/pdftex
+etc/texmf/tex/context/user
+usr/bin

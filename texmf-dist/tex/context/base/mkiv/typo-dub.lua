@@ -71,9 +71,10 @@ local setdirection        = nuts.setdirection
 local setattrlist         = nuts.setattrlist
 
 local remove_node         = nuts.remove
-local insert_node_after   = nuts.insert_after
-local insert_node_before  = nuts.insert_before
-local start_of_par        = nuts.start_of_par
+local insertnodeafter     = nuts.insertafter
+local insertnodebefore    = nuts.insertbefore
+
+local startofpar          = nuts.startofpar
 
 local nodepool            = nuts.pool
 local new_direction       = nodepool.direction
@@ -87,7 +88,7 @@ local hlist_code          = nodecodes.hlist
 local vlist_code          = nodecodes.vlist
 local math_code           = nodecodes.math
 local dir_code            = nodecodes.dir
-local localpar_code       = nodecodes.localpar
+local par_code            = nodecodes.par
 
 local parfillskip_code    = gluecodes.parfillskip
 
@@ -398,17 +399,11 @@ end
 local function get_baselevel(head,list,size,direction)
     if direction == lefttoright_code or direction == righttoleft_code then
         return direction, true
-    elseif getid(head) == localpar_code and start_of_par(head) then
+    elseif getid(head) == par_code and startofpar(head) then
         direction = getdirection(head)
         if direction == lefttoright_code or direction == righttoleft_code then
             return direction, true
         end
-    end
-    -- for old times sake we we handle strings too
-    if direction == "TLT" then
-        return lefttoright_code, true
-    elseif direction == "TRT" then
-        return righttoleft_code, true
     end
     -- P2, P3
     for i=1,size do
@@ -904,16 +899,16 @@ local function apply_to_list(list,size,head,pardir)
                 local d = new_direction(enddir,true)
              -- setprop(d,"directions",true)
              -- setattrlist(d,current)
-                head = insert_node_before(head,current,d)
+                head = insertnodebefore(head,current,d)
                 enddir = false
             end
         elseif begindir then
-            if id == localpar_code and start_of_par(current) then
-                -- localpar should always be the 1st node
+            if id == par_code and startofpar(current) then
+                -- par should always be the 1st node
                 local d = new_direction(begindir)
              -- setprop(d,"directions",true)
              -- setattrlist(d,current)
-                head, current = insert_node_after(head,current,d)
+                head, current = insertnodeafter(head,current,d)
                 begindir = nil
             end
         end
@@ -921,7 +916,7 @@ local function apply_to_list(list,size,head,pardir)
             local d = new_direction(begindir)
          -- setprop(d,"directions",true)
          -- setattrlist(d,current)
-            head = insert_node_before(head,current,d)
+            head = insertnodebefore(head,current,d)
         end
         local skip = entry.skip
         if skip and skip > 0 then
@@ -934,7 +929,7 @@ local function apply_to_list(list,size,head,pardir)
             local d = new_direction(enddir,true)
          -- setprop(d,"directions",true)
          -- setattrlist(d,current)
-            head, current = insert_node_after(head,current,d)
+            head, current = insertnodeafter(head,current,d)
         end
         if not entry.remove then
             current = getnext(current)

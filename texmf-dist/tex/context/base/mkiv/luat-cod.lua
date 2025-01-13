@@ -20,19 +20,19 @@ local texconfig, lua = texconfig, lua
 texconfig.kpse_init       = false
 texconfig.shell_escape    = 't'
 
-texconfig.error_line      =     79 -- frozen / large values can crash
-texconfig.expand_depth    =  10000
-texconfig.half_error_line =     50 -- frozen
-texconfig.max_in_open     =   1000
-texconfig.max_print_line  = 100000
-texconfig.max_strings     = 500000
-texconfig.nest_size       =   1000
-texconfig.param_size      =  25000
-texconfig.save_size       = 100000
-texconfig.stack_size      =  10000
-texconfig.function_size   =  32768
-texconfig.properties_size =  10000
-texconfig.fix_mem_init    = 750000
+texconfig.error_line      =     250
+texconfig.expand_depth    =   10000
+texconfig.half_error_line =     125
+texconfig.max_in_open     =    1000
+texconfig.max_print_line  =  100000
+texconfig.max_strings     =  500000
+texconfig.nest_size       =    1000
+texconfig.param_size      =   25000
+texconfig.save_size       =  100000
+texconfig.stack_size      =   10000
+texconfig.function_size   =   32768
+texconfig.properties_size =   10000
+texconfig.fix_mem_init    = 1000000
 
 -- registering bytecode chunks
 
@@ -59,9 +59,6 @@ local strip = false if arg then for i=-1,#arg do if arg[i] == "--c:strip" then s
 
 function lua.registercode(filename,options)
     local barename = gsub(filename,"%.[%a%d]+$","")
-    if barename == filename then
-        filename = filename .. ".lua"
-    end
     local basename = match(barename,"^.+[/\\](.-)$") or barename
     if not bytedone[basename] then
         local opts = { }
@@ -70,10 +67,13 @@ function lua.registercode(filename,options)
                 opts[s] = true
             end
         end
+        if barename == filename then
+            filename = filename .. ".lua"
+        end
         local code = environment.luafilechunk(filename,false,opts.optimize)
         if code then
             bytedone[basename] = true
-            if environment.initex then
+            if environment.initex and not opts.initexonly then
                 local n = lua.lastbytecode + 1
                 bytedata[n] = { name = barename, options = opts }
                 if strip or opts.strip then
@@ -86,28 +86,6 @@ function lua.registercode(filename,options)
         elseif environment.initex then
             texio.write_nl(format("\nerror loading file: %s (aborting)",filename))
             os.exit()
-        end
-    end
-end
-
-local finalizers = { }
-
-function lua.registerfinalizer(f,comment)
-    comment = comment or "unknown"
-    if type(f) == "function" then
-        finalizers[#finalizers+1] = { action = f, comment = comment }
-    else
-        print(format("\nfatal error: invalid finalizer, action: %s\n",comment))
-        os.exit()
-    end
-end
-
-function lua.finalize(logger)
-    for i=1,#finalizers do
-        local finalizer = finalizers[i]
-        finalizer.action()
-        if logger then
-            logger("finalize action: %s",finalizer.comment)
         end
     end
 end
@@ -142,7 +120,7 @@ if LUATEXVERSION == nil then
 end
 
 if CONTEXTLMTXMODE == nil then
-    CONTEXTLMTXMODE = LUATEXENGINE == "luametatex" and 1 or 0
+    CONTEXTLMTXMODE = 0
 end
 
 if LUATEXFUNCTIONALITY == nil then
@@ -167,6 +145,38 @@ environment.luatexfunctionality = LUATEXFUNCTIONALITY
 environment.jitsupported        = JITSUPPORTED
 environment.initex              = INITEXMODE
 environment.initexmode          = INITEXMODE
+
+if INITEXMODE then
+
+    local finalizers = { }
+
+    function lua.registerinitexfinalizer(f,comment)
+        comment = comment or "unknown"
+        if type(f) == "function" then
+            finalizers[#finalizers+1] = { action = f, comment = comment }
+        else
+            print(format("\nfatal error: invalid finalizer, action: %s\n",comment))
+            os.exit()
+        end
+    end
+
+    function lua.finalizeinitex(logger)
+        for i=1,#finalizers do
+            local finalizer = finalizers[i]
+            finalizer.action()
+            if logger then
+                logger("finalize action: %s",finalizer.comment)
+            end
+        end
+    end
+
+else
+
+    function lua.registerinitexfinalizer() end
+    function lua.finalizeinitex         () end
+
+end
+
 
 if not environment.luafilechunk then
 

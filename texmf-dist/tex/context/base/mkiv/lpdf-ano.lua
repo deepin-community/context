@@ -108,6 +108,10 @@ local pdf_named               = pdfconstant("Named")
 local autoprefix              = "#"
 local usedautoprefixes        = { }
 
+function codeinjections.setautoprefix(prefix)
+    autoprefix = prefix ~= "" and prefix or autoprefix
+end
+
 local function registerautoprefix(name)
     local internal = autoprefix .. name
     if usedautoprefixes[internal] == nil then
@@ -712,7 +716,8 @@ function codeinjections.prerollreference(actions) -- share can become option
             local bs, bc = pdfborder()
             main = pdfdictionary {
                 Subtype = pdf_link,
-                Border  = bs,
+             -- Border  = bs,
+                Border  = pdfshareobjectreference(bs),
                 C       = bc,
                 H       = (not actions.highlight and pdf_n) or nil,
                 A       = pdfshareobjectreference(main),
@@ -1214,24 +1219,24 @@ local pdf_stop   = pdfconstant("Stop")
 local pdf_resume = pdfconstant("Resume")
 local pdf_pause  = pdfconstant("Pause")
 
-local function movie_or_sound(operation,arguments)
+local function movie_or_sound(operation,what,arguments)
     arguments = (type(arguments) == "table" and arguments) or settings_to_array(arguments)
     return pdfdictionary {
         S         = pdf_movie,
-        T         = format("movie %s",arguments[1] or "noname"),
+        T         = format("%s %s",what,arguments[1] or "noname"),
         Operation = operation,
     }
 end
 
-function executers.startmovie (arguments) return movie_or_sound(pdf_start ,arguments) end
-function executers.stopmovie  (arguments) return movie_or_sound(pdf_stop  ,arguments) end
-function executers.resumemovie(arguments) return movie_or_sound(pdf_resume,arguments) end
-function executers.pausemovie (arguments) return movie_or_sound(pdf_pause ,arguments) end
+function executers.startmovie (arguments) return movie_or_sound(pdf_start ,"movie",arguments) end
+function executers.stopmovie  (arguments) return movie_or_sound(pdf_stop  ,"movie",arguments) end
+function executers.resumemovie(arguments) return movie_or_sound(pdf_resume,"movie",arguments) end
+function executers.pausemovie (arguments) return movie_or_sound(pdf_pause ,"movie",arguments) end
 
-function executers.startsound (arguments) return movie_or_sound(pdf_start ,arguments) end
-function executers.stopsound  (arguments) return movie_or_sound(pdf_stop  ,arguments) end
-function executers.resumesound(arguments) return movie_or_sound(pdf_resume,arguments) end
-function executers.pausesound (arguments) return movie_or_sound(pdf_pause ,arguments) end
+function executers.startsound (arguments) return movie_or_sound(pdf_start ,"sound",arguments) end
+function executers.stopsound  (arguments) return movie_or_sound(pdf_stop  ,"sound",arguments) end
+function executers.resumesound(arguments) return movie_or_sound(pdf_resume,"sound",arguments) end
+function executers.pausesound (arguments) return movie_or_sound(pdf_pause ,"sound",arguments) end
 
 function specials.action(var)
     local operation = var.operation

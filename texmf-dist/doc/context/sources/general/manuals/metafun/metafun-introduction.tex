@@ -1,6 +1,4 @@
-% language=uk
-%
-% copyright=pragma-ade readme=readme.pdf licence=cc-by-nc-sa
+% language=us runpath=texruns:manuals/metafun
 
 \startcomponent metafun-introduction
 
@@ -87,6 +85,26 @@ macros. Some examples can be rewritten in a more efficient way but are kept as
 they are. Therefore this manual presents different ways to solve problems.
 Hopefully this is not too confusing. Numerous examples can be found in the other
 manuals and test suite.
+
+The first version of \METAFUN\ evolved in \CONTEXT\ \MKII, and when we moved to
+\MKIV\ some interfaces (especially the extensions) could be made better. We now
+have \LMTX\ so we can make even those better (and often easier). The downside is
+that some features discussed here won't work in \MKII\ and \MKIV. If you run into
+that, just consider updating to \LMTX. The current version should process okay
+with the latest version; thanks to Otared Kavian for keeping an eye on that and
+posting me possible issues. The real new features are part of what is to become
+\LUAMETAFUN, but for that we have a separate manual.
+
+In 2022 Mikael Sundqvist and I spent a lot of time on improving math in both
+\LUAMETATEX\ and \CONTEXT\ \LMTX, which is now the main version. Because we're both
+\METAPOST\ fans we let ourselves being sidetracked to also explore new possibilities
+in the library. Some of the macros that evolved from that made it into \METAFUN\
+which is why we also discuss some here. Be aware of the fact that we do some things
+different in \LMTX\ than in \MKIV, for instance we moved to colors being specified
+as strings (references to colors defined in \CONTEXT). There are also some new
+features that are unique to the library in \LUAMETATEX, like \type {&&}, \type
+{&&&}, \type {&&&&} and \type {nocycle}. THis means that not everything discussed
+here works in \MKIV\ too.
 
 \blank[big,samepage]
 

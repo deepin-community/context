@@ -47,11 +47,13 @@
 
 %D Document:
 
-\newtoks \everysetupdocument
 \newtoks \everyendoftextbody
 
 \newtoks \everystarttext
 \newtoks \everystoptext
+
+\newtoks \everystartdocument
+\newtoks \everystopdocument
 
 %D Purity:
 
@@ -89,7 +91,7 @@
 
 %D Exporting:
 
-\newtoks\everyinitializeexport
+\newtoks \everyinitializeexport
 
 %D Sectioning:
 
@@ -170,8 +172,9 @@
 
 \newif \ifinpagebody
 \newif \ifinsidecolumns
-\newif \ifdoublesided   \doublesidedfalse
-\newif \ifsinglesided   \singlesidedtrue
+\newif \ifinsidemulticolumns  % simple mixed-in-text columns
+\newif \ifdoublesided         \doublesidedfalse
+\newif \ifsinglesided         \singlesidedtrue
 \newif \ifinsidefloat
 \newif \ifdoingblocks
 \newif \ifgridsnapping
@@ -180,12 +183,15 @@
 \newconstant\pageduplexmode % 0 single 1 double 2 mix
 \newconstant\pagebodymode   % 0 not 1 normal pagebody 2 spread
 
+\newcount\nofcolumns      \nofcolumns     \plusone
+\newcount\nofmulticolumns \nofmulticolumns\plusone
+
 %D \macros
 %D   {ifproductionrun}
 %D
 %D This boolean can be used to bypass certain initializations.
 
-\newif\ifproductionrun
+% \newif\ifproductionrun % already defined
 
 \appendtoks
     \productionruntrue

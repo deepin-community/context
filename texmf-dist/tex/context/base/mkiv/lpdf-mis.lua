@@ -17,7 +17,8 @@ if not modules then modules = { } end modules ['lpdf-mis'] = {
 
 local next, tostring, type = next, tostring, type
 local format, gsub, formatters = string.format, string.gsub, string.formatters
-local flattened = table.flattened
+local concat, flattened = table.concat, table.flattened
+local settings_to_array = utilities.parsers.settings_to_array
 
 local backends, lpdf, nodes = backends, lpdf, nodes
 
@@ -236,22 +237,17 @@ local function setupidentity()
         end
         local keywords = identity.keywords or ""
         if keywords ~= "" then
-            keywords = gsub(keywords, "[%s,]+", " ")
-            addtoinfo("Keywords",pdfunicode(keywords), keywords)
+            keywords = concat(settings_to_array(keywords), " ")
+            addtoinfo("Keywords", pdfunicode(keywords), keywords)
         end
         local id = lpdf.id()
         addtoinfo("ID", pdfstring(id), id) -- needed for pdf/x
         --
         addtoinfo("ConTeXt.Version",version)
-        --
-        local lmtx = codeinjections.lmtxmode()
-        if lmtx then
-            addtoinfo("ConTeXt.LMTX",formatters["%0.2f"](lmtx))
-        end
-        --
         addtoinfo("ConTeXt.Time",os.date("%Y-%m-%d %H:%M"))
         addtoinfo("ConTeXt.Jobname",jobname)
-        addtoinfo("ConTeXt.Url","www.pragma-ade.com")
+     -- addtoinfo("ConTeXt.Url","www.pragma-ade.com")
+        addtoinfo("ConTeXt.Url","github.com/contextgarden/context")
         addtoinfo("ConTeXt.Support","contextgarden.net")
         addtoinfo("TeX.Support","tug.org")
         --
@@ -451,7 +447,7 @@ local function documentspecification()
     if not pagespec or pagespec == "" then
         pagespec = v_default
     end
-    local settings = utilities.parsers.settings_to_array(pagespec)
+    local settings = settings_to_array(pagespec)
     -- so the first one detemines the defaults
     local first    = settings[1]
     local defaults = pagespecs[first]

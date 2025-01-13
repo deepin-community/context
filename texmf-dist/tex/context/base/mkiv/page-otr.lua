@@ -7,6 +7,6 @@ if not modules then modules = { } end modules ['page-otr'] = {
 }
 
 interfaces.implement {
-    name    = "triggerpagebuilder",
-    actions = tex.triggerbuildpage,
+    name      = "triggerpagebuilder",
+    actions   = tex.triggerbuildpage,
 }

@@ -21,7 +21,7 @@ if not modules then modules = { } end modules ['lang-ini'] = {
 local type, tonumber, next = type, tonumber, next
 local utfbyte = utf.byte
 local format, gsub, gmatch, find = string.format, string.gsub, string.gmatch, string.find
-local concat, sortedkeys, sortedpairs, keys, insert = table.concat, table.sortedkeys, table.sortedpairs, table.keys, table.insert
+local concat, sortedkeys, sortedhash, keys, insert = table.concat, table.sortedkeys, table.sortedhash, table.keys, table.insert
 local utfvalues, strip, utfcharacters = string.utfvalues, string.strip, utf.characters
 
 local context   = context
@@ -36,20 +36,20 @@ local trace_patterns = false  trackers.register("languages.patterns", function(v
 local report_initialization = logs.reporter("languages","initialization")
 
 local lang             = lang
+language               = lang -- we use that in lmtx
 
-local prehyphenchar    = lang.prehyphenchar    -- global per language
-local posthyphenchar   = lang.posthyphenchar   -- global per language
-local preexhyphenchar  = lang.preexhyphenchar  -- global per language
-local postexhyphenchar = lang.postexhyphenchar -- global per language
------ lefthyphenmin    = lang.lefthyphenmin
------ righthyphenmin   = lang.righthyphenmin
-local sethjcode        = lang.sethjcode
+local prehyphenchar    = language.prehyphenchar    -- global per language
+local posthyphenchar   = language.posthyphenchar   -- global per language
+local preexhyphenchar  = language.preexhyphenchar  -- global per language
+local postexhyphenchar = language.postexhyphenchar -- global per language
+----- lefthyphenmin    = language.lefthyphenmin
+----- righthyphenmin   = language.righthyphenmin
+local sethjcode        = language.sethjcode
 
 local uccodes          = characters.uccodes
 local lccodes          = characters.lccodes
 
-lang.exceptions        = lang.hyphenation
-local new_langage      = lang.new
+local new_language     = language.new
 
 languages              = languages or {}
 local languages        = languages
@@ -85,7 +85,7 @@ local function resolve(tag)
     if data then
         instance = data.instance
         if not instance then
-            instance = new_langage(data.number)
+            instance = new_language(data.number)
             data.instance = instance
         end
     end
@@ -101,7 +101,7 @@ local function tolang(what) -- returns lang object
     if data then
         local instance = data.lang
         if not instance then
-            instance = new_langage(data.number)
+            instance = new_language(data.number)
             data.instance = instance
         end
         return instance
@@ -158,11 +158,16 @@ local function sethjcodes(instance,loaded,what,factor)
             loaded.codehash = h
         end
         --
-        local function setcode(l)
-            local u = uccodes[l]
+        local function setcode(code)
+            local l = lccodes[code] -- just in case we get a mixture
+            local u = uccodes[code] -- just in case we get a mixture
             local s = l
+            if type(s) ~= "number" then
+                l = code
+                s = code
+            end
             if hjcounts then
-                local c = hjcounts[l]
+                local c = hjcounts[s]
                 if c then
                     c = c.count
                     if not c then
@@ -183,14 +188,14 @@ local function sethjcodes(instance,loaded,what,factor)
             h[l] = s
             if u ~= l and type(u) == "number" then
                 sethjcode(instance,u,s)
-                h[u] = lccodes[l]
+                h[u] = s
             end
         end
         --
         local s = tex.savinghyphcodes
         tex.savinghyphcodes = 0
         if type(c) == "table" then
-            for l in next, c do
+            for l in sortedhash(c) do
                 setcode(utfbyte(l))
             end
         else
@@ -501,7 +506,6 @@ else
             return 0
         end
     end
-
 end
 
 -- not that usefull, global values
@@ -577,7 +581,7 @@ languages.logger = languages.logger or { }
 
 function languages.logger.report()
     local result, r = { }, 0
-    for tag, l in sortedpairs(registered) do
+    for tag, l in sortedhash(registered) do
         if l.loaded then
             r = r + 1
             result[r] = format("%s:%s:%s",tag,l.parent,l.number)

@@ -1,1 +1,12 @@
 context: license-problem-font-adobe-copyrighted-fragment
+# TeX packages have their documentation outside usr-share-doc.
+context: package-contains-documentation-outside-usr-share-doc
+context: script-not-executable
+# Lua scripts are in /usr/share/texmf/scripts/context/lua .
+context: spare-manual-page
+# Some input files need local encoding.
+context: national-encoding
+# We are a TeX package.
+context: font-in-non-font-package
+context: font-outside-font-dir
+context: repeated-path-segment

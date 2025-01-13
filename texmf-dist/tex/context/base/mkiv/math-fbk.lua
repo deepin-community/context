@@ -7,6 +7,7 @@ if not modules then modules = { } end modules ['math-fbk'] = {
 }
 
 local next, type = next, type
+local floor = math.floor
 
 local trace_fallbacks   = false  trackers.register("math.fallbacks", function(v) trace_fallbacks = v end)
 
@@ -32,6 +33,7 @@ local popcommand        = helpers.commands.pop
 local pushcommand       = helpers.commands.push
 
 local virtualcharacters = { }
+local virtualforced     = { }
 
 local hashes            = fonts.hashes
 local identifiers       = hashes.identifiers
@@ -53,13 +55,15 @@ function fallbacks.apply(target,original)
     -- we also have forcedsize ... at this moment we already passed through
     -- constructors.scale so we have this set
     local parameters = target.parameters
+    local properties = target.properties
     local mathsize   = parameters.mathsize
     if mathsize < 1 or mathsize > 3 then
         return
     end
-    local characters = target.characters
-    local size       = parameters.size
-    local usedfonts  = target.fonts
+    local characters  = target.characters
+    local size        = parameters.size
+    local usedfonts   = target.fonts
+    local compactmath = properties.compactmath
     if not usedfonts then
         usedfonts    = { { id = 0 } } -- we need at least one entry (automatically done anyway)
         target.fonts = usedfonts
@@ -90,6 +94,10 @@ function fallbacks.apply(target,original)
         usedfonts[textindex] = { id = textid }
     else
         textdata = target
+    end
+    if compactmath then
+        scriptid       = textid
+        scriptscriptid = textid
     end
     if scriptid and scriptid ~= 0 then
         scriptindex = #usedfonts  + 1
@@ -130,7 +138,7 @@ function fallbacks.apply(target,original)
     local fullname = trace_fallbacks and target.properties.fullname
     --
     for k, v in sortedhash(virtualcharacters) do
-        if not characters[k] then
+        if not characters[k] or virtualforced[k] then
             local tv = type(v)
             local cd = nil
             if tv == "table" then
@@ -304,11 +312,11 @@ end
 
 -- we could move the defs from math-act here
 
-local function accent_to_extensible(target,newchr,original,oldchr,height,depth,swap,offset,unicode)
+local function accent_to_extensible(target,newchr,original,oldchr,height,depth,swap,offset,unicode,force)
     local characters = target.characters
     local olddata = characters[oldchr]
     -- brrr ... pagella has only next
-    if olddata and not olddata.commands then -- not: and olddata.width > 0
+    if force or (olddata and not olddata.commands) then -- not: and olddata.width > 0
         local addprivate = fonts.helpers.addprivate
         if swap then
             swap   = characters[swap]
@@ -404,14 +412,14 @@ virtualcharacters[0xFE33E] = function(data)
     local target = data.target
     local height = 0
     local depth  = target.parameters.xheight/4
-    return accent_to_extensible(target,0xFE33E,data.original,0x0305,height,depth,nil,nil,0x203E)
+    return accent_to_extensible(target,0xFE33E,data.original,0x0305,height,depth,nil,nil,0x203E,true)
 end
 
 virtualcharacters[0xFE33F] = function(data)
     local target = data.target
     local height = target.parameters.xheight/8
     local depth  = height
-    return accent_to_extensible(target,0xFE33F,data.original,0x0305,height,depth,nil,nil,0x203E)
+    return accent_to_extensible(target,0xFE33F,data.original,0x0305,height,depth,nil,nil,0x203E,true)
 end
 
 -- spacing (no need for a cache of widths)
@@ -595,9 +603,11 @@ local function actuarian(data)
     return {
         -- todo: add alttext
         -- compromise: lm has large hooks e.g. \actuarial{a}
-        width     = basewidth + 4 * linewidth,
-        unicode   = 0x20E7,
-        commands  = {
+        width    = basewidth + 4 * linewidth,
+        height   = basechar.height,
+        depth    = basechar.depth,
+        unicode  = 0x20E7,
+        commands = {
             rightcommand[2 * linewidth],
             downcommand[- baseheight - 3 * linewidth],
             { "rule", linewidth, basewidth + 4 * linewidth },
@@ -617,13 +627,15 @@ local function equals(data,unicode,snippet,advance,n) -- mathpair needs them
     local basechar   = characters[snippet]
     local advance    = advance * parameters.quad
     return {
-        unicode   = unicode,
-        width     = n*basechar.width + (n-1)*advance,
-        commands  = {
+        unicode  = unicode,
+        width    = n*basechar.width - (n-1)*advance,
+        height   = basechar.height,
+        depth    = basechar.depth,
+        commands = {
             charcommand[snippet],
-            rightcommand[advance],
+            leftcommand[advance],
             charcommand[snippet],
-            n > 2 and rightcommand[advance] or nil,
+            n > 2 and leftcommand[advance] or nil,
             n > 2 and charcommand[snippet] or nil,
         },
     }
@@ -688,3 +700,30 @@ virtualcharacters[0x305] = function(data)
     }
 end
 
+local function threedots(data,shift)
+    local characters = data.target.characters
+    local parameters = data.target.parameters
+    local periodchar = characters[0x002E]
+    local pluschar   = characters[0x002B]
+    local period     = charcommand[0x002E]
+    local periodwd   = periodchar.width  or 0
+    local periodht   = periodchar.height or 0
+    local perioddp   = periodchar.depth or 0
+    local offset     = 0
+    if shift then
+        local plusht = pluschar.height or 0
+        local plusdp = pluschar.depth or 0
+        local axis   = floor((plusdp + plusht)/2) - plusdp
+        offset   = axis - floor(periodht/2)
+        periodht = axis + floor(periodht/2)
+    end
+    return {
+        width    = 3*periodwd,
+        height   = periodht,
+        depth    = 0,
+        commands = { upcommand[offset], period, period, period }
+    }
+end
+
+virtualcharacters[0x2026] = function(data) return threedots(data,false) end virtualforced[0x2026] = true
+virtualcharacters[0x22EF] = function(data) return threedots(data, true) end virtualforced[0x22EF] = true

@@ -50,23 +50,6 @@
 
 \def\displayopenupvalue{.25\bodyfontsize}
 
-% \def\math_build_eqalign
-%   {\scratchtoks\emptytoks
-%    \d_math_eqalign_distance\mathalignmentparameter\c!distance
-%    \scratchcounterone\mathalignmentparameter\c!m
-%    \scratchcountertwo\mathalignmentparameter\c!n
-%    \normalexpanded{\scratchtoks{\the\scratchtoks\the\t_math_align_a}}%
-%    \scratchcounter\plusone
-%    \dorecurse{\numexpr\scratchcounterone*\scratchcountertwo-\plusone\relax}
-%      {\ifnum\scratchcounter=\scratchcountertwo
-%         \scratchcounter\plusone
-%         \scratchtoks\expandafter{\the\scratchtoks\math_eqalign_distance}%
-%       \else
-%         \advance\scratchcounter\plusone
-%       \fi
-%       \normalexpanded{\scratchtoks{\the\scratchtoks\the\t_math_align_b}}}%
-%    \normalexpanded{\scratchtoks{\the\scratchtoks\the\t_math_align_c}}}
-
 \def\math_build_eqalign
   {\scratchtoks\emptytoks
    \d_math_eqalign_distance\mathalignmentparameter\c!distance\relax
@@ -78,6 +61,7 @@
      {\ifnum\scratchcounter=\scratchcountertwo
         \scratchcounter\plusone
         \etoksapp\scratchtoks{\math_eqalign_distance}%
+        \etoksapp\scratchtoks{\global\c_math_eqalign_column\zerocount}%
       \else
         \advance\scratchcounter\plusone
       \fi
@@ -395,7 +379,7 @@
      {\advance\c_math_eqalign_column\plusone\math_eqalign_set_column}% takes argument
    \global\c_math_eqalign_column\plusone
    \dostarttagged\t!math\empty
-   \dostarttagged\t!mathtable\currentmathalignment
+   \dostarttagged\t!mtable\currentmathalignment
    \numberedeqalign}
 
 \def\math_alignment_stop
@@ -473,13 +457,13 @@
 
 \def\math_first_in_eqalign
   {\global\c_math_eqalign_column\plusone
-   \dostarttagged\t!mathtablerow \empty
-   \dostarttagged\t!mathtablecell\empty}
+   \dostarttagged\t!mtablerow \empty
+   \dostarttagged\t!mtablecell\empty}
 
 \def\math_next_in_eqalign
   {\global\advance\c_math_eqalign_column\plusone
    \dostoptagged % finish cell
-   \dostarttagged\t!mathtablecell\empty}
+   \dostarttagged\t!mtablecell\empty}
 
 \def\math_left_of_eqalign
   {\ifcsname\??mathalignmentvariant\number\c_math_eqalign_column\endcsname
@@ -832,7 +816,7 @@
 \def\math_matrix_start_table
   {\global\c_math_eqalign_column\zerocount
    \dostarttagged\t!math\empty
-   \dostarttagged\t!mathtable\empty}
+   \dostarttagged\t!mtable\empty}
 
 \def\math_matrix_stop_table
   {\dostoptagged
@@ -840,13 +824,13 @@
 
 \def\math_matrix_start_row
   {\noalign{\global\c_math_eqalign_column\zerocount}%
-   \dostarttagged\t!mathtablerow\empty}
+   \dostarttagged\t!mtablerow\empty}
 
 \def\math_matrix_stop_row
   {\dostoptagged}
 
 \unexpanded\def\math_matrix_start_cell
-  {\dostarttagged\t!mathtablecell\empty
+  {\dostarttagged\t!mtablecell\empty
    \hss
    \math_left_of_eqalign
    \startimath
@@ -1012,12 +996,12 @@
 \let\mathmatrixleft \empty % experimental hook
 \let\mathmatrixright\empty % experimental hook
 
-\setvalue{\??mathmatrixalignlocation\v!top   }{\raise\dimexpr(\nextboxdp-\nextboxht)/2 +\mathaxisheight\textfont\zerocount\relax}
+\setvalue{\??mathmatrixalignlocation\v!top   }{\raise\dimexpr(\nextboxdp-\nextboxht)/2 +\mathaxisheight\mathstyle\relax}
 \setvalue{\??mathmatrixalignlocation\v!high  }{\raise\dimexpr(\nextboxdp-\nextboxht)/2\relax}
 \setvalue{\??mathmatrixalignlocation\v!center}{\relax}
 \setvalue{\??mathmatrixalignlocation\v!lohi}  {\relax}
 \setvalue{\??mathmatrixalignlocation\v!normal}{\relax}
-\setvalue{\??mathmatrixalignlocation\v!bottom}{\lower\dimexpr(\nextboxdp-\nextboxht)/2 +\mathaxisheight\textfont\zerocount\relax}
+\setvalue{\??mathmatrixalignlocation\v!bottom}{\lower\dimexpr(\nextboxdp-\nextboxht)/2 +\mathaxisheight\mathstyle\relax}
 \setvalue{\??mathmatrixalignlocation\v!low   }{\lower\dimexpr(\nextboxdp-\nextboxht)/2\relax}
 
 \def\math_matrix_finish_nextbox
@@ -1908,7 +1892,7 @@
    \begingroup
    \beforedisplayspace
    % subset of \everydisplay:
-   \attribute \mathmodeattribute \plusone
+   \c_attr_mathmode\plusone
    \settrue \indisplaymath
    % end of subset
    \informulatrue}

@@ -11,6 +11,7 @@ if not modules then modules = { } end modules ['m-asymptote'] = {
 local context = context
 local replacesuffix = file.replacesuffix
 
+moduledata = moduledata or { }
 moduledata.asymptote = { }
 
 sandbox.registerrunner {
@@ -29,7 +30,7 @@ sandbox.registerrunner {
     checkers = { filename = "readable" },
 }
 
-function moduledata.asympote.process(name,type)
+function moduledata.asymptote.process(name,type)
     if type == "prc" then
         local result = buffers.run(name,false,"asymptote prc","prc")
         local jsdata = { js = replacesuffix(result,"js") }

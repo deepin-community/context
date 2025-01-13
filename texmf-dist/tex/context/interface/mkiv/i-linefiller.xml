@@ -4,7 +4,7 @@
 
 <cd:interface xmlns:cd="http://www.pragma-ade.com/commands">
 
-    <cd:command name="definelinefiller" level="style" category="rules metapost" file="node-rul.mkiv">
+    <cd:command name="definelinefiller" level="style" category="rules" keywords="metapost" file="node-rul.mkiv">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
             <cd:resolve name="keyword-name-optional"/>
@@ -14,7 +14,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setuplinefiller" level="style" category="rules metapost" file="node-rul.mkiv">
+    <cd:command name="setuplinefiller" level="style" category="rules" keywords="metapost" file="node-rul.mkiv">
         <cd:arguments>
             <cd:resolve name="keyword-name-list-optional"/>
             <cd:assignments list="yes">
@@ -29,9 +29,14 @@
                     <cd:constant type="local" default="yes"/>
                     <cd:constant type="global"/>
                 </cd:parameter>
-                <cd:parameter name="color">
-                    <cd:constant type="cd:color"/>
+                <cd:parameter name="mp">
+                    <cd:constant type="cd:name"/>
                 </cd:parameter>
+                <!--
+                    cd:parameter name="method">
+                        <cd:constant type="cd:number"/>
+                    </cd:parameter
+                -->
                 <cd:parameter name="height">
                     <cd:constant type="cd:dimension"/>
                 </cd:parameter>
@@ -47,9 +52,15 @@
                 <cd:parameter name="rulethickness">
                     <cd:constant type="cd:dimension"/>
                 </cd:parameter>
-                <!-- cd:parameter name="method">
-                    <cd:constant type="cd:number"/>
-                </cd:parameter -->
+                <cd:parameter name="before">
+                    <cd:constant type="cd:command"/>
+                </cd:parameter>
+                <cd:parameter name="after">
+                    <cd:constant type="cd:command"/>
+                </cd:parameter>
+                <cd:parameter name="color">
+                    <cd:constant type="cd:color"/>
+                </cd:parameter>
                 <cd:parameter name="textstyle">
                     <cd:resolve name="value-style"/>
                 </cd:parameter>
@@ -59,20 +70,11 @@
                 <cd:parameter name="align">
                     <cd:inherit name="setupalign"/>
                 </cd:parameter>
-                <cd:parameter name="mp">
-                    <cd:constant type="cd:name"/>
-                </cd:parameter>
-                <cd:parameter name="before">
-                    <cd:constant type="cd:command"/>
-                </cd:parameter>
-                <cd:parameter name="after">
-                    <cd:constant type="cd:command"/>
-                </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setuplinefillers" level="style" category="rules metapost" file="node-rul.mkiv">
+    <cd:command name="setuplinefillers" level="style" category="rules" keywords="metapost" file="node-rul.mkiv">
         <cd:arguments>
             <cd:resolve name="keyword-name-list-optional"/>
             <cd:assignments list="yes">
@@ -81,7 +83,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="linefiller" type="environment" level="style" category="rules metapost" file="node-rul.mkiv">
+    <cd:command name="linefiller" type="environment" level="style" category="rules" keywords="metapost" file="node-rul.mkiv">
         <cd:arguments>
             <cd:keywords>
                 <cd:constant type="filler"/>
@@ -93,12 +95,36 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setlinefiller" level="style" category="rules metapost" file="node-rul.mkiv">
+    <cd:command name="setlinefiller" level="style" category="rules" keywords="metapost" file="node-rul.mkiv">
         <cd:arguments>
             <cd:keywords>
                 <cd:constant type="filler"/>
                 <cd:constant type="cd:name"/>
             </cd:keywords>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="linefillerhbox" level="document" category="rules" keywords="metapost boxes" file="node-rul.mkiv">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
+            <cd:resolve name="string-boxoptions"/>
+            <cd:content/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="linefillervbox" level="document" category="rules" keywords="metapost boxes" file="node-rul.mkiv">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
+            <cd:resolve name="string-boxoptions"/>
+            <cd:content/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="linefillervtop" level="document" category="rules" keywords="metapost boxes" file="node-rul.mkiv">
+        <cd:arguments>
+            <cd:resolve name="keyword-name"/>
+            <cd:resolve name="string-boxoptions"/>
+            <cd:content/>
         </cd:arguments>
     </cd:command>
 

@@ -17,30 +17,27 @@
 
 \newcount\filterstate \filterstate\plusone % hm, public
 
-\ifcase\contextlmtxmode \else
-    \registerctxluafile{node-cmp}{}
-\fi
-
 \registerctxluafile{node-ini}{}
 \registerctxluafile{node-met}{}
 \registerctxluafile{node-nut}{}
 \registerctxluafile{node-res}{}
 %registerctxluafile{node-ppt}{} % experimental, not used so probably useless
 \registerctxluafile{node-aux}{}
+\registerctxluafile{node-gcm}{}
 \registerctxluafile{node-tst}{}
 \registerctxluafile{node-tra}{} % we might split it off (module)
 \registerctxluafile{node-snp}{}
 \registerctxluafile{node-tsk}{}
 \registerctxluafile{node-tex}{}
-\registerctxluafile{node-dir}{} % experimental, not yet (and maybe never) used
 \registerctxluafile{node-pro}{}
 \registerctxluafile{node-ser}{}
-\registerctxluafile{node-ext}{}
+%registerctxluafile{node-ext}{}
 \registerctxluafile{node-acc}{} % experimental
 %registerctxluafile{node-prp}{} % makes no sense (yet)
 \registerctxluafile{node-scn}{}
 \registerctxluafile{node-syn}{}
 \registerctxluafile{node-par}{}
+\registerctxluafile{node-bwc}{} % might stay
 
 \newcount\c_node_tracers_show_box % box number
 
@@ -52,15 +49,5 @@
 
 \unexpanded\def\visualizenextnodes{\dowithnextbox{\ctxlua{nodes.visualizebox(\number\nextbox,false,true)}}}
 \unexpanded\def\visualizeflatnodes{\dowithnextbox{\ctxlua{nodes.visualizebox(\number\nextbox,true,true)}}}
-
-\unexpanded\def\starttracingnodes[#1]{\ctxlua{nodes.tracers.characters.start("#1")}}
-\unexpanded\def\stoptracingnodes     {\ctxlua{nodes.tracers.characters.stop()}}
-
-% \starttext
-%     \starttracingnodes[characters]
-%         \input tufte \par
-%         \input tufte \par
-%     \stoptracingnodes
-% \stoptext
 
 \protect \endinput

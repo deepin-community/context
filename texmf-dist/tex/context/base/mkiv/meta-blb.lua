@@ -200,7 +200,7 @@ metapost.installplugin {
 }
 
 -- Here follows an example of usage of the above: a more modern
--- version of followokens (in meta-imp-txt.mkiv).
+-- version of followtokens (in meta-imp-txt.mkiv).
 
 local nodecodes       = nodes.nodecodes
 local kerncodes       = nodes.kerncodes
@@ -221,9 +221,9 @@ local getsubtype      = nuts.getsubtype
 local setlink         = nuts.setlink
 local setlist         = nuts.setlist
 local getnext         = nuts.getnext
-local flatten_list    = nuts.flatten_discretionaries
+local flatten_list    = nuts.flattendiscretionaries
 local remove_node     = nuts.remove
-local flush_node      = nuts.flush
+local flushnode       = nuts.flush
 
 local addblob         = mp.mf_blob_add
 local newblob         = mp.mf_blob_new
@@ -276,7 +276,7 @@ local function initialize(category,box)
             end
             setlist(wrap,head)
         end
-        flush_node(wrap)
+        flushnode(wrap)
     end
 end
 
@@ -293,7 +293,7 @@ function mp.mf_inject_blob(category,str)
     newblob(category,str) -- only for tracing
     mp_category = category
     mp_str      = str
-    tex.runtoks("mpblobtext")
+    tex.runlocal("mpblobtext")
 end
 
 interfaces.implement {

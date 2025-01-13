@@ -1,11 +1,22 @@
+usage () {
+  echo '$1 = location of your personal copy of TeXLive (please no space in path)'
+  echo '$2 = basever = date of TeXLive checkout as format yyyy.mm.dd'
+  exit 0
+}
 
-tlnet=${1:-/home/norbert/public_html/tlnet}
+if [ -z $2 ]; then usage; fi
 
-basever=2020.03.10
+#tlnet=${1:-/home/norbert/public_html/tlnet}
+#tlnet=${1:-/home/hille/devel/TeXLive/ctan_tl_texmf_tl_bin/ctan.mirror.norbert-ruehl.de}
+#tlnet=${1:-/home/hille/devel/TeXLive/zzz_upstream_raw/ctan.mirror.norbert-ruehl.de}
+tlnet="$1"
+
+#basever=2023.04.09
+basever="$2"
 
 verstr=`date +%Y%m%d`
-pkg="context-${basever}.$verstr"
-orig="context_${basever}.$verstr.orig.tar.gz"
+pkg="context-${basever}.${verstr}"
+orig="context_${basever}.${verstr}+dfsg.orig.tar.gz"
 
 if [ -r $pkg ] ; then
   echo "already here: $pkg"
@@ -34,9 +45,16 @@ rm -r texmf-dist/scripts/context/stubs/win64/
 #
 # remove non-free files for the moment
 # replaced in TL already
-#rm -rf texmf-dist/tex/context/colors/icc/profiles/*
+rm -rf texmf-dist/tex/context/colors/icc/profiles/*
+
+grep -l -r licence=cc-by-nc-sa *|xargs rm
+
+# Remove luametatex binary
+rm -f bin/i386-linux/luametatex
+
+# Remove broken links (after luametatex removal)
+rm -f bin/i386-linux/context bin/i386-linux/mtxrun
 
 cd ..
 
 GZIP=-9 tar -czf $orig $pkg
-

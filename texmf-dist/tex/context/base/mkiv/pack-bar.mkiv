@@ -40,7 +40,7 @@
 
 \installcorenamespace{positionbar}
 
-\installsimplecommandhandler \??positionbar {positionbar}
+\installsimplecommandhandler \??positionbar {positionbar} \??positionbar
 
 \setuppositionbar
   [\c!min=1,
@@ -63,7 +63,8 @@
 
 \unexpanded\def\verticalpositionbar[#1]%
   {\vbox to \vsize
-     {\setuppositionbar[#1]%
+     {\hsize\positionbarparameter\c!width
+      \setuppositionbar[#1]%
       \usepositionbarstyleandcolor\c!style\c!color
       \vskip\zeropoint\s!plus \positionbarparameter\c!n  \s!fill
       \vskip\zeropoint\s!plus-\positionbarparameter\c!min\s!fill
@@ -75,17 +76,18 @@
   {\hpack to \hsize
      {\setuppositionbar[#1]%
       \usepositionbarstyleandcolor\c!style\c!color
-      \leaders\vrule\hskip\zeropoint\s!plus\numexpr\positionbarparameter\c!n-\positionbarparameter\c!min+\plusone\relax\s!fill
       \vrule\s!width\zeropoint\s!height\positionbarparameter\c!height\s!depth\positionbarparameter\c!depth
+      \leaders\vrule\hskip\zeropoint\s!plus\numexpr\positionbarparameter\c!n-\positionbarparameter\c!min+\plusone\relax\s!fill
       \hskip\zeropoint\s!plus \positionbarparameter\c!max\s!fill
       \hskip\zeropoint\s!plus-\positionbarparameter\c!n  \s!fill}}
 
 \unexpanded\def\verticalgrowingbar[#1]%
   {\vpack to \vsize
-     {\setuppositionbar[#1]%
+     {\hsize\positionbarparameter\c!width
+      \setuppositionbar[#1]%
       \usepositionbarstyleandcolor\c!style\c!color
-      \leaders\hrule\vskip\zeropoint\s!plus\numexpr\positionbarparameter\c!n-\positionbarparameter\c!min+\plusone\relax\s!fill
       \hrule\s!width\positionbarparameter\c!width\s!height\zeropoint\s!depth\zeropoint
+      \leaders\hrule\vskip\zeropoint\s!plus\numexpr\positionbarparameter\c!n-\positionbarparameter\c!min+\plusone\relax\s!fill
       \vskip\zeropoint\s!plus \positionbarparameter\c!max\s!fill
       \vskip\zeropoint\s!plus-\positionbarparameter\c!n  \s!fill}}
 

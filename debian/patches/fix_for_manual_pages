@@ -1,0 +1,44 @@
+--- context.orig/texmf-dist/doc/man/man1/context.1
++++ context/texmf-dist/doc/man/man1/context.1
+@@ -132,7 +132,7 @@
+ never initializes synctex (for production runs)
+ .TP
+ .B --synctex
+-run with synctex enabled (better use \setupsynctex[state=start])
++run with synctex enabled (better use \\setupsynctex[state=start])
+ .TP
+ .B --nodates
+ omit runtime dates in pdf file (optional value: a number (this 1970 offset time) or string "YYYY-MM-DD HH:MM")
+--- context.orig/texmf-dist/doc/man/man1/mtx-context.1
++++ context/texmf-dist/doc/man/man1/mtx-context.1
+@@ -132,7 +132,7 @@
+ never initializes synctex (for production runs)
+ .TP
+ .B --synctex
+-run with synctex enabled (better use \setupsynctex[state=start])
++run with synctex enabled (better use \\setupsynctex[state=start])
+ .TP
+ .B --nodates
+ omit runtime dates in pdf file (optional value: a number (this 1970 offset time) or string "YYYY-MM-DD HH:MM")
+--- context.orig/texmf-dist/doc/man/man1/mtx-evohome.1
++++ context/texmf-dist/doc/man/man1/mtx-evohome.1
+@@ -18,7 +18,7 @@
+ update data from device
+ .TP
+ .B --presets
+-file with authenciation data
++file with authentication data
+ .TP
+ .B --auto
+ fetch temperature data every hour
+--- context.orig/texmf-dist/doc/man/man1/mtxrun.1
++++ context/texmf-dist/doc/man/man1/mtxrun.1
+@@ -12,7 +12,7 @@
+ .SH OPTIONS
+ .TP
+ .B --script
+-run an mtx script (lua prefered method) (--noquotes), no script gives list
++run an mtx script (lua preferred method) (--noquotes), no script gives list
+ .TP
+ .B --evaluate
+ run code passed on the commandline (between quotes) (=loop) (exit|quit aborts)

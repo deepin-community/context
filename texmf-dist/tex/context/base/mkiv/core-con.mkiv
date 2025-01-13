@@ -76,6 +76,9 @@
 \def\abjadnodotnumerals#1{\clf_abjadnodotnumerals\numexpr#1\relax}
 \def\abjadnaivenumerals#1{\clf_alphabetic        \numexpr#1\relax{arabic}} % okay?
 
+\def\hebrewnumerals    #1{\clf_hebrewnumerals\numexpr#1\relax}
+\let\yiddishnumerals      \hebrewnumerals
+
 \def\languagecharacters#1{\clf_alphabetic\numexpr#1\relax{\currentlanguage}} % new
 \def\languageCharacters#1{\clf_Alphabetic\numexpr#1\relax{\currentlanguage}} % new
 
@@ -104,9 +107,10 @@
 \let\koreanparenthesisnumerals\koreannumeralsp
 \let\koreancirclenumerals     \koreannumeralsc
 
-\def\chinesenumerals   #1{\clf_chinesenumerals\numexpr#1\relax{normal}}
-\def\chinesecapnumerals#1{\clf_chinesenumerals\numexpr#1\relax{cap}}
-\def\chineseallnumerals#1{\clf_chinesenumerals\numexpr#1\relax{all}}
+\def\chinesenumerals    #1{\clf_chinesenumerals\numexpr#1\relax{normal}}
+\def\chinesecapnumerals #1{\clf_chinesenumerals\numexpr#1\relax{cap}}
+\def\chineseallnumerals #1{\clf_chinesenumerals\numexpr#1\relax{all}}
+\def\chinesedatenumerals#1{\clf_chinesenumerals\numexpr#1\relax{date}}
 
 %D \macros
 %D   {character,Character}
@@ -210,6 +214,8 @@
 
 \unexpanded\def\monthlong #1{\clf_monthname\numexpr#1\relax}
 \unexpanded\def\monthshort#1{\clf_monthmnem\numexpr#1\relax}
+\unexpanded\def\daylong   #1{\clf_dayname\numexpr#1\relax}
+\unexpanded\def\dayshort  #1{\clf_daymnem\numexpr#1\relax}
 
 \let\convertmonth\monthlong % for old times sake
 
@@ -218,11 +224,15 @@
 %D \showsetup{month}
 %D \showsetup{MONTH}
 
+\pushoverloadmode
+
 \let\month\monthlong
 
-\unexpanded\def\MONTH     #1{\WORD{\month     {#1}}}
-\unexpanded\def\MONTHLONG #1{\WORD{\monthlong {#1}}}
-\unexpanded\def\MONTHSHORT#1{\WORD{\monthshort{#1}}}
+\popoverloadmode
+
+\unexpanded\def\MONTH     #1{\WORD{\clf_monthname\numexpr#1\relax}}
+\unexpanded\def\MONTHLONG #1{\WORD{\clf_monthname\numexpr#1\relax}}
+\unexpanded\def\MONTHSHORT#1{\WORD{\clf_monthmnem\numexpr#1\relax}}
 
 %D We never explicitly needed this, but Tobias Burnus pointed out that it would be
 %D handy to convert to the day of the week. In doing so, we have to calculate the
@@ -242,8 +252,10 @@
 %D \showsetup{weekday}
 %D \showsetup{WEEKDAY}
 
-\unexpanded\def\weekday#1{\clf_dayname\numexpr#1\relax}
-\unexpanded\def\WEEKDAY#1{\WORD{\clf_dayname\numexpr#1\relax}}
+\unexpanded\def\weekday #1{\clf_dayname\numexpr#1\relax}
+\unexpanded\def\WEEKDAY #1{\WORD{\clf_dayname\numexpr#1\relax}}
+\unexpanded\def\DAYLONG #1{\WORD{\clf_dayname\numexpr#1\relax}}
+\unexpanded\def\DAYSHORT#1{\WORD{\clf_daymnem\numexpr#1\relax}}
 
 %D \macros
 %D   {getdayoftheweek, dayoftheweek}
@@ -407,8 +419,28 @@
 %D \stopbuffer
 %D
 %D \typebuffer \getbuffer
+%D
+%D Some indirectness and abstraction:
+%D
+%D \starttyping
+%D \definedate[crap][year]
+%D \currentdate[crap]
+%D \stoptyping
 
-\newtoks \everycurrentdate
+\installcorenamespace{date}
+
+\unexpanded\def\definedate
+  {\dodoubleargument\syst_converters_define_date}
+
+\def\syst_converters_define_date[#1][#2]%
+  {\setvalue{\??date#1}{#2}}
+
+\def\syst_converters_check_date_specification#1%
+  {\ifcsname\??date#1\endcsname
+     \edef#1{\lastnamedcs}%
+   \fi}
+
+\newtoks\everycurrentdate
 
 \unexpanded\def\currentdate
   {\dosingleempty\syst_converters_current_date}
@@ -417,8 +449,11 @@
   {\dontleavehmode
    \begingroup
    \the\everycurrentdate
+   \edef\forceddatespecification{#1}%
+   \syst_converters_check_date_specification\forceddatespecification
+   \syst_converters_check_date_specification\currentdatespecification
    \clf_currentdate
-     {#1}{\currentdatespecification}{\labellanguage}%
+     {\forceddatespecification}{\currentdatespecification}{\labellanguage}%
      \normalyear\normalmonth\normalday
    \endgroup}
 
@@ -433,16 +468,22 @@
      \letdummyparameter\c!m\normalmonth
      \letdummyparameter\c!y\normalyear
      \getdummyparameters[#1]%
+     \edef\p_d{\directdummyparameter\c!d}%
+     \edef\p_m{\directdummyparameter\c!m}%
+     \edef\p_y{\directdummyparameter\c!y}%
      \normalexpanded
        {\endgroup
-        \normalday  \number\directdummyparameter\c!d\relax
-        \normalmonth\number\directdummyparameter\c!m\relax
-        \normalyear \number\directdummyparameter\c!y\relax}%
+        \ifx\p_d\empty\else\normalday  \number\directdummyparameter\c!d\relax\fi
+        \ifx\p_m\empty\else\normalmonth\number\directdummyparameter\c!m\relax\fi
+        \ifx\p_y\empty\else\normalyear \number\directdummyparameter\c!y\relax\fi}%
    \fi
    \begingroup
    \the\everycurrentdate
+   \edef\forceddatespecification{#2}%
+   \syst_converters_check_date_specification\forceddatespecification
+   \syst_converters_check_date_specification\currentdatespecification
    \clf_currentdate
-     {#2}{\currentdatespecification}{\labellanguage}%
+     {\forceddatespecification}{\currentdatespecification}{\labellanguage}%
      \normalyear\normalmonth\normalday
    \endgroup}
 
@@ -627,8 +668,10 @@
 \def\ordinalnumber      #1{\clf_ordinal\numexpr#1\relax{\currentlanguage}}
 \def\Ordinalnumber      #1{\Words{\clf_ordinal\numexpr#1\relax{\currentlanguage}}}
 
-\def\verbosenumber      #1{\clf_verbose\numexpr#1\relax{\currentlanguage}}
-\def\VerboseNumber      #1{\Words{\clf_verbose\numexpr#1\relax{\currentlanguage}}}
+\let\verbosenumberconnector\space
+
+\def\verbosenumber      #1{\clf_verbose\numexpr#1\relax{\currentlanguage}{\verbosenumberconnector}}
+\def\VerboseNumber      #1{\Words{\clf_verbose\numexpr#1\relax{\currentlanguage}{\verbosenumberconnector}}}
 
 %D As longs as symbols are linked to levels or numbers, we can also use the
 %D conversion mechanism, but in for instance the itemization macros, we prefer
@@ -705,6 +748,12 @@
 \defineconversion [abjadnodotnumerals]   [\abjadnodotnumerals]
 \defineconversion [abjadnaivenumerals]   [\abjadnaivenumerals]
 
+\defineconversion [hebrewnumerals]       [\hebrewnumerals]
+\defineconversion [yiddishnumerals]      [\yiddishnumerals]
+
+% users can do: \defineconversion [he] [\hebrewnumerals]
+% users can do: \defineconversion [yi] [\hebrewnumerals]
+
 \defineconversion [thainumerals]         [\thainumerals]
 \defineconversion [devanagarinumerals]   [\devanagarinumerals]
 \defineconversion [gurmurkhinumerals]    [\gurmurkhinumerals]
@@ -731,10 +780,12 @@
 \defineconversion [chinesenumerals]      [\chinesenumerals]
 \defineconversion [chinesecapnumerals]   [\chinesecapnumerals]
 \defineconversion [chineseallnumerals]   [\chineseallnumerals]
+\defineconversion [chinesedatenumerals]  [\chinesedatenumerals]
 
 \defineconversion [cn]                   [\chinesenumerals]
 \defineconversion [cn-c]                 [\chinesecapnumerals]
 \defineconversion [cn-a]                 [\chineseallnumerals]
+\defineconversion [cn-d]                 [\chinesedatenumerals]
 
 %D Moved from lang-def.mkiv:
 %D

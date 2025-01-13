@@ -26,7 +26,6 @@ if not modules then modules = { } end modules ['util-sql'] = {
 
 -- util-sql-imp-client.lua
 -- util-sql-imp-library.lua
--- util-sql-imp-swiglib.lua
 -- util-sql-imp-lmxsql.lua
 
 -- local sql = require("util-sql")
@@ -36,8 +35,7 @@ if not modules then modules = { } end modules ['util-sql'] = {
 --     { name = "data",type = "string" },
 -- }
 --
--- local execute = sql.methods.swiglib.execute
--- -- local execute = sql.methods.library.execute
+-- local execute = sql.methods.library.execute
 -- -- local execute = sql.methods.client.execute
 -- -- local execute = sql.methods.lmxsql.execute
 --
@@ -89,11 +87,21 @@ sql.helpers           = helpers
 local serialize       = table.fastserialize
 local deserialize     = table.deserialize
 
+local json            = require("util-jsn")
+local tojson          = json.tostring
+local fromjson        = json.tolua
+
 sql.serialize         = serialize
 sql.deserialize       = deserialize
 
 helpers.serialize     = serialize   -- bonus
 helpers.deserialize   = deserialize -- bonus
+
+sql.tojson            = tojson
+sql.fromjson          = fromjson
+
+helpers.tojson        = tojson   -- bonus
+helpers.fromjson      = fromjson -- bonus
 
 local defaults     = { __index =
     {
@@ -114,7 +122,6 @@ if optional then
     local methods = {
         ffi       = "mysql",
         library   = "mysql",
-        swiglib   = "mysql",
         postgress = "postgress",
         sqlite    = "sqlite",
         sqlite3   = "sqlite",
@@ -124,7 +131,7 @@ if optional then
         local m = methods[k]
         if m then
             report_state("start loading method %a as %a",k,m)
-            require("libs-imp-" .. m)
+            require("libs-imp-" .. m .. ".lmt") -- brrr
             report_state("loading method %a done",k)
             return rawget(t,m)
         else
@@ -177,6 +184,8 @@ local function makeconverter(entries,celltemplate,wraptemplate)
             assignments[#assignments+1] = format("[%q] = tab_%s[%s],",name,#converters,value)
         elseif kind == "deserialize" then
             assignments[#assignments+1] = format("[%q] = deserialize(%s),",name,value)
+        elseif kind == "fromjson" then
+            assignments[#assignments+1] = format("[%q] = fromjson(%s),",name,value)
         elseif kind == "key" then
             -- hashed instead of indexed
             key = value
@@ -192,8 +201,7 @@ local function makeconverter(entries,celltemplate,wraptemplate)
             assignments[#assignments+1] = format("[%q] = %s,",name,value)
         end
     end
-    local code = format(wraptemplate,concat(shortcuts,"\n"),key and "{ }" or "data",key or "i",concat(assignments,"\n            "))
- -- print(code)
+    local code = format(wraptemplate,concat(shortcuts,"\n"),key and "{ }" or "data",key or "i",concat(assignments,"\n        "))
     local func = load(code)
     return func and func()
 end
@@ -396,9 +404,21 @@ function sql.usedatabase(presets,datatable)
                 name = name or "data"
                 for i=1,#records do
                     local record = records[i]
-                    local data = record[name]
+                    local data   = record[name]
                     if data then
                         record[name] = deserialize(data)
+                    end
+                end
+            end
+        end
+        local function unpackjson(records,name)
+            if records then
+                name = name or "json"
+                for i=1,#records do
+                    local record = records[i]
+                    local data   = record[name]
+                    if data then
+                        record[name] = fromjson(data)
                     end
                 end
             end
@@ -412,7 +432,10 @@ function sql.usedatabase(presets,datatable)
             execute     = execute,
             serialize   = serialize,
             deserialize = deserialize,
+            tojson      = tojson,
+            fromjson    = fromjson,
             unpackdata  = unpackdata,
+            unpackjson  = unpackjson,
         }
     else
         report_state("missing name in usedatabase specification")

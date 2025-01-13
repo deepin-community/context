@@ -14,17 +14,13 @@ local trace_locating = false  trackers.register("resolvers.locating", function(v
 
 local report_zip = logs.reporter("resolvers","zip")
 
---[[ldx--
-<p>We use a url syntax for accessing the zip file itself and file in it:</p>
-
-<typing>
-zip:///oeps.zip?name=bla/bla.tex
-zip:///oeps.zip?tree=tex/texmf-local
-zip:///texmf.zip?tree=/tex/texmf
-zip:///texmf.zip?tree=/tex/texmf-local
-zip:///texmf-mine.zip?tree=/tex/texmf-projects
-</typing>
---ldx]]--
+-- We use a url syntax for accessing the zip file itself and file in it:
+--
+--   zip:///oeps.zip?name=bla/bla.tex
+--   zip:///oeps.zip?tree=tex/texmf-local
+--   zip:///texmf.zip?tree=/tex/texmf
+--   zip:///texmf.zip?tree=/tex/texmf-local
+--   zip:///texmf-mine.zip?tree=/tex/texmf-projects
 
 local resolvers    = resolvers
 local findfile     = resolvers.findfile
@@ -70,10 +66,10 @@ if zipfiles then
     local readstring  = streams.readstring
     local streamsize  = streams.size
 
-    local metatable = {
+    local metatable = { -- irrelevant as the streams proivide the methods .. a leftover?
         close = streams.close,
         read  = function(stream,n)
-            readstring(stream,n == "*a" and streamsize(stream) or n)
+            readstring(stream,n == "*a" and streamsize(stream) or n) -- no return ?
         end
     }
 

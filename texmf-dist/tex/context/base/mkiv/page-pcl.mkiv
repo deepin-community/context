@@ -173,8 +173,7 @@
          \scratchoffset\ht\b_page_one_contents
        \fi
        \setbox\b_page_one_bottom_notes\hpack
-         {\checksinglecolumnfootnotes % ?
-          \hsize\d_page_col_column_width
+         {\hsize\d_page_col_column_width
           \setupnotes[\c!width=\textwidth]%
           \lower\scratchoffset\vbox{\placebottomnotes\par\kern\zeropoint}}%
       \ht\b_page_one_contents    \zeropoint
@@ -247,8 +246,8 @@
    \page_marks_synchronize_column\plusone\c_page_col_n_of_columns\recurselevel\scratchbox
    % backgrounds
    \anch_mark_column_box\scratchbox\recurselevel
-   \mixedcolumnseparatorheight\ht\scratchbox
-   \mixedcolumnseparatordepth \dp\scratchbox
+   \pagecolumnseparatorheight\ht\scratchbox
+   \pagecolumnseparatordepth \dp\scratchbox
    \inheritedpagecolumnsframedbox\recurselevel\scratchbox}
 
 \def\page_col_routine_package

@@ -10,6 +10,8 @@ local next, type = next, type
 local P, R, S = lpeg.P, lpeg.R, lpeg.S
 local lpegmatch = lpeg.match
 local insert, remove, copy, unpack = table.insert, table.remove, table.copy, table.unpack
+local find = string.find
+local idiv = number.idiv
 
 local formatters           = string.formatters
 local sortedkeys           = table.sortedkeys
@@ -37,12 +39,15 @@ local f_index              = formatters["I%05X"]
 local f_character_y        = formatters["%C"]
 local f_character_n        = formatters["[ %C ]"]
 
-local check_duplicates     = true -- can become an option (pseudo feature) / aways needed anyway
-local check_soft_hyphen    = true -- can become an option (pseudo feature) / needed for tagging
+local check_duplicates     = true    -- can become an option (pseudo feature) / always needed anyway
+local check_soft_hyphen    = context -- only in context
 
 directives.register("otf.checksofthyphen",function(v)
-    check_soft_hyphen = v
+    check_soft_hyphen = v -- only for testing
 end)
+
+-- After (!) the unicodes have been resolved we compact ligature tables so before that happens
+-- we don't need to check for numbers.
 
 local function replaced(list,index,replacement)
     if type(list) == "number" then
@@ -453,31 +458,48 @@ local function copyduplicates(fontdata)
         local resources    = fontdata.resources
         local duplicates   = resources.duplicates
         if check_soft_hyphen then
-            -- ebgaramond has a zero width empty soft hyphen
-            -- antykwatorunsks lacks a soft hyphen
-            local ds = descriptions[0xAD]
-            if not ds or ds.width == 0 then
-                if ds then
+         -- ebgaramond has a zero width empty soft hyphen
+         -- antykwatorunska lacks a soft hyphen
+         -- lucidaot has a halfwidth soft hyphen
+
+         -- local dh = descriptions[0x2D]
+         -- if dh then
+         --     descriptions[0xAD] = nil
+         --     local d = duplicates[0x2D]
+         --     if d then
+         --         d[#d+1] = { [0xAD] = true }
+         --     else
+         --         duplicates[0x2D] = { [0xAD] = true }
+         --     end
+         -- end
+
+            local dh = descriptions[0x2D]
+            if dh then
+                local ds = descriptions[0xAD]
+                if not ds or ds.width ~= dh.width then
                     descriptions[0xAD] = nil
-                    if trace_unicodes then
-                        report_unicodes("patching soft hyphen")
+                    if ds then
+                        if trace_unicodes then
+                            report_unicodes("patching soft hyphen")
+                        end
+                    else
+                        if trace_unicodes then
+                            report_unicodes("adding soft hyphen")
+                        end
                     end
-                else
-                    if trace_unicodes then
-                        report_unicodes("adding soft hyphen")
+                    if not duplicates then
+                        duplicates = { }
+                        resources.duplicates = duplicates
                     end
-                end
-                if not duplicates then
-                    duplicates = { }
-                    resources.duplicates = duplicates
-                end
-                local dh = duplicates[0x2D]
-                if dh then
-                    dh[#dh+1] = { [0xAD] = true }
-                else
-                    duplicates[0x2D] = { [0xAD] = true }
+                    local d = duplicates[0x2D]
+                    if d then
+                        d[0xAD] = true
+                    else
+                        duplicates[0x2D] = { [0xAD] = true }
+                    end
                 end
             end
+
         end
         if duplicates then
            for u, d in next, duplicates do
@@ -718,6 +740,33 @@ local function checklookups(fontdata,missing,nofmissing)
             report_unicodes("not unicoded: % t",sortedkeys(done))
         end
     end
+
+    for k, v in next, descriptions do
+        local math = v.math
+        if math then
+            local variants = math.variants
+            local parts    = math.parts
+            local unicode  = v.unicode
+            if variants then
+                if unicode then
+                    for i=1,#variants do
+                        local v = descriptions[variants[i]]
+                        if not v then
+                            -- error
+                        elseif v.unicode then
+                            -- error
+                        else
+                            v.unicode = unicode
+                        end
+                    end
+                end
+            end
+            if parts then
+                parts[idiv(#parts,2)+1].unicode = unicode
+            end
+        end
+    end
+
 end
 
 local firstprivate = fonts.privateoffsets and fonts.privateoffsets.textbase or 0xF0000
@@ -759,6 +808,7 @@ local function unifyglyphs(fontdata,usenames)
     local resources    = fontdata.resources
     local zero         = glyphs[0]
     local zerocode     = zero.unicode
+    local nofglyphs    = #glyphs
     if not zerocode then
         zerocode       = private
         zero.unicode   = zerocode
@@ -775,7 +825,7 @@ local function unifyglyphs(fontdata,usenames)
     --
     if names then
         -- seldom uses, we don't issue message ... this branch might even go away
-        for index=1,#glyphs do
+        for index=1,nofglyphs do
             local glyph   = glyphs[index]
             local unicode = glyph.unicode -- this is the primary one
             if not unicode then
@@ -808,7 +858,7 @@ local function unifyglyphs(fontdata,usenames)
             descriptions[unicode] = glyph
         end
     elseif trace_unicodes then
-        for index=1,#glyphs do
+        for index=1,nofglyphs do
             local glyph   = glyphs[index]
             local unicode = glyph.unicode -- this is the primary one
             if not unicode then
@@ -849,7 +899,7 @@ local function unifyglyphs(fontdata,usenames)
             descriptions[unicode] = glyph
         end
     else
-        for index=1,#glyphs do
+        for index=1,nofglyphs do
             local glyph   = glyphs[index]
             local unicode = glyph.unicode -- this is the primary one
             if not unicode then
@@ -876,38 +926,56 @@ local function unifyglyphs(fontdata,usenames)
         end
     end
     --
-    for index=1,#glyphs do
-        local math  = glyphs[index].math
-        if math then
-            local list = math.vparts
-            if list then
-                for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
+    if LUATEXENGINE == "luametatex" then
+        for index=1,nofglyphs do
+            local math = glyphs[index].math
+            if math then
+                local list = math.parts
+                if list then
+                    for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
+                end
+                local list = math.variants
+                if list then
+                    for i=1,#list do list[i] = indices[list[i]] end
+                end
             end
-            local list = math.hparts
-            if list then
-                for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
-            end
-            local list = math.vvariants
-            if list then
-             -- for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
-                for i=1,#list do list[i] = indices[list[i]] end
-            end
-            local list = math.hvariants
-            if list then
-             -- for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
-                for i=1,#list do list[i] = indices[list[i]] end
+        end
+    else
+        for index=1,nofglyphs do
+            local math = glyphs[index].math
+            if math then
+                local list = math.vparts
+                if list then
+                    for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
+                end
+                local list = math.hparts
+                if list then
+                    for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
+                end
+                local list = math.vvariants
+                if list then
+                 -- for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
+                    for i=1,#list do list[i] = indices[list[i]] end
+                end
+                local list = math.hvariants
+                if list then
+                 -- for i=1,#list do local l = list[i] l.glyph = indices[l.glyph] end
+                    for i=1,#list do list[i] = indices[list[i]] end
+                end
             end
         end
     end
     --
     local colorpalettes = resources.colorpalettes
     if colorpalettes then
-        for index=1,#glyphs do
+        for index=1,nofglyphs do
             local colors = glyphs[index].colors
             if colors then
                 for i=1,#colors do
                     local c = colors[i]
-                    c.slot = indices[c.slot]
+                    if c then -- safeguard
+                        c.slot = indices[c.slot]
+                    end
                 end
             end
         end
@@ -918,19 +986,22 @@ local function unifyglyphs(fontdata,usenames)
     fontdata.names        = names
     fontdata.descriptions = descriptions
     fontdata.hashmethod   = hashmethod
+    fontdata.nofglyphs    = nofglyphs
     --
     return indices, names
 end
 
-local p_crappyname  do
+local stripredundant  do
 
     local p_hex   = R("af","AF","09")
     local p_digit = R("09")
     local p_done  = S("._-")^0 + P(-1)
+ -- local p_style = P(".ss") * p_digit * p_digit * P(-1)
+    local p_style = P(".")
     local p_alpha = R("az","AZ")
     local p_ALPHA = R("AZ")
 
-    p_crappyname = (
+    local p_crappyname = (
     -- (P("uni") + P("UNI") + P("Uni") + P("U") + P("u"))
         lpeg.utfchartabletopattern({ "uni", "u" },true)
       * S("Xx_")^0
@@ -958,56 +1029,182 @@ local p_crappyname  do
       * P(1)^1
     ) * p_done
 
-end
+    -- In context we only keep glyph names because of tracing and access by name
+    -- so weird names make no sense.
 
--- In context we only keep glyph names because of tracing and access by name
--- so weird names make no sense.
+    if context then
 
-local forcekeep = false -- only for testing something
+        local forcekeep = false -- only for testing something
+--         local forcekeep = true
 
-directives.register("otf.keepnames",function(v)
-    report_cleanup("keeping weird glyph names, expect larger files and more memory usage")
-    forcekeep = v
-end)
+        directives.register("otf.keepnames",function(v)
+            report_cleanup("keeping weird glyph names, expect larger files and more memory usage")
+            forcekeep = v
+        end)
 
-local function stripredundant(fontdata)
-    local descriptions = fontdata.descriptions
-    if descriptions then
-        local n = 0
-        local c = 0
-        -- in context we always strip
-        if (not context and fonts.privateoffsets.keepnames) or forcekeep then
-            for unicode, d in next, descriptions do
-                if d.class == "base" then
-                    d.class = nil
-                    c = c + 1
-                end
-            end
-        else
-            for unicode, d in next, descriptions do
-                local name = d.name
-                if name and lpegmatch(p_crappyname,name) then
-                    d.name = nil
-                    n = n + 1
-                end
-                if d.class == "base" then
-                    d.class = nil
-                    c = c + 1
-                end
-            end
-        end
-        if trace_cleanup then
+     -- local p_lesscrappyname =
+     --     lpeg.utfchartabletopattern({ "uni", "u" },true)
+     --   * S("Xx")^0
+     --   * p_hex^1
+     --   * p_style
+
+        local function stripvariants(descriptions,list)
+            local n = list and #list or 0
             if n > 0 then
-                report_cleanup("%s bogus names removed (verbose unicode)",n)
+                for i=1,n do
+                    local g = list[i]
+                    if g then
+                        local d = descriptions[g]
+                        if d and d.name then
+                            d.name = nil
+                            n = n + 1
+                        end
+                    end
+                end
             end
-            if c > 0 then
-                report_cleanup("%s base class tags removed (default is base)",c)
+            return n
+        end
+
+        local function stripparts(descriptions,list)
+            local n = list and #list or 0
+            if n > 0 then
+                for i=1,n do
+                    local g = list[i].glyph
+                    if g then
+                        local d = descriptions[g]
+                        if d and d.name then
+                            d.name = nil
+                            n = n + 1
+                        end
+                    end
+                end
+            end
+            return n
+        end
+
+     -- local function collectsimple(fontdata)
+     --     local resources = fontdata.resources
+     --     local sequences = resources and resources.sequences
+     --     if sequences then
+     --         local keeplist = { }
+     --         for i=1,#sequences do
+     --             local s = sequences[i]
+     --             if s.type == "gsub_single" then
+     --                 -- only simple ones
+     --                 local features = s.features
+     --                 local steps    = s.steps
+     --                 if features and steps then
+     --                     local okay = false
+     --                     for k, v in next, features do
+     --                         if find(k,"^ss%d%d") then
+     --                             okay = true
+     --                             break
+     --                         end
+     --                     end
+     --                     if okay then
+     --                         for i=1,#steps do
+     --                             local coverage = steps[i].coverage
+     --                             if coverage then
+     --                                 for k, v in next, coverage do
+     --                                     keeplist[k] = v
+     --                                 end
+     --                             end
+     --                         end
+     --                     end
+     --                 end
+     --             end
+     --         end
+     --         return next(keeplist) and keeplist or nil
+     --     end
+     -- end
+
+        local function collectsimple(fontdata)
+            return nil
+        end
+
+        stripredundant = function(fontdata)
+            local descriptions = fontdata.descriptions
+            if descriptions then
+                local n = 0
+                local c = 0
+                for unicode, d in next, descriptions do
+                    local m = d.math
+                    if m then
+                        n = n + stripvariants(descriptions,m.vvariants)
+                        n = n + stripvariants(descriptions,m.hvariants)
+                        n = n + stripparts   (descriptions,m.vparts)
+                        n = n + stripparts   (descriptions,m.hparts)
+                    end
+                end
+                if forcekeep then
+                    for unicode, d in next, descriptions do
+                        if d.class == "base" then
+                            d.class = nil
+                            c = c + 1
+                        end
+                    end
+                else
+                    local keeplist = collectsimple(fontdata)
+                    for unicode, d in next, descriptions do
+                        local name = d.name
+                        if name then
+                         -- if lpegmatch(p_lesscrappyname,name) then
+                            if keeplist and keeplist[name] then
+                                -- keep name
+                            elseif lpegmatch(p_crappyname,name) then
+                                d.name = nil
+                                n = n + 1
+                            end
+                        end
+                        if d.class == "base" then
+                            d.class = nil
+                            c = c + 1
+                        end
+                    end
+                end
+                if trace_cleanup then
+                    if n > 0 then
+                        report_cleanup("%s bogus names removed (verbose unicode)",n)
+                    end
+                    if c > 0 then
+                        report_cleanup("%s base class tags removed (default is base)",c)
+                    end
+                end
             end
         end
-    end
-end
 
-readers.stripredundant = stripredundant
+    else
+
+        stripredundant = function(fontdata)
+            local descriptions = fontdata.descriptions
+            if descriptions then
+                if fonts.privateoffsets.keepnames then
+                    for unicode, d in next, descriptions do
+                        if d.class == "base" then
+                            d.class = nil
+                        end
+                    end
+                else
+                    for unicode, d in next, descriptions do
+                        local name = d.name
+                        if name then
+                            if lpegmatch(p_crappyname,name) then
+                                d.name = nil
+                            end
+                        end
+                        if d.class == "base" then
+                            d.class = nil
+                        end
+                    end
+                end
+            end
+        end
+
+    end
+
+    readers.stripredundant = stripredundant
+
+end
 
 function readers.getcomponents(fontdata) -- handy for resolving ligatures when names are missing
     local resources = fontdata.resources
@@ -1024,6 +1221,10 @@ function readers.getcomponents(fontdata) -- handy for resolving ligatures when n
                         local function traverse(p,k,v)
                             if k == "ligature" then
                                 collected[v] = { unpack(l) }
+                            elseif tonumber(v) then
+                                insert(l,k)
+                                collected[v] = { unpack(l) }
+                                remove(l)
                             else
                                 insert(l,k)
                                 for k, vv in next, v do
@@ -1102,8 +1303,7 @@ readers.unifymissing = unifymissing
 function readers.rehash(fontdata,hashmethod) -- TODO: combine loops in one
     if not (fontdata and fontdata.glyphs) then
         return
-    end
-    if hashmethod == "indices" then
+    elseif hashmethod == "indices" then
         fontdata.hashmethod = "indices"
     elseif hashmethod == "names" then
         fontdata.hashmethod = "names"
@@ -1111,7 +1311,6 @@ function readers.rehash(fontdata,hashmethod) -- TODO: combine loops in one
         unifyresources(fontdata,indices)
         copyduplicates(fontdata)
         unifymissing(fontdata)
-     -- stripredundant(fontdata)
     else
         fontdata.hashmethod = "unicodes"
         local indices = unifyglyphs(fontdata)
@@ -1211,7 +1410,6 @@ local function tabstr_flat(t)
 end
 
 local function tabstr_mixed(t) -- indexed
-    local s = { }
     local n = #t
     if n == 0 then
         return ""
@@ -1225,6 +1423,7 @@ local function tabstr_mixed(t) -- indexed
             return tostring(k) -- number or string
         end
     else
+        local s = { }
         for i=1,n do
             local k = t[i]
             if k == true then
@@ -1333,6 +1532,21 @@ function readers.pack(data)
                 return nt
             end
         end
+
+     -- local function pack_indexed(v) -- less code
+     --     local tag = concat(v," ")
+     --     local ht = h[tag]
+     --     if ht then
+     --         c[ht] = c[ht] + 1
+     --     else
+     --         ht = nt + 1
+     --         t[ht] = v
+     --         c[ht] = 1
+     --         h[tag] = ht
+     --         nt = ht
+     --     end
+     --     return ht
+     -- end
 
         local function pack_mixed(v)
             local tag = tabstr_mixed(v)
@@ -2564,6 +2778,34 @@ end
 -- Because we pack we cannot mix tables and numbers so we can only turn a whole set in
 -- format kern instead of pair.
 
+local strip_pairs         = true
+
+local compact_pairs       = true
+local compact_singles     = true
+
+local merge_pairs         = true
+local merge_singles       = true
+local merge_substitutions = true
+local merge_alternates    = true
+local merge_multiples     = true
+local merge_ligatures     = true
+local merge_cursives      = true
+local merge_marks         = true
+
+directives.register("otf.strip.pairs",         function(v) strip_pairs     = v end)
+
+directives.register("otf.compact.pairs",       function(v) compact_pairs   = v end)
+directives.register("otf.compact.singles",     function(v) compact_singles = v end)
+
+directives.register("otf.merge.pairs",         function(v) merge_pairs         = v end)
+directives.register("otf.merge.singles",       function(v) merge_singles       = v end)
+directives.register("otf.merge.substitutions", function(v) merge_substitutions = v end)
+directives.register("otf.merge.alternates",    function(v) merge_alternates    = v end)
+directives.register("otf.merge.multiples",     function(v) merge_multiples     = v end)
+directives.register("otf.merge.ligatures",     function(v) merge_ligatures     = v end)
+directives.register("otf.merge.cursives",      function(v) merge_cursives      = v end)
+directives.register("otf.merge.marks",         function(v) merge_marks         = v end)
+
 local function checkpairs(lookup)
     local steps    = lookup.steps
     local nofsteps = lookup.nofsteps
@@ -2581,6 +2823,7 @@ local function checkpairs(lookup)
                     if v == true then
                         -- all zero
                     elseif v and (v[1] ~= 0 or v[2] ~= 0 or v[4] ~= 0) then
+                        -- complex kerns
                         return false
                     end
                 end
@@ -2617,29 +2860,39 @@ local function checkpairs(lookup)
     return kerned
 end
 
-local compact_pairs       = true
-local compact_singles     = true
+local function strippairs(lookup)
+    local steps    = lookup.steps
+    local nofsteps = lookup.nofsteps
+    local stripped = 0
 
-local merge_pairs         = true
-local merge_singles       = true
-local merge_substitutions = true
-local merge_alternates    = true
-local merge_multiples     = true
-local merge_ligatures     = true
-local merge_cursives      = true
-local merge_marks         = true
-
-directives.register("otf.compact.pairs",       function(v) compact_pairs   = v end)
-directives.register("otf.compact.singles",     function(v) compact_singles = v end)
-
-directives.register("otf.merge.pairs",         function(v) merge_pairs         = v end)
-directives.register("otf.merge.singles",       function(v) merge_singles       = v end)
-directives.register("otf.merge.substitutions", function(v) merge_substitutions = v end)
-directives.register("otf.merge.alternates",    function(v) merge_alternates    = v end)
-directives.register("otf.merge.multiples",     function(v) merge_multiples     = v end)
-directives.register("otf.merge.ligatures",     function(v) merge_ligatures     = v end)
-directives.register("otf.merge.cursives",      function(v) merge_cursives      = v end)
-directives.register("otf.merge.marks",         function(v) merge_marks         = v end)
+    for i=1,nofsteps do
+        local step = steps[i]
+        if step.format == "pair" then
+            local coverage = step.coverage
+            for g1, d1 in next, coverage do
+                for g2, d2 in next, d1 do
+                    if d2[2] then
+                        --- true or { a, b, c, d }
+                 -- else
+                 --     local v = d2[1]
+                 --     if v == true then
+                 --         d1[g2] = nil
+                 --         stripped = stripped + 1
+                 --     elseif v and (v[1] == 0 and v[2] == 0 and v[4] == 0) then -- vkrn can have v[3] ~= 0
+                 --         d1[g2] = nil
+                 --         stripped = stripped + 1
+                 --     end
+                 -- end
+                    elseif d2[1] == true then
+                        d1[g2] = nil
+                        stripped = stripped + 1
+                    end
+                end
+            end
+        end
+    end
+    return stripped
+end
 
 function readers.compact(data)
     if not data or data.compacted then
@@ -2648,6 +2901,7 @@ function readers.compact(data)
         data.compacted = true
     end
     local resources = data.resources
+    local stripped  = 0
     local merged    = 0
     local kerned    = 0
     local allsteps  = 0
@@ -2678,6 +2932,7 @@ function readers.compact(data)
                             merged = merged + mergesteps_4(lookup)
                         end
                     elseif kind == "gpos_single" then
+                        -- maybe also strip zeros here
                         if merge_singles then
                             merged = merged + mergesteps_1(lookup,true)
                         end
@@ -2685,6 +2940,9 @@ function readers.compact(data)
                             kerned = kerned + checkkerns(lookup)
                         end
                     elseif kind == "gpos_pair" then
+                        if strip_pairs then
+                            stripped = stripped + strippairs(lookup) -- noto cjk from 24M -> 8 M
+                        end
                         if merge_pairs then
                             merged = merged + mergesteps_2(lookup)
                         end
@@ -2726,6 +2984,9 @@ function readers.compact(data)
     compact("sequences")
     compact("sublookups")
     if trace_optimizations then
+        if stripped > 0 then
+            report_optimizations("%i zero positions stripped before merging",stripped)
+        end
         if merged > 0 then
             report_optimizations("%i steps of %i removed due to merging",merged,allsteps)
         end
@@ -2733,6 +2994,91 @@ function readers.compact(data)
             report_optimizations("%i steps of %i steps turned from pairs into kerns",kerned,allsteps)
         end
     end
+end
+
+if CONTEXTLMTXMODE and CONTEXTLMTXMODE > 0 then
+
+    local done = 0
+
+    local function condense_1(k,v,t)
+        if type(v) == "table" then
+            local u = false
+            local l = false
+            for k, v in next, v do
+                if k == "ligature" then
+                    l = v
+                    if u then
+                        break
+                    end
+                elseif u then
+                    break
+                else
+                    u = true
+                end
+            end
+            if l and not u then
+                t[k] = l
+                done = done + 1
+            end
+            if u then
+                for k, vv in next, v do
+                    if k ~= "ligature" then
+                        condense_1(k,vv,v)
+                    end
+                end
+            end
+        end
+    end
+
+    local function condensesteps_1(lookup)
+        done = 0
+        if lookup.type == "gsub_ligature" then
+            local steps = lookup.steps
+            if steps then
+                for i=1,#steps do
+                    local step     = steps[i]
+                    local coverage = step.coverage
+                    if coverage then
+                        for k, v in next, coverage do
+                            if condense_1(k,v,coverage) then
+                                coverage[k] = v.ligature
+                                done = done + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        return done
+    end
+
+    function readers.condense(data)
+        if not data or data.condensed then
+            return
+        else
+            data.condensed = true
+        end
+        local resources = data.resources
+        local condensed = 0
+        local function condense(what)
+            local lookups = resources[what]
+            if lookups then
+                for i=1,#lookups do
+                    condensed = condensed + condensesteps_1(lookups[i])
+                end
+            elseif trace_optimizations then
+                report_optimizations("no lookups in %a",what)
+            end
+        end
+        condense("sequences")
+        condense("sublookups")
+        if trace_optimizations then
+            if condensed > 0 then
+                report_optimizations("%i ligatures condensed",condensed)
+            end
+        end
+    end
+
 end
 
 local function mergesteps(t,k)
@@ -2854,7 +3200,7 @@ function readers.expand(data)
     -- about 15% on arabtype .. then moving the a test also saves a bit (even when
     -- often a is not set at all so that one is a bit debatable
 
-    local function expandlookups(sequences)
+    local function expandlookups(sequences,whatever)
         if sequences then
             -- we also need to do sublookups
             for i=1,#sequences do
@@ -2930,6 +3276,9 @@ function readers.expand(data)
                                         if lookups then
                                             for k, v in next, lookups do -- actually this one is indexed
                                                 local lookup = sublookups[v]
+if not lookup and whatever then
+    lookup = whatever[v]
+end
                                                 if lookup then
                                                     lookups[k] = lookup
                                                     if not subtype then
@@ -3010,5 +3359,5 @@ function readers.expand(data)
     end
 
     expandlookups(sequences)
-    expandlookups(sublookups)
+    expandlookups(sublookups,sequences)
 end

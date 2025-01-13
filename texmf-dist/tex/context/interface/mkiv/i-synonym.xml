@@ -76,6 +76,25 @@
                 <cd:parameter name="synonymcolor">
                     <cd:constant type="cd:color"/>
                 </cd:parameter>
+                <cd:parameter name="left">
+                    <cd:constant type="cd:command"/>
+                </cd:parameter>
+                <cd:parameter name="right">
+                    <cd:constant type="cd:command"/>
+                </cd:parameter>
+                <cd:parameter name="before">
+                    <cd:constant type="cd:command"/>
+                </cd:parameter>
+                <cd:parameter name="after">
+                    <cd:constant type="cd:command"/>
+                </cd:parameter>
+                <cd:parameter name="inbetween">
+                    <cd:constant type="cd:command"/>
+                </cd:parameter>
+                <cd:parameter name="hyphens">
+                    <cd:constant type="yes" default="yes"/>
+                    <cd:constant type="no"/>
+                </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
@@ -144,14 +163,14 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifelsecurrentsynonymused" level="system" category="symbols conditional" file="strc-syn.mkiv">
+    <cd:command name="doifelsecurrentsynonymused" level="system" category="symbols" keywords="conditional" file="strc-syn.mkiv">
         <cd:arguments>
             <cd:resolve name="argument-true"/>
             <cd:resolve name="argument-false"/>
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifelsecurrentsynonymshown" level="system" category="symbols conditional" file="strc-syn.mkiv">
+    <cd:command name="doifelsecurrentsynonymshown" level="system" category="symbols" keywords="conditional" file="strc-syn.mkiv">
         <cd:arguments>
             <cd:resolve name="argument-true"/>
             <cd:resolve name="argument-false"/>
@@ -193,33 +212,5 @@
             <cd:resolve name="argument-name"/>
         </cd:arguments>
     </cd:command>
-
-    <!--
-
-        <cd:command name="abbreviation" level="document" category="symbols" file="strc-syn.mkiv">
-            <cd:arguments>
-                <cd:resolve name="keyword-name-optional"/>
-                <cd:resolve name="argument-text"/>
-                <cd:content/>
-            </cd:arguments>
-        </cd:command>
-
-        <cd:command name="placelistofabbreviations" level="document" category="symbols" file="strc-syn.mkiv">
-            <cd:arguments>
-                <cd:assignments list="yes" optional="yes">
-                    <cd:inherit name="setupsynonyms"/>
-                </cd:assignments>
-            </cd:arguments>
-        </cd:command>
-
-        <cd:command name="completelistofabbreviations" level="document" category="symbols" file="strc-syn.mkiv">
-            <cd:arguments>
-                <cd:assignments list="yes" optional="yes">
-                    <cd:inherit name="setupsynonyms"/>
-                </cd:assignments>
-            </cd:arguments>
-        </cd:command>
-
-    -->
 
 </cd:interface>

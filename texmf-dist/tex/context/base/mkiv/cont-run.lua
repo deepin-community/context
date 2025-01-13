@@ -9,27 +9,27 @@ if not modules then modules = { } end modules ['cont-run'] = {
 -- When a style is loaded there is a good change that we never enter
 -- this code.
 
-local report = logs.reporter("system")
 
 local type, tostring = type, tostring
 
-local report        = logs.reporter("sandbox","call")
-local fastserialize = table.fastserialize
-local quoted        = string.quoted
-local possiblepath  = sandbox.possiblepath
+local report_sandbox = logs.reporter("sandbox","call")
+local report_system  = logs.reporter("system")
+local fastserialize  = table.fastserialize
+local quoted         = string.quoted
+local possiblepath   = sandbox.possiblepath
 
-local context       = context
-local implement     = interfaces.implement
+local context        = context
+local implement      = interfaces.implement
 
-local qualified     = { }
-local writeable     = { }
-local readable      = { }
-local blocked       = { }
-local trace_files   = false
-local trace_calls   = false
-local nofcalls      = 0
-local nofrejected   = 0
-local logfilename   = "sandbox.log"
+local qualified      = { }
+local writeable      = { }
+local readable       = { }
+local blocked        = { }
+local trace_files    = false
+local trace_calls    = false
+local nofcalls       = 0
+local nofrejected    = 0
+local logfilename    = "sandbox.log"
 
 local function registerstats()
     statistics.register("sandboxing", function()
@@ -82,7 +82,7 @@ local function logsandbox(details)
         end
     end
     if trace_calls then
-        report("%s(%,t) => %l",details.comment,arguments,result)
+        report_sandbox("%s(%,t) => %l",details.comment,arguments,result)
     end
     nofcalls = nofcalls + 1
     if not result then
@@ -146,7 +146,7 @@ local debugging  = environment.arguments.debug
 
 if sandboxing then
 
-    report("enabling sandbox")
+    report_system("enabling sandbox")
 
     sandbox.enable()
 
@@ -169,7 +169,7 @@ if sandboxing then
     context [[\let\primitive\relax\let\normalprimitive\relax]]
 
     debug = {
-        traceback = traceback,
+        traceback = debug.traceback,
     }
 
     package.loaded.debug = debug
@@ -181,20 +181,26 @@ elseif debugging then
 else
 
     debug = {
-        traceback = traceback,
-        getinfo   = getinfo,
-        sethook   = sethook,
+        traceback = debug.traceback,
+        getinfo   = debug.getinfo,
+        sethook   = debug.sethook,
     }
 
     package.loaded.debug = debug
 
 end
 
-local preparejob  preparejob = function() -- tricky: we need a hook for this
+local function processjob()
+
+    tokens.setters.macro("processjob","") -- make a
+
+    environment.initializefilenames() -- todo: check if we really need to pre-prep the filename
 
     local arguments = environment.arguments
+    local suffix    = environment.suffix
+    local filename  = environment.filename -- hm, not inputfilename !
 
-    environment.lmtxmode = CONTEXTLMTXMODE
+    environment.lmtxmode = false
 
     if arguments.nosynctex then
         luatex.synctex.setup {
@@ -207,55 +213,6 @@ local preparejob  preparejob = function() -- tricky: we need a hook for this
         }
     end
 
- -- -- todo: move from mtx-context to here:
- --
- -- local timing = arguments.timing
- -- if type(timing) == "string" then
- --     context.usemodule { timing }
- -- end
- -- local nodates = arguments.nodates
- -- if nodates then
- --     context.enabledirectives { "backend.date=" .. (type(nodates) == "string" and nodates or "no") }
- -- end
- -- local trailerid = arguments.trailerid
- -- if type(trailerid) == "string" then
- --     context.enabledirectives { "backend.trailerid=" .. trailerid }
- -- end
- -- local profile = arguments.profile
- -- if profile then
- --     context.enabledirectives { "system.profile=" .. tonumber(profile) or 0 }
- -- end
-
- -- -- already done in mtxrun / mtx-context, has to happen very early
- --
- -- if arguments.silent then
- --     directives.enable("logs.blocked",arguments.silent)
- -- end
- --
- -- -- already done in mtxrun / mtx-context, can as well happen here
- --
- -- if arguments.errors then
- --     directives.enable("logs.errors",arguments.errors)
- -- end
-
-    preparejob = function() end
-
-    job.prepare = preparejob
-
-end
-
-job.prepare = preparejob
-
-local function processjob()
-
-    environment.initializefilenames() -- todo: check if we really need to pre-prep the filename
-
-    local arguments = environment.arguments
-    local suffix    = environment.suffix
-    local filename  = environment.filename -- hm, not inputfilename !
-
-    preparejob()
-
     if not filename or filename == "" then
         -- skip
     elseif suffix == "xml" or arguments.forcexml then
@@ -264,7 +221,7 @@ local function processjob()
         -- can be part of (any) loaded (sub) file. The \starttext
         -- wrapping might go away.
 
-        report("processing as xml: %s",filename)
+        report_system("processing as xml: %s",filename)
 
         context.starttext()
             context.xmlprocess("main",filename,"")
@@ -272,7 +229,7 @@ local function processjob()
 
     elseif suffix == "cld" or arguments.forcecld then
 
-        report("processing as cld: %s",filename)
+        report_system("processing as cld: %s",filename)
 
         context.runfile(filename)
 
@@ -281,7 +238,7 @@ local function processjob()
         -- The wrapping might go away. Why is is it there in the
         -- first place.
 
-        report("processing as lua: %s",filename)
+        report_system("processing as lua: %s",filename)
 
         context.starttext()
             context.ctxlua(string.format('dofile("%s")',filename))
@@ -289,7 +246,7 @@ local function processjob()
 
     elseif suffix == "mp" or arguments.forcemp then
 
-        report("processing as metapost: %s",filename)
+        report_system("processing as metapost: %s",filename)
 
         context.starttext()
             context.processMPfigurefile(filename)
@@ -306,7 +263,7 @@ local function processjob()
 
     elseif suffix == "mps" or arguments.forcemps then
 
-        report("processing metapost output: %s",filename)
+        report_system("processing metapost output: %s",filename)
 
         context.starttext()
             context.startTEXpage()
@@ -331,6 +288,7 @@ end
 
 implement {
     name     = "processjob",
+    public   = true,
     onlyonce = true,
     actions  = processjob,
 }

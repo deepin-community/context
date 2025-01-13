@@ -24,7 +24,7 @@
 \definesystemattribute[verbatimline][public]
 
 \appendtoksonce
-    \attribute\verbatimlineattribute\attributeunsetvalue
+    \c_attr_verbatimline\attributeunsetvalue
 \to \everyforgetall
 
 %D Initializations.
@@ -39,6 +39,7 @@
     \the\everyresettypesetting
     \resetfontfeature
     \resetcharacterspacing
+    \resetbreakpoints
 \to \everyinitializeverbatim
 
 \unexpanded\def\setverbatimspaceskip % to be checked: must happen after font switch
@@ -178,9 +179,9 @@
     \setuevalue{\e!start\currenttyping}{\buff_verbatim_typing_start{\currenttyping}}%
     \setuevalue{\e!stop \currenttyping}{\buff_verbatim_typing_stop {\currenttyping}}%
     \ifx\currenttypingparent\empty
-        \normalexpanded{\definelinenumbering[\currenttyping]}%
+      \normalexpanded{\definelinenumbering[\currenttyping]}%
     \else
-        \normalexpanded{\definelinenumbering[\currenttyping][\currenttypingparent]}%
+      \normalexpanded{\definelinenumbering[\currenttyping][\currenttypingparent]}%
     \fi
 \to \everydefinetyping
 
@@ -286,10 +287,10 @@
 
 \def\buff_verbatim_type_nop
   {\buff_verbatim_left_of_type
-   \futurelet\next\buff_verbatim_type_one}
+   \futurelet\nexttoken\buff_verbatim_type_one}
 
 \def\buff_verbatim_type_one
-  {\ifx\next\bgroup
+  {\ifx\nexttoken\bgroup
      \expandafter\buff_verbatim_type_a
    \else
      \expandafter\buff_verbatim_type_two
@@ -298,10 +299,10 @@
 \def\buff_verbatim_type_two
   {\catcode`<=\othercatcode % old precaution
    \catcode`>=\othercatcode % old precaution
-   \futurelet\next\buff_verbatim_type_three}
+   \futurelet\nexttoken\buff_verbatim_type_three}
 
 \def\buff_verbatim_type_three
-  {\if\next<%
+  {\if\nexttoken<%
      \expandafter\buff_verbatim_type_b
    \else
      \expandafter\buff_verbatim_type_c
@@ -386,7 +387,7 @@
 \unexpanded\def\explicitcontrolspace  {\optionalcontrolspace\allowbreak} % uses asciispace
 
 \appendtoks
-    \unexpanded\def\obeyedspace{\hskip\zeropoint\asciispacechar\hskip\zeropoint}%
+    \unexpanded\def\obeyedspace{\hskip\zeropoint\relax\asciispacechar\hskip\zeropoint\relax}%
 \to \everyenableelements
 
 \unexpanded\def\obeyhyphens
@@ -488,17 +489,6 @@
    \buff_verbatim_initialize_typing_one
    \buff_verbatim_setup_keep_together
    \normalexpanded{\buff_verbatim_type_block{\e!start\currenttyping}{\e!stop\currenttyping}}}
-
-% \def\buff_verbatim_typing_start_yes[#1]%
-%   {\typingparameter\c!before
-%    \startpacked[\v!blank]%
-%    \doifelseassignment{#1}
-%      {\setupcurrenttyping[#1]}
-%      {\doif\v!continue{#1}{\lettypingparameter\c!continue\v!yes}}%
-%    \buff_verbatim_setup_line_numbering
-%    \buff_verbatim_initialize_typing_one
-%    \buff_verbatim_setup_keep_together
-%    \normalexpanded{\buff_verbatim_type_block{\e!start\currenttyping}{\e!stop\currenttyping}}}
 
 \def\buff_verbatim_typing_start_yes[#1]%
   {\typingparameter\c!before
@@ -608,21 +598,6 @@
 \appendtoks
     \setuevalue{\e!type\currenttyping\v!file}{\typefile[\currenttyping]}%
 \to \everydefinetyping
-
-% \def\buff_verbatim_type_file[#1][#2]#3%
-%   {\begingroup
-%    \ifsecondargument
-%      \setuptyping[#1][#2]%
-%      \buff_verbatim_type_file_checked{#1}{#3}%
-%    \else\iffirstargument
-%      \doifelseassignment{#1}
-%        {\setuptyping[\v!file][#1]%
-%         \buff_verbatim_type_file_checked\v!file{#3}}
-%        {\buff_verbatim_type_file_checked{#1}{#3}}%
-%    \else
-%      \buff_verbatim_type_file_checked\v!file{#3}%
-%    \fi\fi
-%    \endgroup}
 
 \def\buff_verbatim_type_file[#1][#2]#3%
   {\begingroup
@@ -823,20 +798,6 @@
     \setuevalue{\e!type\currenttyping\v!buffer}{\buff_verbatim_type_buffer_class{\currenttyping}}%
 \to \everydefinetyping
 
-% \unexpanded\def\buff_verbatim_type_buffer[#1][#2]%
-%   {\ifsecondargument
-%      \setupcurrenttyping[#2]%
-%      \processcommalist[#1]{\buff_verbatim_type_buffer_indeed\currenttyping}% [name] [settings]
-%    \else\iffirstargument
-%      \doifelseassignment{#1}
-%        {\setupcurrenttyping[#1]%
-%         \buff_verbatim_type_buffer_indeed\currenttyping\empty}% [settings]
-%        {\processcommalist[#1]{\buff_verbatim_type_buffer_indeed\currenttyping}}% [name]
-%    \else
-%      \buff_verbatim_type_buffer_indeed\currenttyping\empty% []
-%    \fi\fi
-%    \endgroup}
-
 \unexpanded\def\buff_verbatim_type_buffer[#1][#2]%
   {\ifsecondargument
      \setupcurrenttyping[#2]%
@@ -851,6 +812,7 @@
    \else
      \buff_verbatim_type_buffer_indeed\currenttyping\empty% []
    \fi\fi
+   \useindentnextparameter\typingparameter
    \endgroup
    \dorechecknextindentation}
 
@@ -865,7 +827,9 @@
      \setuptyping[#1][#3]%
    \fi
    \buff_verbatim_type_buffer_indeed{#1}{#2}%
-   \endgroup}
+   \useindentnextparameter\typingparameter
+   \endgroup
+   \dorechecknextindentation}
 
 \unexpanded\def\buff_verbatim_type_buffer_indeed#1#2% category name
   {\edef\currenttyping{#1}%
@@ -891,8 +855,7 @@
    \endofverbatimlines
    \dostoptagged
    \stoppacked
-   \typingparameter\c!after
-   \dorechecknextindentation}
+   \typingparameter\c!after}
 
 \unexpanded\def\typeinlinebuffer
   {\dontleavehmode
@@ -925,21 +888,6 @@
 \unexpanded\def\processbuffer
   {\writestatus{nota bene}{\string\processbuffer\space is obsolete}%
    \dodoubleempty\buff_verbatim_process}
-
-% \def\buff_verbatim_process[#1][#2]%
-%   {\begingroup
-%    \ifsecondargument
-%      \setuptyping[\v!buffer][#2]%
-%      \processcommalist[#1]{\buff_verbatim_process_indeed\v!buffer}% [name] [settings]
-%    \else\iffirstargument
-%      \doifelseassignment{#1}
-%        {\setuptyping[\v!buffer][#1]%
-%         \buff_verbatim_process_indeed\v!buffer\empty}% [settings]
-%        {\processcommalist[#1]{\buff_verbatim_process_indeed\v!buffer}}% [name]
-%    \else
-%      \buff_verbatim_process_indeed\v!buffer\empty% []
-%    \fi\fi
-%    \endgroup}
 
 \def\buff_verbatim_process[#1][#2]%
   {\begingroup
@@ -977,7 +925,7 @@
 \unexpanded\def\buff_verbatim_begin_of_line
   {\ifconditional\verbatimnumberinglines
      \global\advance\nofverbatimlines\plusone
-     \attribute\verbatimlineattribute\nofverbatimlines
+     \c_attr_verbatimline\nofverbatimlines
    \fi
    \noindent
    \buff_verbatim_set_line_margin
@@ -991,7 +939,7 @@
    \obeyedline % still needed?
    \par
    \ifconditional\verbatimnumberinglines
-     \attribute\verbatimlineattribute\attributeunsetvalue
+     \c_attr_verbatimline\attributeunsetvalue
    \fi}
 
 \unexpanded\def\buff_verbatim_empty_line
@@ -1070,5 +1018,9 @@
 \to \everysimplifycommands
 
 \stopcontextdefinitioncode
+
+%D This is \type {\asciimode} without the double comment hackery:
+
+\unexpanded\def\literalmode{\setcatcodetable\txtcatcodes}
 
 \protect \endinput

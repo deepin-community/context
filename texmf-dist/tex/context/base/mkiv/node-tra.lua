@@ -6,10 +6,8 @@ if not modules then modules = { } end modules ['node-tra'] = {
     license   = "see context related readme files"
 }
 
---[[ldx--
-<p>This is rather experimental. We need more control and some of this
-might become a runtime module instead. This module will be cleaned up!</p>
---ldx]]--
+-- Some of the code here might become a runtime module instead. This old module will
+-- be cleaned up anyway!
 
 local next = next
 local utfchar = utf.char
@@ -50,8 +48,6 @@ local getglue         = nuts.getglue
 local isglyph         = nuts.isglyph
 local getdirection    = nuts.getdirection
 local getwidth        = nuts.getwidth
-
-local flush_list      = nuts.flush_list
 local count_nodes     = nuts.countall
 local used_nodes      = nuts.usedlist
 
@@ -77,13 +73,14 @@ local glue_code       = nodecodes.glue
 local kern_code       = nodecodes.kern
 local rule_code       = nodecodes.rule
 local dir_code        = nodecodes.dir
-local localpar_code   = nodecodes.localpar
+local par_code        = nodecodes.par
 local whatsit_code    = nodecodes.whatsit
+local passive_code    = nodecodes.passive
 
 local dimenfactors    = number.dimenfactors
 local formatters      = string.formatters
 
-local start_of_par    = nuts.start_of_par
+local startofpar      = nuts.startofpar
 
 -- this will be reorganized:
 
@@ -113,19 +110,6 @@ function nodes.handlers.checkglyphs(head,message)
         report_nodes("%s glyphs: % t",n,t)
     end
     return false
-end
-
-function nodes.handlers.checkforleaks(sparse)
-    local l = { }
-    local q = used_nodes()
-    for p, id in nextnode, q do
-        local s = table.serialize(nodes.astable(p,sparse),nodecodes[id])
-        l[s] = (l[s] or 0) + 1
-    end
-    flush_list(q)
-    for k, v in next, l do
-        report_nodes("%s * %s",v,k)
-    end
 end
 
 local fontcharacters -- = fonts.hashes.descriptions
@@ -167,7 +151,7 @@ local function tosequence(start,stop,compact)
             elseif id == dir_code then
                 local d, p = getdirection(start)
                 n = n + 1 ; t[n] = "[<" .. (p and "-" or "+") .. d .. ">]" -- todo l2r etc
-            elseif id == localpar_code and start_of_par(current) then
+            elseif id == par_code and startofpar(current) then
                 n = n + 1 ; t[n] = "[<" .. getdirection(start) .. ">]" -- todo l2r etc
             elseif compact then
                 n = n + 1 ; t[n] = "[]"
@@ -315,68 +299,71 @@ local function showsimplelist(h,depth,n)
     end
 end
 
--- \startluacode
--- callbacks.register('buildpage_filter',function() nodes.show_simple_list(tex.lists.contrib_head) end)
--- \stopluacode
--- \vbox{b\footnote{n}a}
--- \startluacode
--- callbacks.register('buildpage_filter',nil)
--- \stopluacode
-
 nodes.showsimplelist = function(h,depth) showsimplelist(h,depth,0) end
 
 local function listtoutf(h,joiner,textonly,last,nodisc)
-    local w = { }
-    local n = 0
-    local g = formatters["<%i>"]
-    local d = formatters["[%s|%s|%s]"]
-    while h do
-        local c, id = isglyph(h)
-        if c then
-            n = n + 1 ; w[n] = c >= 0 and utfchar(c) or g(c)
-            if joiner then
-                n = n + 1 ; w[n] = joiner
-            end
-        elseif id == disc_code then
-            local pre, pos, rep = getdisc(h)
-            if not nodisc then
-                n = n + 1 ; w[n] = d(
-                    pre and listtoutf(pre,joiner,textonly) or "",
-                    pos and listtoutf(pos,joiner,textonly) or "",
-                    rep and listtoutf(rep,joiner,textonly) or ""
-                )
-            elseif rep then
-                n = n + 1 ; w[n] = listtoutf(rep,joiner,textonly) or ""
-            end
-            if joiner then
-                n = n + 1 ; w[n] = joiner
-            end
-        elseif textonly then
-            if id == glue_code then
-                if getwidth(h) > 0 then
-                    n = n + 1 ; w[n] = " "
+    if h then
+        local w = { }
+        local n = 0
+        local g = formatters["<%i>"]
+        local d = formatters["[%s|%s|%s]"]
+        while h do
+            local c, id = isglyph(h)
+            if c then
+                n = n + 1 ; w[n] = c >= 0 and utfchar(c) or g(c)
+                if joiner then
+                    n = n + 1 ; w[n] = joiner
                 end
-            elseif id == hlist_code or id == vlist_code then
-                n = n + 1 ; w[n] = "["
-                n = n + 1 ; w[n] = listtoutf(getlist(h),joiner,textonly,last,nodisc)
-                n = n + 1 ; w[n] = "]"
+            elseif id == disc_code then
+                local pre, pos, rep = getdisc(h)
+                if not nodisc then
+                    n = n + 1 ; w[n] = d(
+                        pre and listtoutf(pre,joiner,textonly) or "",
+                        pos and listtoutf(pos,joiner,textonly) or "",
+                        rep and listtoutf(rep,joiner,textonly) or ""
+                    )
+                elseif rep then
+                    n = n + 1 ; w[n] = listtoutf(rep,joiner,textonly) or ""
+                end
+                if joiner then
+                    n = n + 1 ; w[n] = joiner
+                end
+            elseif id == passive_code then
+                -- smells like a bug in luatex
+                print("weird: passive node in listtoutf")
+                return ""
+            elseif textonly then
+                if id == glue_code then
+                    if getwidth(h) > 0 then
+                        n = n + 1 ; w[n] = " "
+                    end
+                elseif id == hlist_code or id == vlist_code then
+                    local l = getlist(h)
+                    n = n + 1 ; w[n] = "["
+                    if l then
+                        n = n + 1 ; w[n] = listtoutf(l,joiner,textonly,last,nodisc)
+                    end
+                    n = n + 1 ; w[n] = "]"
+                end
+            else
+                n = n + 1 ; w[n] = "[-]"
             end
-        else
-            n = n + 1 ; w[n] = "[-]"
+            if h == last then
+                break
+            else
+                h = getnext(h)
+            end
         end
-        if h == last then
-            break
-        else
-            h = getnext(h)
-        end
+        return concat(w,"",1,(w[n] == joiner) and (n-1) or n)
+    else
+        return ""
     end
-    return concat(w,"",1,(w[n] == joiner) and (n-1) or n)
 end
 
 function nodes.listtoutf(h,joiner,textonly,last,nodisc)
     if h then
         local joiner = joiner == true and utfchar(0x200C) or joiner -- zwnj
-        return listtoutf(tonut(h),joiner,textonly,last and tonut(last),nodisc)
+        return listtoutf(tonut(h),joiner,textonly,last and tonut(last) or nil,nodisc)
     else
         return ""
     end
@@ -503,8 +490,8 @@ function number.tobasepoints  (n,fmt) return numbertodimen(n,"bp",fmt) end
 function number.topicas       (n,fmt) return numbertodimen(n "pc",fmt) end
 function number.todidots      (n,fmt) return numbertodimen(n,"dd",fmt) end
 function number.tociceros     (n,fmt) return numbertodimen(n,"cc",fmt) end
-function number.tonewdidots   (n,fmt) return numbertodimen(n,"nd",fmt) end
-function number.tonewciceros  (n,fmt) return numbertodimen(n,"nc",fmt) end
+-------- number.tonewdidots   (n,fmt) return numbertodimen(n,"nd",fmt) end
+-------- number.tonewciceros  (n,fmt) return numbertodimen(n,"nc",fmt) end
 
 function nodes.topoints      (n,fmt) return nodetodimen(n,"pt",fmt) end
 function nodes.toinches      (n,fmt) return nodetodimen(n,"in",fmt) end
@@ -516,8 +503,8 @@ function nodes.tobasepoints  (n,fmt) return nodetodimen(n,"bp",fmt) end
 function nodes.topicas       (n,fmt) return nodetodimen(n "pc",fmt) end
 function nodes.todidots      (n,fmt) return nodetodimen(n,"dd",fmt) end
 function nodes.tociceros     (n,fmt) return nodetodimen(n,"cc",fmt) end
-function nodes.tonewdidots   (n,fmt) return nodetodimen(n,"nd",fmt) end
-function nodes.tonewciceros  (n,fmt) return nodetodimen(n,"nc",fmt) end
+-------- nodes.tonewdidots   (n,fmt) return nodetodimen(n,"nd",fmt) end
+-------- nodes.tonewciceros  (n,fmt) return nodetodimen(n,"nc",fmt) end
 
 -- stop redefinition
 

@@ -33,6 +33,13 @@ mappings["blackboard-to-bold"] = {
     [0x02124] = 0x1D419,
 }
 
+mappings["mikaels-favourites"] = {
+    [0x211D] = 0x1D411,
+    [0x211A] = 0x1D410,
+    [0x2124] = 0x1D419,
+    [0x2115] = 0x1D40D,
+}
+
 local function renderset(list) -- order matters
     local tag = gsub(list," ","")
     local n = sets[tag]

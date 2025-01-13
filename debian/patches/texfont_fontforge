@@ -3,10 +3,8 @@ texfont calls pfaedit, but Debian has already fontforge, change the name
  scripts/context/perl/texfont.pl |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-Index: context-2008.01.02/scripts/context/perl/texfont.pl
-===================================================================
---- context-2008.01.02.orig/scripts/context/perl/texfont.pl	2006-12-13 18:25:07.000000000 +0100
-+++ context-2008.01.02/scripts/context/perl/texfont.pl	2008-01-10 07:35:51.000000000 +0100
+--- context.orig/texmf-dist/scripts/context/perl/texfont.pl
++++ context/texmf-dist/scripts/context/perl/texfont.pl
 @@ -1078,8 +1078,8 @@
          report ("destination file : $pfbfont") ; }
      else

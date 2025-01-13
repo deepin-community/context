@@ -1,5 +1,6 @@
 if not modules then modules = { } end modules ['node-ref'] = {
     version   = 1.001,
+    optimize  = true,
     comment   = "companion to node-ref.mkiv",
     author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
     copyright = "PRAGMA ADE / ConTeXt Development Team",
@@ -77,7 +78,8 @@ local getdimensions        = nuts.dimensions
 local getrangedimensions   = nuts.rangedimensions
 local traverse             = nuts.traverse
 local find_node_tail       = nuts.tail
-local start_of_par         = nuts.start_of_par
+
+local startofpar           = nuts.startofpar
 
 local nodecodes            = nodes.nodecodes
 local gluecodes            = nodes.gluecodes
@@ -93,10 +95,11 @@ local glue_code            = nodecodes.glue
 local glyph_code           = nodecodes.glyph
 local rule_code            = nodecodes.rule
 local dir_code             = nodecodes.dir
-local localpar_code        = nodecodes.localpar
+local par_code             = nodecodes.par
 
 local leftskip_code        = gluecodes.leftskip
 local rightskip_code       = gluecodes.rightskip
+local parfillleftskip_code = gluecodes.parfillleftskip
 local parfillskip_code     = gluecodes.parfillskip
 
 ----- linelist_code        = listcodes.line
@@ -105,7 +108,7 @@ local new_rule             = nodepool.rule
 local new_kern             = nodepool.kern
 local new_hlist            = nodepool.hlist
 
-local flush_node           = nuts.flush
+local flushnode            = nuts.flush
 
 local tosequence           = nodes.tosequence
 
@@ -133,7 +136,7 @@ local function vlist_dimensions(start,stop) -- also needs the stretch and so
     local v = vpack_list(start)
     local w, h, d = getwhd(v)
     setlist(v) -- not needed
-    flush_node(v)
+    flushnode(v)
     if temp then
         setnext(stop,temp)
     end
@@ -322,7 +325,8 @@ local function inject_list(id,current,reference,make,stack,pardir,txtdir)
                 local last = find_node_tail(first)
                 if getid(last) == glue_code and getsubtype(last) == rightskip_code then
                     local prev = getprev(last)
-                    moveright = getid(first) == glue_code and getsubtype(first) == leftskip_code
+                    -- this can be more clever
+                    moveright = getid(first) == glue_code and (getsubtype(first) == leftskip_code or getsubtype(first) == parfillleftskip_code)
                     if prev and getid(prev) == glue_code and getsubtype(prev) == parfillskip_code then
                         width = dimensions(current,first,getprev(prev)) -- maybe not current as we already take care of it
                     else
@@ -414,16 +418,29 @@ local function inject_areas(head,attribute,make,stack,done,skip,parent,pardir,tx
             if r then
                 done[r] = done[r] - 1
             end
-        elseif id == glue_code and getsubtype(current) == leftskip_code then -- any glue at the left?
-            --
         elseif id == dir_code then
             local direction, pop = getdirection(current)
             txtdir = not pop and direction -- we might need a stack
-        elseif id == localpar_code then
-            if start_of_par(current) then
+        elseif id == par_code then
+            if startofpar(current) then
                 pardir = getdirection(current)
             end
+        elseif id == glue_code and getsubtype(current) == leftskip_code then -- any glue at the left?
+            --
         else
+            if id == glue_code then
+                local subtype = getsubtype(current)
+                -- todo in lmtx: lefthangskip and righthangskip
+                if subtype == leftskip_code or subtype == parfillleftskip_code then
+                    goto NEXT
+                elseif subtype == rightskip_code or subtype == parfillskip_code then
+                    if reference and (done[reference] or 0) == 0 then
+                        head, current = inject_range(head,first,last,reference,make,stack,parent,pardir,firstdir)
+                        reference, first, last, firstdir = nil, nil, nil, nil
+                    end
+                    goto NEXT
+                end
+            end
             local r = getattr(current,attribute)
             if not r then
                 -- just go on, can be kerns
@@ -431,7 +448,7 @@ local function inject_areas(head,attribute,make,stack,done,skip,parent,pardir,tx
                 reference, first, last, firstdir = r, current, current, txtdir
             elseif r == reference then
                 last = current
-            elseif (done[reference] or 0) == 0 then -- or id == glue_code and getsubtype(current) == right_skip_code
+            elseif (done[reference] or 0) == 0 then -- or (id == glue_code and getsubtype(current) == right_skip_code) then
                 if not skip or r > skip then -- maybe no > test
                     head, current = inject_range(head,first,last,reference,make,stack,parent,pardir,firstdir)
                     reference, first, last, firstdir = nil, nil, nil, nil
@@ -440,6 +457,7 @@ local function inject_areas(head,attribute,make,stack,done,skip,parent,pardir,tx
                 reference, first, last, firstdir = r, current, current, txtdir
             end
         end
+      ::NEXT::
         current = getnext(current)
     end
     if reference and (done[reference] or 0) == 0 then

@@ -314,7 +314,7 @@
 % left-overs (some day in private unicode space, so that we can roundtrip)
 
 \unexpanded\def\textblacksquare   {\dontleavehmode\hbox{\vrule\s!width.3\s!em\s!height.4\s!em\s!depth-.1\s!em}}
-\unexpanded\def\schwa             {\hbox{\rotate[\c!rotation=180,\c!location=\v!high]{\hbox{e}}}}
+%unexpanded\def\schwa             {\hbox{\rotate[\c!rotation=180,\c!location=\v!high]{\hbox{e}}}}
 \unexpanded\def\schwagrave        {\buildtextgrave\schwa}
 
 \chardef\textcontrolspace"2423
@@ -427,7 +427,7 @@
   {\char  \iffontchar\font"2012 "2012 % figuredash
      \else\iffontchar\font"2013 "2013 % endash
      \else\iffontchar\font"2212 "2212 % math minus
-                                "002D % hyphen
+     \else                      "002D % hyphen
      \fi\fi\fi}
 
 \unexpanded\def\textplus

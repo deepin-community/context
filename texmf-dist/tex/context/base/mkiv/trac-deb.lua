@@ -13,100 +13,13 @@ local status = status
 
 local tonumber, tostring, type = tonumber, tostring, type
 local format, concat, match, find, gsub = string.format, table.concat, string.match, string.find, string.gsub
-local lpegmatch = lpeg.match
 
--- maybe tracers -> tracers.tex (and tracers.lua for current debugger)
+local report_nl     = logs.newline
+local report_str    = logs.writer
 
------ report_tex  = logs.reporter("tex error")
------ report_lua  = logs.reporter("lua error")
-local report_nl   = logs.newline
-local report_str  = logs.writer
-
-tracers           = tracers or { }
-local tracers     = tracers
-
-tracers.lists     = { }
-local lists       = tracers.lists
-
-tracers.strings   = { }
-local strings     = tracers.strings
-
-local texgetdimen = tex.getdimen
-local texgettoks  = tex.gettoks
-local texgetcount = tex.getcount
-local texgethelp  = tex.gethelptext or function() end
-local fatalerror  = tex.fatalerror
-
-local implement   = interfaces.implement
-
--- this is used in lmx files but needs to be redone
-
-strings.undefined = "undefined"
-
-function tracers.dimen(name)
-    local d = texgetdimen(name)
-    return d and number.topoints(d) or strings.undefined
-end
-
-function tracers.count(name)
-    return texgetcount(name) or strings.undefined
-end
-
-function tracers.toks(name,limit)
-    local t = texgettoks(name)
-    return t and string.limit(t,tonumber(limit) or 40) or strings.undefined
-end
-
-function tracers.primitive(name)
-    return tex[name] or strings.undefined
-end
-
-lists.scratch = {
-    0, 2, 4, 6, 8
-}
-
-lists.internals = {
-    'p:hsize', 'p:parindent', 'p:leftskip','p:rightskip',
-    'p:vsize', 'p:parskip', 'p:baselineskip', 'p:lineskip', 'p:topskip'
-}
-
-lists.context = {
-    'd:lineheight',
-    'c:realpageno', 'c:userpageno', 'c:pageno', 'c:subpageno'
-}
-
-local types = {
-    ['d'] = tracers.dimen,
-    ['c'] = tracers.count,
-    ['t'] = tracers.toks,
-    ['p'] = tracers.primitive
-}
-
-local splitboth = lpeg.splitat(":")
-
-function tracers.type(csname)
-    local tag, name = lpegmatch(splitboth,csname)
-    return tag or ""
-end
-
-function tracers.name(csname)
-    local tag, name = lpegmatch(splitboth,csname)
-    return name or csname
-end
-
-function tracers.cs(csname)
-    local tag, name = lpegmatch(splitboth,csname)
-    if name and types[tag] then
-        return types[tag](name)
-    else
-        return tracers.primitive(csname)
-    end
-end
-
-function tracers.knownlist(name)
-    local l = lists[name]
-    return l and #l > 0
-end
+tracers             = tracers or { }
+local tracers       = tracers
+local implement     = interfaces.implement
 
 local savedluaerror = nil
 local usescitelexer = nil
@@ -179,19 +92,12 @@ end
 -- todo: some nested errors have two line numbers
 -- todo: collect errorcontext in string (after code cleanup)
 -- todo: have a separate status.lualinenumber
-
 -- todo: \starttext bla \blank[foo] bla \stoptext
 
 local nop = function() end
 local resetmessages = status.resetmessages or nop
 
-local function processerror(offset)
- -- print("[[ last tex error: " .. tostring(status.lasterrorstring     or "<unset>") .. " ]]")
- -- print("[[ last lua error: " .. tostring(status.lastluaerrorstring  or "<unset>") .. " ]]")
- -- print("[[ last warning  : " .. tostring(status.lastwarningstring   or "<unset>") .. " ]]")
- -- print("[[ last location : " .. tostring(status.lastwarninglocation or "<unset>") .. " ]]")
- -- print("[[ last context  : " .. tostring(status.lasterrorcontext    or "<unset>") .. " ]]")
-
+local function processerror(offset,eof)
     local filename     = status.filename
     local linenumber   = tonumber(status.linenumber) or 0
     local lastcontext  = status.lasterrorcontext
@@ -211,26 +117,15 @@ local function processerror(offset)
         luaerrorline = luaerrorline,
         lastcontext  = lastcontext,
         lasttexhelp  = tex.gethelptext and tex.gethelptext() or nil,
+        endoffile    = eof,
     }
-end
-
--- so one can overload the printer if (really) needed
-
-if fatalerror then
-    callback.register("terminal_input",function(what)
-        if what == "*" then
-            fatalerror("some kind of input expected, file ends too soon, quitting now")
-        else
-            fatalerror("bad input, quitting now")
-        end
-    end)
-else
- -- tex.print("\\nonstopmode")
+    if job and type(job.disablesave) == "function" then
+        job.disablesave()
+    end
 end
 
 directives.register("system.quitonerror",function(v)
     quitonerror = toboolean(v)
- -- tex.print("\\errorstopmode")
 end)
 
 directives.register("system.usescitelexer",function(v)
@@ -251,9 +146,15 @@ function tracers.printerror(specification)
         local luaerrorline = specification.luaerrorline
         local errortype    = specification.errortype
         local offset       = specification.offset
+        local endoffile    = specification.endoffile
         local report       = errorreporter(luaerrorline)
-        if not filename then
-            report("error not related to input file:")
+        if endoffile then
+            report("runaway error: %s",lasttexerror or "-")
+            if not quitonerror and texio.terminal then
+                texio.terminal() -- not well tested
+            end
+        elseif not filename then
+            report("fuzzy error:")
             report("  tex: %s",lasttexerror or "-")
             report("  lua: %s",lastluaerror or "-")
             report("  mps: %s",lastmpserror or "-")
@@ -281,14 +182,20 @@ function tracers.printerror(specification)
                     report_nl()
                     tex.show_context()
                 end
+                if lastluaerror and not match(lastluaerror,"^%s*[%?]*%s*$") then
+                    print("\nlua error:\n\n",lastluaerror,"\n")
+                    quitonerror = true
+                end
             end
             report_nl()
             report_str(tracers.showlines(filename,linenumber,offset,tonumber(luaerrorline)))
             report_nl()
         end
-        local errname = file.addsuffix(tex.jobname .. "-error","log")
         if quitonerror then
-            table.save(errname,specification)
+            local name = tex.jobname or ""
+            if name ~= "" then
+                table.save(name .. "-error.log",specification)
+            end
             local help = specification.lasttexhelp
             if help and #help > 0 then
                 report_nl()
@@ -322,9 +229,9 @@ directives.register("system.errorcontext", function(v)
     local register = callback.register
     if v then
         register('show_error_message',  nop)
-        register('show_warning_message',function() processwarning(v) end)
-        register('show_error_hook',     function() processerror(v) end)
-        register('show_lua_error_hook', function() processerror(v) end)
+        register('show_warning_message',function()         processwarning(v)   end)
+        register('show_error_hook',     function(eof)      processerror(v,eof) end)
+        register('show_lua_error_hook', function()         processerror(v)     end)
     else
         register('show_error_message',  nil)
         register('show_error_hook',     nil)
@@ -349,15 +256,6 @@ local function reportback(lmxname,default,variables)
             logs.report("context report","file: %s",name)
         end
     end
-end
-
-function lmx.showdebuginfo(lmxname)
-    local variables = {
-        ['title']                = 'ConTeXt Debug Information',
-        ['color-background-one'] = lmx.get('color-background-green'),
-        ['color-background-two'] = lmx.get('color-background-blue'),
-    }
-    reportback(lmxname,"context-debug.lmx",variables)
 end
 
 local function showerror(lmxname)
@@ -390,6 +288,7 @@ function lmx.overloaderror(v)
     end
     callback.register('show_error_hook',     function() showerror() end) -- prevents arguments being passed
     callback.register('show_lua_error_hook', function() showerror() end) -- prevents arguments being passed
+    callback.register('show_tex_error_hook', function() showerror() end) -- prevents arguments being passed
 end
 
 directives.register("system.showerror", lmx.overloaderror)
@@ -429,8 +328,6 @@ directives.register("system.showerror", lmx.overloaderror)
 --     end
 -- end)
 
-local implement = interfaces.implement
-
 implement { name = "showtrackers",       actions = trackers.show }
 implement { name = "enabletrackers",     actions = trackers.enable,     arguments = "string" }
 implement { name = "disabletrackers",    actions = trackers.disable,    arguments = "string" }
@@ -444,7 +341,6 @@ implement { name = "showexperiments",    actions = experiments.show }
 implement { name = "enableexperiments",  actions = experiments.enable,  arguments = "string" }
 implement { name = "disableexperiments", actions = experiments.disable, arguments = "string" }
 
-implement { name = "showdebuginfo",      actions = lmx.showdebuginfo }
 implement { name = "overloaderror",      actions = lmx.overloaderror }
 implement { name = "showlogcategories",  actions = logs.show }
 

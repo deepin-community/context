@@ -125,7 +125,7 @@ if not modules then modules = { } end modules ['node-syn'] = {
 local type, rawset = type, rawset
 local concat = table.concat
 local formatters = string.formatters
-local replacesuffix, suffixonly, nameonly = file.replacesuffix, file.suffix, file.nameonly
+local replacesuffix, suffixonly, nameonly, collapsepath = file.replacesuffix, file.suffix, file.nameonly, file.collapsepath
 local openfile, renamefile, removefile = io.open, os.rename, os.remove
 
 local report_system = logs.reporter("system")
@@ -159,8 +159,8 @@ local fontkern_code      = kerncodes.fontkern
 
 local cancel_code        = nodes.dircodes.cancel
 
-local insert_before      = nuts.insert_before
-local insert_after       = nuts.insert_after
+local insertbefore       = nuts.insertbefore
+local insertafter        = nuts.insertafter
 
 local nodepool           = nuts.pool
 local new_latelua        = nodepool.latelua
@@ -170,15 +170,11 @@ local new_kern           = nodepool.kern
 local getdimensions      = nuts.dimensions
 local getrangedimensions = nuts.rangedimensions
 
-local get_synctex_fields = nuts.get_synctex_fields
------ set_synctex_fields = nuts.set_synctex_fields
-local set_synctex_line   = tex.set_synctex_line
-local set_synctex_tag    = tex.set_synctex_tag
-local force_synctex_tag  = tex.force_synctex_tag
-local force_synctex_line = tex.force_synctex_line
------ get_synctex_tag    = tex.get_synctex_tag
-local get_synctex_line   = tex.get_synctex_line
-local set_synctex_mode   = tex.set_synctex_mode
+local getsynctexfields   = nuts.getsynctexfields
+local forcesynctextag    = tex.forcesynctextag   or tex.force_synctex_tag
+local forcesynctexline   = tex.forcesynctexline  or tex.force_synctex_line
+local getsynctexline     = tex.getsynctexline    or tex.get_synctex_line
+local setsynctexmode     = tex.setsynctexmode    or tex.set_synctex_mode
 
 local foundintree        = resolvers.foundintree
 
@@ -212,7 +208,7 @@ local paused  = 0
 local used    = false
 local never   = false
 
--- get rid of overhead
+-- get rid of overhead in mkiv
 
 if tex.set_synctex_no_files then
     tex.set_synctex_no_files(1)
@@ -235,7 +231,8 @@ local blockedsuffixes    = {
  -- lfg  = true,
 }
 
-local sttags = table.setmetatableindex(function(t,name)
+local sttags = table.setmetatableindex(function(t,fullname)
+    local name = collapsepath(fullname)
     if blockedsuffixes[suffixonly(name)] then
         -- Just so that I don't get the ones on my development tree.
         nofblocked = nofblocked + 1
@@ -251,6 +248,9 @@ local sttags = table.setmetatableindex(function(t,name)
     else
         noftags = noftags + 1
         t[name] = noftags
+        if name ~= fullname then
+            t[fullname] = noftags
+        end
         stnums[noftags] = name
         return noftags
     end
@@ -261,18 +261,18 @@ function synctex.blockfilename(name)
 end
 
 function synctex.setfilename(name,line)
-    if paused == 0 and force_synctex_tag and name then
-        force_synctex_tag(sttags[name])
+    if paused == 0 and name then
+        forcesynctextag(sttags[name])
         if line then
-            force_synctex_line(line)
+            forcesynctexline(line)
         end
     end
 end
 
 function synctex.resetfilename()
-    if paused == 0 and force_synctex_tag then
-        force_synctex_tag(0)
-        force_synctex_line(0)
+    if paused == 0 then
+        forcesynctextag(0)
+        forcesynctexline(0)
     end
 end
 
@@ -284,10 +284,10 @@ do
     function synctex.pushline()
         nesting = nesting + 1
         if nesting == 1 then
-            local l = get_synctex_line()
+            local l = getsynctexline()
             ignored = l and l > 0
             if not ignored then
-                force_synctex_line(texget("inputlineno"))
+                forcesynctexline(texget("inputlineno"))
             end
         end
     end
@@ -295,7 +295,7 @@ do
     function synctex.popline()
         if nesting == 1 then
             if not ignored then
-                force_synctex_line()
+                forcesynctexline()
                 ignored = false
             end
         end
@@ -395,27 +395,27 @@ end
 -- end
 --
 -- local function b_vlist(head,current,t,l,w,h,d)
---     return insert_before(head,current,new_latelua(function() doaction(f_vlist,t,l,w,h,d) end))
+--     return insertbefore(head,current,new_latelua(function() doaction(f_vlist,t,l,w,h,d) end))
 -- end
 --
 -- local function b_hlist(head,current,t,l,w,h,d)
---     return insert_before(head,current,new_latelua(function() doaction(f_hlist,t,l,w,h,d) end))
+--     return insertbefore(head,current,new_latelua(function() doaction(f_hlist,t,l,w,h,d) end))
 -- end
 --
 -- local function e_vlist(head,current)
---     return insert_after(head,current,new_latelua(noaction(s_vlist)))
+--     return insertafter(head,current,new_latelua(noaction(s_vlist)))
 -- end
 --
 -- local function e_hlist(head,current)
---     return insert_after(head,current,new_latelua(noaction(s_hlist)))
+--     return insertafter(head,current,new_latelua(noaction(s_hlist)))
 -- end
 --
 -- local function x_vlist(head,current,t,l,w,h,d)
---     return insert_before(head,current,new_latelua(function() doaction(f_vlist_1,t,l,w,h,d) end))
+--     return insertbefore(head,current,new_latelua(function() doaction(f_vlist_1,t,l,w,h,d) end))
 -- end
 --
 -- local function x_hlist(head,current,t,l,w,h,d)
---     return insert_before(head,current,new_latelua(function() doaction(f_hlist_1,t,l,w,h,d) end))
+--     return insertbefore(head,current,new_latelua(function() doaction(f_hlist_1,t,l,w,h,d) end))
 -- end
 --
 -- generic
@@ -469,7 +469,11 @@ local x_hlist  do
     local doaction = doaction_1
 
     x_hlist = function(head,current,t,l,w,h,d)
-        return insert_before(head,current,new_latelua(function() doaction(t,l,w,h,d) end))
+        if filehandle then
+            return insertbefore(head,current,new_latelua(function() doaction(t,l,w,h,d) end))
+        else
+            return head
+        end
     end
 
     directives.register("system.synctex.compression", function(v)
@@ -502,8 +506,8 @@ local function inject(head,first,last,tag,line)
         d = depth
     end
     if trace then
-        head = insert_before(head,first,new_rule(w,fulltrace and h or traceheight,fulltrace and d or tracedepth))
-        head = insert_before(head,first,new_kern(-w))
+        head = insertbefore(head,first,new_rule(w,fulltrace and h or traceheight,fulltrace and d or tracedepth))
+        head = insertbefore(head,first,new_kern(-w))
     end
     head = x_hlist(head,first,tag,line,w,h,d)
     return head
@@ -520,7 +524,7 @@ local function collect_min(head)
             local line  = 0
             while true do
                 if id == glyph_code then
-                    local tc, lc = get_synctex_fields(current)
+                    local tc, lc = getsynctexfields(current)
                     if tc and tc > 0 then
                         tag  = tc
                         line = lc
@@ -569,8 +573,8 @@ local function inject(parent,head,first,last,tag,line)
         d = depth
     end
     if trace then
-        head = insert_before(head,first,new_rule(w,fulltrace and h or traceheight,fulltrace and d or tracedepth))
-        head = insert_before(head,first,new_kern(-w))
+        head = insertbefore(head,first,new_rule(w,fulltrace and h or traceheight,fulltrace and d or tracedepth))
+        head = insertbefore(head,first,new_kern(-w))
     end
     head = x_hlist(head,first,tag,line,w,h,d)
     return head
@@ -587,7 +591,7 @@ local function collect_max(head,parent)
             local line  = 0
             while true do
                 if id == glyph_code then
-                    local tc, lc = get_synctex_fields(current)
+                    local tc, lc = getsynctexfields(current)
                     if tc and tc > 0 then
                         if tag > 0 and (tag ~= tc or line ~= lc) then
                             head  = inject(parent,head,first,last,tag,line)
@@ -615,7 +619,7 @@ local function collect_max(head,parent)
                     end
                 elseif id == glue_code then
                     if tag > 0 then
-                        local tc, lc = get_synctex_fields(current)
+                        local tc, lc = getsynctexfields(current)
                         if tc and tc > 0 then
                             if tag ~= tc or line ~= lc then
                                 head = inject(parent,head,first,last,tag,line)
@@ -730,7 +734,7 @@ end
 function synctex.enable()
     if not never and not enabled then
         enabled = true
-        set_synctex_mode(3) -- we want details
+        setsynctexmode(3) -- we want details
         if not used then
             nodes.tasks.enableaction("shipouts","luatex.synctex.collect")
             report_system("synctex functionality is enabled, expect 5-10 pct runtime overhead!")
@@ -744,7 +748,7 @@ end
 
 function synctex.disable()
     if enabled then
-        set_synctex_mode(0)
+        setsynctexmode(0)
         report_system("synctex functionality is disabled!")
         enabled = false
         for i=1,#disablers do
@@ -768,13 +772,13 @@ local filename = nil
 function synctex.pause()
     paused = paused + 1
     if enabled and paused == 1 then
-        set_synctex_mode(0)
+        setsynctexmode(0)
     end
 end
 
 function synctex.resume()
     if enabled and paused == 1 then
-        set_synctex_mode(3)
+        setsynctexmode(3)
     end
     paused = paused - 1
 end
@@ -849,12 +853,17 @@ implement {
     actions = synctex.resume,
 }
 
-interfaces.implement {
+implement {
     name    = "synctexpushline",
     actions = synctex.pushline,
 }
-interfaces.implement {
+
+implement {
     name    = "synctexpopline",
     actions = synctex.popline,
 }
 
+implement {
+    name    = "synctexdisable",
+    actions = synctex.disable,
+}

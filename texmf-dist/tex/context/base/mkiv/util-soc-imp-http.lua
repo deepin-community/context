@@ -59,7 +59,7 @@ local function receiveheaders(sock, headers)
         headers = { }
     end
     -- get first line
-    local line, err = sock:receive()
+    local line, err = sock:receive("*l") -- this seems to be wrong!
     if err then
         return nil, err
     end
@@ -68,18 +68,18 @@ local function receiveheaders(sock, headers)
         -- get field-name and value
         local name, value = skipsocket(2, find(line, "^(.-):%s*(.*)"))
         if not (name and value) then
-            return nil, "malformed reponse headers"
+            return nil, "malformed response headers"
         end
         name = lower(name)
         -- get next line (value might be folded)
-        line, err  = sock:receive()
+        line, err  = sock:receive("*l")
         if err then
             return nil, err
         end
         -- unfold any folded values
         while find(line, "^%s") do
             value = value .. line
-            line  = sock:receive()
+            line  = sock:receive("*l")
             if err then
                 return nil, err
             end
@@ -103,7 +103,7 @@ socket.sourcet["http-chunked"] = function(sock, headers)
             dirty = function() return sock:dirty() end,
         }, {
             __call = function()
-                local line, err = sock:receive()
+                local line, err = sock:receive("*l")
                 if err then
                     return nil, err
                 end
@@ -114,7 +114,7 @@ socket.sourcet["http-chunked"] = function(sock, headers)
                 if size > 0 then
                     local chunk, err, part = sock:receive(size)
                     if chunk then
-                        sock:receive()
+                        sock:receive("*a")
                     end
                     return chunk, err
                 else
@@ -186,10 +186,14 @@ function methods.sendbody(self, headers, source, step)
 end
 
 function methods.receivestatusline(self)
-    local try    = self.try
-    local status = try(self.c:receive(5))
+    local try         = self.try
+    local status, err = try(self.c:receive(5))
     if status ~= "HTTP/" then
-        return nil, status -- HTTP/0.9
+        if err == "timeout" then
+            return 408
+        else
+            return nil, status -- HTTP/0.9
+        end
     end
     status = try(self.c:receive("*l", status))
     local code = skipsocket(2, find(status, "HTTP/%d*%.%d* (%d%d%d)"))
@@ -199,6 +203,15 @@ end
 function methods.receiveheaders(self)
     return self.try(receiveheaders(self.c))
 end
+
+-- part of request:
+--
+-- Accept-Encoding: gzip
+
+-- part if body:
+--
+-- Content-Encoding: gzip
+-- Vary: Accept-Encoding
 
 function methods.receivebody(self, headers, sink, step)
     if not sink then
@@ -308,7 +321,7 @@ local function adjustrequest(originalrequest)
     return request
 end
 
-local maxredericts   = 4
+local maxredericts   = 5
 local validredirects = { [301] = true, [302] = true, [303] = true, [307] = true }
 local validmethods   = { [false] = true, GET = true, HEAD = true }
 
@@ -325,10 +338,11 @@ local function shouldredirect(request, code, headers)
     if scheme and not SCHEMES[scheme] then
         return false
     end
-    local method    = request.method
-    local redirect  = request.redirect
-    local redirects = request.nredirects or 0
-    return redirect and validredirects[code] and validmethods[method] and redirects <= maxredericts
+    local method       = request.method
+    local redirect     = request.redirect
+    local redirects    = request.nredirects or 0
+    local maxredirects = request.maxredirects or maxredirects
+    return redirect and validredirects[code] and validmethods[method] and redirects <= maxredirects
 end
 
 local function shouldreceivebody(request, code)
@@ -348,13 +362,14 @@ local tredirect, trequest, srequest
 
 tredirect = function(request, location)
     local result, code, headers, status = trequest {
-        url        = absoluteurl(request.url,location),
-        source     = request.source,
-        sink       = request.sink,
-        headers    = request.headers,
-        proxy      = request.proxy,
-        nredirects = (request.nredirects or 0) + 1,
-        create     = request.create,
+        url          = absoluteurl(request.url,location),
+        source       = request.source,
+        sink         = request.sink,
+        headers      = request.headers,
+        proxy        = request.proxy,
+        nredirects   = (request.nredirects or 0) + 1,
+        maxredirects = request.maxredirects or maxredirects,
+        create       = request.create,
     }
     if not headers then
         headers = { }
@@ -377,10 +392,13 @@ trequest = function(originalrequest)
     local code, status = connection:receivestatusline()
     if not code then
         connection:receive09body(status, request.sink, request.step)
+        connection:close()
         return 1, 200
+    elseif code == 408 then
+        return 1, code
     end
     while code == 100 do
-        headers = connection:receiveheaders()
+        connection:receiveheaders()
         code, status = connection:receivestatusline()
     end
     headers = connection:receiveheaders()

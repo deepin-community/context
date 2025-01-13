@@ -1,5 +1,6 @@
 if not modules then modules = { } end modules ['node-par'] = {
     version   = 1.001,
+    optimize  = true,
     comment   = "companion to node-par.mkiv",
     author    = "Hans Hagen",
     copyright = "ConTeXt Development Team",
@@ -219,7 +220,7 @@ local getpre                  = nuts.getpre
 local setpre                  = nuts.setpre
 
 local isglyph                 = nuts.isglyph
-local start_of_par            = nuts.start_of_par
+local startofpar              = nuts.startofpar
 
 local setfield                = nuts.setfield
 local setlink                 = nuts.setlink
@@ -239,16 +240,16 @@ local setexpansion            = nuts.setexpansion
 
 local find_tail               = nuts.tail
 local copy_node               = nuts.copy
-local flush_node              = nuts.flush
-local flush_node_list         = nuts.flush_list
+local flushnode               = nuts.flush
+local flushnodelist           = nuts.flushlist
 ----- hpack_nodes             = nuts.hpack
 local xpack_nodes             = nuts.hpack
 local replace_node            = nuts.replace
 local remove_node             = nuts.remove
-local insert_node_after       = nuts.insert_after
-local insert_node_before      = nuts.insert_before
-local is_zero_glue            = nuts.is_zero_glue
-local is_skipable             = nuts.protrusion_skippable
+local insertnodeafter         = nuts.insertafter
+local insertnodebefore        = nuts.insertbefore
+local iszeroglue              = nuts.iszeroglue
+local protrusionskippable     = nuts.protrusionskippable
 local setattributelist        = nuts.setattributelist
 local find_node               = nuts.find_node
 
@@ -259,7 +260,6 @@ local nodepool                = nuts.pool
 
 local nodecodes               = nodes.nodecodes
 local kerncodes               = nodes.kerncodes
-local margincodes             = nodes.margincodes
 local disccodes               = nodes.disccodes
 local mathcodes               = nodes.mathcodes
 local fillcodes               = nodes.fillcodes
@@ -267,7 +267,7 @@ local gluecodes               = nodes.gluecodes
 
 local temp_code               = nodecodes.temp
 local glyph_code              = nodecodes.glyph
-local ins_code                = nodecodes.ins
+local insert_code             = nodecodes.insert
 local mark_code               = nodecodes.mark
 local adjust_code             = nodecodes.adjust
 local penalty_code            = nodecodes.penalty
@@ -281,21 +281,17 @@ local unset_code              = nodecodes.unset
 local marginkern_code         = nodecodes.marginkern
 local dir_code                = nodecodes.dir
 local boundary_code           = nodecodes.boundary
-local localpar_code           = nodecodes.localpar
+local par_code                = nodecodes.par
 
 local protrusionboundary_code = nodes.boundarycodes.protrusion
-local leaders_code            = nodes.leadercodes.leaders
+local leaders_code            = nodes.gluecodes.leaders
 local indentlist_code         = nodes.listcodes.indent
-local ligatureglyph_code      = nodes.glyphcodes.ligature
 local cancel_code             = nodes.dircodes.cancel
 
 local userkern_code           = kerncodes.userkern
 local italickern_code         = kerncodes.italiccorrection
 local fontkern_code           = kerncodes.fontkern
 local accentkern_code         = kerncodes.accentkern
-
-local leftmargin_code         = margincodes.left
------ rightmargin_code        = margincodes.right
 
 local automaticdisc_code      = disccodes.automatic
 local regulardisc_code        = disccodes.regular
@@ -349,6 +345,11 @@ local new_hlist               = nodepool.hlist
 
 local getnormalizeline        = nodes.getnormalizeline
 
+local packing_exactly    = "exactly"
+local packing_additional = "additional"
+local packing_expanded   = CONTEXTLMTXMODE > 0 and "expanded"   or "cal_expand_ratio"
+local packing_substitute = CONTEXTLMTXMODE > 0 and "substiture" or "subst_ex_font"
+
 -- helpers --
 
 -- It makes more sense to move the somewhat messy dir state tracking
@@ -385,7 +386,7 @@ local function inject_dirs_at_begin_of_line(stack,current)
         for i=1,n do
             local d = new_direction(stack[i])
             setattributelist(d,current)
-            h, current = insert_node_after(h,current,d)
+            h, current = insertnodeafter(h,current,d)
         end
         stack.n = 0
         return h
@@ -420,14 +421,14 @@ end
         for i=n,1,-1 do
             local d = new_direction(stack[i],true)
             setattributelist(d,start)
-            h, current = insert_node_after(h,current,d)
+            h, current = insertnodeafter(h,current,d)
         end
     end
     stack.n = n
     return current
 end
 
-local ignore_math_skip = node.direct.ignore_math_skip or function(current)
+local ignoremathskip = nuts.ignoremathskip or function(current)
     local mode = texget("mathskipmode")
     if mode == 6 or mode == 7 then
         local b = true
@@ -743,7 +744,7 @@ local function find(head) -- do we really want to recurse into an hlist?
             else
                 return head
             end
-        elseif is_skipable(head) then
+        elseif protrusionskippable(head) then
             head = getnext(head)
         else
             return head
@@ -797,7 +798,7 @@ local function find(head,tail)
             else
                 return tail
             end
-        elseif is_skipable(tail) then
+        elseif protrusionskippable(tail) then
             tail = getprev(tail)
         else
             return tail
@@ -1009,7 +1010,7 @@ do
     end
 
     local function used_skip(s)
-        return s and not is_zero_glue(s) and s
+        return s and not iszeroglue(s) and s
     end
 
     local function initialize_line_break(head,display)
@@ -1321,7 +1322,7 @@ do
 
         while current_break do
 
-            -- hm, here we have head == localpar and in the engine it's a temp node
+            -- hm, here we have head == par and in the engine it's a temp node
 
             head = inject_dirs_at_begin_of_line(dirstack,head)
 
@@ -1356,7 +1357,7 @@ do
                             report_parbuilders('unsupported disc at location %a',3)
                         end
                         if pre then
-                            flush_node_list(pre)
+                            flushnodelist(pre)
                             pre = nil -- signal
                         end
                         if replace then
@@ -1367,13 +1368,13 @@ do
                         setdisc(lastnode,pre,post,replace)
                         local pre, post, replace = getdisc(prevlast)
                         if pre then
-                            flush_node_list(pre)
+                            flushnodelist(pre)
                         end
                         if replace then
-                            flush_node_list(replace)
+                            flushnodelist(replace)
                         end
                         if post then
-                            flush_node_list(post)
+                            flushnodelist(post)
                         end
                         setdisc(prevlast) -- nil,nil,nil
                     elseif subtype == firstdisc_code then
@@ -1386,7 +1387,7 @@ do
                         setpost(lastnode)
                     end
                     if replace then
-                        flush_node_list(replace)
+                        flushnodelist(replace)
                     end
                     if pre then
                         setlink(prevlast,pre)
@@ -1413,7 +1414,7 @@ do
             lastnode = inject_dirs_at_end_of_line(dirstack,lastnode,getnext(head),current_break.cur_break)
             local rightbox = current_break.passive_right_box
             if rightbox then
-                lastnode = insert_node_after(lastnode,lastnode,copy_node(rightbox))
+                lastnode = insertnodeafter(lastnode,lastnode,copy_node(rightbox))
             end
             if not lineend then
                 lineend = lastnode
@@ -1461,7 +1462,7 @@ do
                                     p = nil
                                 end
                                 break
-                            elseif id == localpar_code then
+                            elseif id == par_code then
                                 break
                             elseif id == temp_code then
                                 -- Go on.
@@ -1494,8 +1495,8 @@ do
                             -- so we inherit attributes, lineend is new pseudo head
                             local k = new_rightmarginkern(copy_node(last_rightmost_char),-w)
                             setattributelist(k,p)
---                             insert_node_after(c,c,k)
-                            insert_node_after(p,p,k)
+--                             insertnodeafter(c,c,k)
+                            insertnodeafter(p,p,k)
 --                             if c == lineend then
 --                                 lineend = getnext(c)
 --                             end
@@ -1511,7 +1512,7 @@ do
             if not glue_break then
                 local rs = new_rightskip(unpack(rightskip))
                 setattributelist(rs,lineend)
-                start, lineend = insert_node_after(start,lineend,rs)
+                start, lineend = insertnodeafter(start,lineend,rs)
             end
             local rs = lineend
             -- insert leftbox (if needed after parindent)
@@ -1519,9 +1520,9 @@ do
             if leftbox then
                 local first = getnext(start)
                 if first and current_line == (par.first_line + 1) and getid(first) == hlist_code and not getlist(first) then
-                    insert_node_after(start,start,copy_node(leftbox))
+                    insertnodeafter(start,start,copy_node(leftbox))
                 else
-                    start = insert_node_before(start,start,copy_node(leftbox))
+                    start = insertnodebefore(start,start,copy_node(leftbox))
                 end
             end
             if protrude_chars > 0 then
@@ -1533,7 +1534,7 @@ do
                             if last_leftmost_char and w ~= 0 then
                                 local k = new_rightmarginkern(copy_node(last_leftmost_char),-w)
                                 setattributelist(k,p)
-                                start = insert_node_before(start,start,k)
+                                start = insertnodebefore(start,start,k)
                             end
                         end
                     end
@@ -1545,7 +1546,7 @@ do
                             -- so we inherit attributes, start is pseudo head and moves back
                             local k = new_leftmarginkern(copy_node(last_leftmost_char),-w)
                             setattributelist(k,p)
-                            start = insert_node_before(start,start,k)
+                            start = insertnodebefore(start,start,k)
                         end
                     end
                 end
@@ -1555,32 +1556,32 @@ do
                 -- we could check for non zero but we will normalize anyway
                 ls = new_leftskip(unpack(leftskip))
                 setattributelist(ls,start)
-                start = insert_node_before(start,start,ls)
+                start = insertnodebefore(start,start,ls)
             end
             if normalize > 0 then
-                local localpar  = nil
-                local localdir  = nil
+                local par       = nil
+                local dir       = nil
                 local indent    = nil
-                local localpars = nil
+                local pars      = nil
                 local notflocal = 0
                 for n, id, subtype in nextnode, start do
                     if id == hlist_code then
                         if normalize > 1 and subtype == indentlist_code then
                             indent = n
                         end
-                    elseif id == localpar_code then
-                        if start_of_par(n) then --- maybe subtype check instead
-                            localpar = n
+                    elseif id == par_code then
+                        if startofpar(n) then --- maybe subtype check instead
+                            par = n
                         elseif noflocals then
                             noflocals = noflocals + 1
-                            localpars[noflocals] = n
+                            pars[noflocals] = n
                         else
                             noflocals = 1
-                            localpars = { n }
+                            pars = { n }
                         end
                     elseif id == dir_code then
-                        if localpar and not localdir and subtype(n) == cancel_code then
-                            localdir = n
+                        if par and not dir and subtype(n) == cancel_code then
+                            dir = n
                         end
                     end
                 end
@@ -1589,14 +1590,14 @@ do
                     setattributelist(i,start)
                     replace_node(indent,i)
                 end
-                if localdir then
-                    local d = new_direction((getdirection(localpar)))
+                if dir then
+                    local d = new_direction((getdirection(par)))
                     setattributelist(d,start)
-                    replace_node(localpar,d)
+                    replace_node(par,d)
                 end
-                if localpars then
+                if pars then
                     for i=1,noflocals do
-                        start = remove_node(start,localpars[i],true)
+                        start = remove_node(start,pars[i],true)
                     end
                 end
             end
@@ -1634,11 +1635,11 @@ do
                 setattributelist(r,start)
                 if normalize > 3 then
                     -- makes most sense
-                    start = insert_node_after(start,ls,l)
-                    start = insert_node_before(start,rs,r)
+                    start = insertnodeafter(start,ls,l)
+                    start = insertnodebefore(start,rs,r)
                 else
-                    start = insert_node_before(start,ls,l)
-                    start = insert_node_after(start,rs,r)
+                    start = insertnodebefore(start,ls,l)
+                    start = insertnodeafter(start,rs,r)
                 end
                 cur_width = hsize
                 cur_indent = 0
@@ -1651,9 +1652,9 @@ do
             local finished_line = nil
             if adjust_spacing > 0 then
                 statistics.nofadjustedlines = statistics.nofadjustedlines + 1
-                finished_line = xpack_nodes(start,cur_width,"cal_expand_ratio",par.par_break_dir,par.first_line,current_line) -- ,current_break.analysis)
+                finished_line = xpack_nodes(start,cur_width,packing_expanded,par.par_break_dir,par.first_line,current_line) -- ,current_break.analysis)
             else
-                finished_line = xpack_nodes(start,cur_width,"exactly",par.par_break_dir,par.first_line,current_line) -- ,current_break.analysis)
+                finished_line = xpack_nodes(start,cur_width,packing_exactly,par.par_break_dir,par.first_line,current_line) -- ,current_break.analysis)
             end
             if protrude_chars > 0 then
                 statistics.nofprotrudedlines = statistics.nofprotrudedlines + 1
@@ -1717,7 +1718,7 @@ do
                     local id = getid(next)
                     if id == glyph_code then
                         break
-                    elseif id == localpar_code then
+                    elseif id == par_code then
                         -- nothing
                     elseif id < math_code then
                         -- messy criterium
@@ -1739,7 +1740,7 @@ do
                 end
                 if current ~= head then
                     setnext(current)
-                    flush_node_list(getnext(head))
+                    flushnodelist(getnext(head))
                     setlink(head,next)
                 end
             end
@@ -1754,11 +1755,11 @@ par.head = head
                 if getnext(h) then
                     report_parbuilders("something is left over")
                 end
-                if getid(h) ~= localpar_code then
+                if getid(h) ~= par_code then
                     report_parbuilders("no local par node")
                 end
             end
-            flush_node(h)
+            flushnode(h)
             par.head = nil -- needs checking
         end
         current_line = current_line - 1
@@ -1798,7 +1799,7 @@ par.head = head
             if next then
                 setprev(next)
             end
-            flush_node(head)
+            flushnode(head)
         end
         post_line_break(par)
         reset_meta(par)
@@ -2452,7 +2453,7 @@ par.head = head
 
             if current then
                 local id = getid(current)
-                if id == localpar_code then
+                if id == par_code then
                     par.init_internal_left_box       = getfield(current,"box_left")
                     par.init_internal_left_box_width = getfield(current,"box_left_width")
                     par.internal_pen_inter           = getfield(current,"pen_inter")
@@ -2599,7 +2600,7 @@ par.head = head
                     end
                 elseif id == math_code then
                     auto_breaking = getsubtype(current) == endmath_code
-                    if is_zero_glue(current) or ignore_math_skip(current) then
+                    if iszeroglue(current) or ignoremathskip(current) then
                         local v = getnext(current)
                         if auto_breaking and getid(v) == glue_code then
                             p_active, n_active = try_break(0, unhyphenated_code, par, first_p, current, checked_expansion)
@@ -2615,7 +2616,7 @@ par.head = head
                     p_active, n_active = try_break(getpenalty(current), unhyphenated_code, par, first_p, current, checked_expansion)
                 elseif id == dir_code then
                     par.line_break_dir = checked_line_dir(dirstack,current) or par.line_break_dir
-                elseif id == localpar_code then
+                elseif id == par_code then
                     par.internal_pen_inter       = getfield(current,"pen_inter")
                     par.internal_pen_broken      = getfield(current,"pen_broken")
                     par.internal_left_box        = getfield(current,"box_left")
@@ -2623,7 +2624,7 @@ par.head = head
                     par.internal_right_box       = getfield(current,"box_right")
                     par.internal_right_box_width = getfield(current,"box_right_width")
                 elseif trace_unsupported then
-                    if id == mark_code or id == ins_code or id == adjust_code then
+                    if id == mark_code or id == insert_code or id == adjust_code then
                         -- skip
                     else
                         report_parbuilders("node of type %a found in paragraph",type(id))
@@ -2881,7 +2882,7 @@ do
 
     local function common_message(hlist,line,str)
         write_nl("")
-        if status.output_active then -- unset
+        if CONTEXTLMTXMODE > 0 and tex.getoutputactive() or status.output_active then
             write(str," has occurred while \\output is active")
         else
             write(str)
@@ -2961,7 +2962,7 @@ do
             setlist(hlist,head)
         end
 
-        local cal_expand_ratio  = method == "cal_expand_ratio" or method == "subst_ex_font"
+        local cal_expand_ratio  = method == packing_expanded or method == packing_substitute
 
         direction               = direction or texget("textdir")
 
@@ -3089,7 +3090,7 @@ do
                     end
                     natural = natural + wd
                 elseif id == math_code then
-                    if is_zero_glue(current) or ignore_math_skip(current) then
+                    if iszeroglue(current) or ignoremathskip(current) then
                         natural = natural + getkern(current)
                     else
                         local wd, stretch, shrink, stretch_order, shrink_order = getglue(current)
@@ -3097,7 +3098,7 @@ do
                         total_shrink [shrink_order]  = total_shrink[shrink_order]   + shrink
                         natural = natural + wd
                     end
-                elseif id == ins_code or id == mark_code then
+                elseif id == insert_code or id == mark_code then
                     local prev, next = getboth(current)
                     if adjust_tail then -- todo
                         setlink(prev,next)
@@ -3136,7 +3137,7 @@ do
         if pre_adjust_tail then
             pre_adjust_tail.next = nil -- todo
         end
-        if method == "additional" then
+        if method == packing_additional then
             width = width + natural
         end
         setwhd(hlist,width,height,depth)
@@ -3271,7 +3272,7 @@ do
                                 if p and getid(p) == marginkern_code then
                                     found = p
                                 end
-                                insert_node_before(head,found,g)
+                                insertnodebefore(head,found,g)
                             end
                         end
                     end

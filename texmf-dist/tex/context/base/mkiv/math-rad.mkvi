@@ -26,12 +26,24 @@
 % \def\rootradical{\Uroot    \defaultmathfamily "221A } % can be done in char-def
 % \def\surdradical{\Uradical \defaultmathfamily "221A } % can be done in char-def
 
-\def\root#1\of{\rootradical{#1}} % #2
+\unexpanded\def\root#1\of{\rootradical{#1}} % #2
 
 \unexpanded\def\sqrt{\doifelsenextoptionalcs\rootwithdegree\rootwithoutdegree}
 
-\unexpanded\def\styledrootradical#1#2% so that \text works ok ... \rootradical behaves somewhat weird
-  {\normalexpanded{\rootradical{\normalunexpanded{#1}}{\noexpand\triggermathstyle{\normalmathstyle}\normalunexpanded{#2}}}}
+% \ifcase \contextlmtxmode
+
+    \unexpanded\def\styledrootradical#1#2% so that \text works ok ... \rootradical behaves somewhat weird
+      {\normalexpanded{\rootradical
+         {\normalunexpanded{#1}}%
+         {\noexpand\triggermathstyle{\number\normalmathstyle}%
+          \normalunexpanded{#2}}}}
+
+% \else % experimental new keyword: (maybe keywords should come after the symbol)
+%
+%     \unexpanded\def\styledrootradical#1#2% so that \text works ok ... \rootradical behaves somewhat weird
+%       {\Uroot style \normalmathstyle "0 "221A {#1}{#2}}
+%
+% \fi
 
 \unexpanded\def\rootwithdegree[#1]{\rootradical{#1}}
 \unexpanded\def\rootwithoutdegree {\rootradical  {}}
@@ -43,8 +55,36 @@
 % \let\normalsurd\surd % \Uradical "0 "221A
 % \unexpanded\def\surd{\normalsurd{}}
 
-
-%D The real thing:
+%D The real thing. If needed one can control matters with one of the many
+%D \type {\Umath...} parameters.
+%D
+%D \starttyping
+%D \def\R {\Umathradicaldegreeafter\textstyle0pt}
+%D \def\RR{\Umathradicaldegreeafter\textstyle\dimexpr
+%D    \Umathradicaldegreeafter\textstyle+.1em\relax}
+%D \def\RRR{\frozen\Umathradicaldegreeafter\textstyle\dimexpr
+%D    \Umathradicaldegreeafter\textstyle+.2em\relax}
+%D
+%D $    \sqrt[3]{5}   \RR\sqrt[3]{5}  \sqrt[3]{5} $\par
+%D $    \sqrt[3]{5} {\RRR\sqrt[3]{5}} \sqrt[3]{5} $\par
+%D $ \RR\sqrt[3]{5} {\RRR\sqrt[3]{5}} \sqrt[3]{5} $\par
+%D
+%D \def\R  {\Umathradicaldegreeafter\textstyle
+%D            0pt}
+%D \def\RR {\Umathradicaldegreeafter\textstyle
+%D            0.95\Umathradicaldegreeafter\textstyle}
+%D \def\RRR{\frozen\Umathradicaldegreeafter\textstyle
+%D            0.9\Umathradicaldegreeafter\textstyle}
+%D
+%D $    \sqrt[3]{5}   \RR\sqrt[3]{5}  \sqrt[3]{5} $\par
+%D $    \sqrt[3]{5} {\RRR\sqrt[3]{5}} \sqrt[3]{5} $\par
+%D $ \RR\sqrt[3]{5} {\RRR\sqrt[3]{5}} \sqrt[3]{5} $\par
+%D
+%D \def\RR {\mathopenupparameter\Umathradicaldegreeafter{.1}}
+%D
+%D $ \sqrt[3]{5}  \RR\sqrt[3]{5}  \sqrt[3]{5} $\par
+%D $ \sqrt[3]{5} {\RR\sqrt[3]{5}} \sqrt[3]{5} $\par
+%D \stoptyping
 
 \installcorenamespace{mathradical}
 \installcorenamespace{mathradicalalternative}
@@ -157,10 +197,11 @@
     enddef ;
 \stopMPextensions
 
-\startuniqueMPgraphic{math:radical:default}%{...}
+\startuniqueMPgraphic{minifun::math:radical:default}%{...}
     draw
         math_radical_simple(OverlayWidth,OverlayHeight,OverlayDepth,OverlayOffset)
-        withpen pencircle xscaled (2OverlayLineWidth) yscaled (3OverlayLineWidth/4) rotated 30
+      % withpen pencircle xscaled (2OverlayLineWidth) yscaled (3OverlayLineWidth/4) rotated 30
+        withpen pencircle scaled OverlayLineWidth
       % dashed evenly
         withcolor OverlayLineColor ;
 \stopuniqueMPgraphic
@@ -177,7 +218,8 @@
    \d_overlay_height   \ht\nextbox
    \d_overlay_depth    \dp\nextbox
    \d_overlay_offset   \scratchoffset
-   \d_overlay_linewidth\linewidth
+   \d_overlay_linewidth\the\dimexpr\triggeredmathstyleparameter\Umathfractionrule
+   %
    \edef\overlaylinecolor{\mathradicalparameter\c!color}%
    %
    \edef\p_mp{\mathradicalparameter\c!mp}%
@@ -201,7 +243,7 @@
    \fi
    \endgroup}
 
-\definemathradical[sqrt][mp=math:radical:default]
+\definemathradical[sqrt][mp=minifun::math:radical:default]
 
 % \setupmathradical[sqrt][alternative=normal,color=darkblue]
 % \setupmathradical[sqrt][alternative=mp,color=darkgreen]

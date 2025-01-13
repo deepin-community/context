@@ -92,7 +92,7 @@ local application = logs.application {
 }
 
 local gmatch, match, gsub, find, lower, upper, format = string.gmatch, string.match, string.gsub, string.find, string.lower, string.upper, string.format
-local concat, sort = table.concat, table.sort
+local concat, sort, sortedhash = table.concat, table.sort, table.sortedhash
 local split, splitlines, strip = string.split, string.splitlines, string.strip
 local are_equal = table.are_equal
 local tonumber, tostring, rawget = tonumber, tostring, rawget
@@ -143,8 +143,11 @@ function scripts.unicode.update()
     local eastasianwidth       = texttables.eastasianwidth
     local standardizedvariants = texttables.standardizedvariants
     local arabicshaping        = texttables.arabicshaping
+    local casefolding          = texttables.casefolding
     local index                = texttables.index
     local characterdata        = characters.data
+    --
+    local descriptions         = { }
     --
     for unicode, ud in table.sortedpairs(unicodedata) do
         if not skipped[unicode] then
@@ -162,6 +165,9 @@ function scripts.unicode.update()
                 local cjkwd     = ed and lower(ed[2] or "n")
                 local mirror    = bd and tonumber(bd[2],16)
                 local arabic    = nil
+                local lccode    = false
+                local uccode    = false
+                descriptions[description] = unicode
                 if sparse and direction == "l" then
                     direction = nil
                 end
@@ -200,6 +206,40 @@ function scripts.unicode.update()
                 if not combining or combining == 0 then
                     combining = nil
                 end
+                --
+                local cf = casefolding[unicode]
+                if cf and  tonumber(cf[1],16) == unicode then
+                    local how = cf[2]
+                    if how == "C" or how == "S" then
+                        local fold = tonumber(cf[3],16)
+                        if fold == unicode then
+                         -- print("SKIPPING",description)
+                        elseif category == "ll" then
+                            uccode = fold
+                        elseif category == "lu" then
+                            lccode = fold
+                        end
+                    elseif how == "F" then
+                        -- we can use the first
+                        local folding = { }
+                        for s in gmatch(cf[3],"%S+") do
+                            folding[#folding+1] = tonumber(s,16)
+                        end
+                        if category == "ll" then
+                            uccode = folding
+                        elseif category == "ul" then
+                            lccode = folding
+                        end
+                    else
+                        -- we skip these
+                     -- print(description)
+                     -- inspect(cf)
+                    end
+                end
+                --
+-- if specials and specials[1] == "font" then
+--     specials = nil
+-- end
                 if not char then
                     report("%U : adding entry %a",unicode,description)
                     char = {
@@ -215,9 +255,34 @@ function scripts.unicode.update()
                         specials    = specials,
                         arabic      = arabic,
                         combining   = combining,
+                        uccode      = uccode and uccode or nil,
+                        lccode      = lccode and lccode or nil,
                     }
                     characterdata[unicode] = char
                 else
+                    -- we have more case mapping (e.g. cherokee)
+                    if lccode then
+                        if type(lccode) == "table" then
+                            if type(char.lccode) ~= "table" or not are_equal(lccode,char.lccode) then
+                                report("%U : setting lccode to % t, %a",unicode,lccode,description)
+                                char.lccode = lccode
+                            end
+                        elseif char.lccode ~= lccode then
+                            report("%U : setting lccode to %a, %a, %a",unicode,lccode,description)
+                            char.lccode = lccode
+                        end
+                    end
+                    if uccode then
+                        if type(uccode) == "table" then
+                            if type(char.uccode) ~= "table" or not are_equal(uccode,char.uccode) then
+                                report("%U : setting uccode to % t, %a",unicode,uccode,description)
+                                char.uccode = uccode
+                            end
+                        elseif char.uccode ~= uccode then
+                            report("%U : setting uccode to %a, %a",unicode,uccode,description)
+                            char.uccode = uccode
+                        end
+                    end
                     if direction then
                         if char.direction ~= direction then
                             report("%U : setting direction to %a, %a",unicode,direction,description)
@@ -292,6 +357,7 @@ function scripts.unicode.update()
                     else
                         local specials = char.specials
                         if specials then
+-- if specials and specials[1] ~= "font" then
                             local t = { } for i=2,#specials do t[i] = formatters["%U"](specials[i]) end
                             if false then
                                 char.comment = nil
@@ -303,7 +369,7 @@ function scripts.unicode.update()
                                 elseif not find(comment,"check special") then
                                     char.comment = comment .. ", check special"
                                 end
-                                report("%U : check specials % + t, %a",unicode,t,description)
+                             -- report("%U : check specials % + t, %a",unicode,t,description)
                             end
                         end
                     end
@@ -358,13 +424,13 @@ function scripts.unicode.update()
                             if l or r then
                                 mathextensible = 'm' -- mixed
                             else
-                                mathextensible = "u"     -- up
+                                mathextensible = "u" -- up
                             end
                         elseif d then
                             if l or r then
                                 mathextensible = 'm' -- mixed
                             else
-                                mathextensible = "d"     -- down
+                                mathextensible = "d" -- down
                             end
                         elseif l and r then
                             mathextensible = "h"     -- horizontal
@@ -382,6 +448,26 @@ function scripts.unicode.update()
             end
         end
     end
+    -- we need the hash .. add missing specials
+    for unicode, data in sortedhash(characterdata) do
+        if not data.specials or data.comment and find(data.comment,"check special") then
+            local description = data.description
+            local b, m = match(description,"^(.+) WITH (.+)$")
+            if b and m and (find(b,"^LATIN") or find (b,"^CYRILLIC")) then
+                local base = descriptions[b]
+                local mark = descriptions[m]
+                if not mark and m == "STROKE" then
+                    mark = descriptions["SOLIDUS"] -- SLASH
+                end
+                if base and mark then
+                 -- report("adding extra char special for %a",description)
+                    data.specials = { "with", base, mark }
+                    data.comment  = nil
+                end
+            end
+        end
+    end
+    --
     for i=1,#standardizedvariants do
         local si = standardizedvariants[i]
         local pair, addendum = si[1], strip(si[2])
@@ -391,7 +477,7 @@ function scripts.unicode.update()
         if first then
             local d = characterdata[first]
             if d then
-                local v = d.variants
+             -- local v = d.variants
                 local v = rawget(d,"variants")
                 if not v then
                     v = { }
@@ -406,7 +492,7 @@ function scripts.unicode.update()
     end
     for unicode, ud in table.sortedpairs(characterdata) do
         if not rawget(ud,"category") and rawget(ud,"variants") then
-            report("stripping %U (variant, takes from metacharacter)",unicode)
+         -- report("stripping %U (variant, takes from metacharacter)",unicode)
             characterdata[unicode] = nil
         end
     end
@@ -414,7 +500,7 @@ end
 
 local preamble
 
-local function splitdefinition(str,index)
+local function splitdefinition(filename,str,index)
     local l = splitlines(str)
     local t = { }
     if index then
@@ -436,7 +522,7 @@ local function splitdefinition(str,index)
                             t[k] = d
                         end
                     else
-                        report("problem: %s",s)
+                        report("problem: %i %s => %s",i,filename,s)
                     end
                 end
             end
@@ -498,6 +584,7 @@ function scripts.unicode.load()
             eastasianwidth       = resolvers.findfile("eastasianwidth.txt")       or "",
             standardizedvariants = resolvers.findfile("standardizedvariants.txt") or "",
             arabicshaping        = resolvers.findfile("arabicshaping.txt")        or "",
+            casefolding          = resolvers.findfile("casefolding.txt")          or "",
             index                = resolvers.findfile("index.txt")                or "",
         }
         --
@@ -508,17 +595,23 @@ function scripts.unicode.load()
             eastasianwidth       = textfiles.eastasianwidth       ~= "" and io.loaddata(textfiles.eastasianwidth)       or "",
             standardizedvariants = textfiles.standardizedvariants ~= "" and io.loaddata(textfiles.standardizedvariants) or "",
             arabicshaping        = textfiles.arabicshaping        ~= "" and io.loaddata(textfiles.arabicshaping)        or "",
+            casefolding          = textfiles.casefolding          ~= "" and io.loaddata(textfiles.casefolding)          or "",
             index                = textfiles.index                ~= "" and io.loaddata(textfiles.index)                or "",
         }
         texttables = {
-            unicodedata          = splitdefinition(textdata.unicodedata,true),
-            bidimirroring        = splitdefinition(textdata.bidimirroring,true),
-            linebreak            = splitdefinition(textdata.linebreak,true),
-            eastasianwidth       = splitdefinition(textdata.eastasianwidth,true),
-            standardizedvariants = splitdefinition(textdata.standardizedvariants,false),
-            arabicshaping        = splitdefinition(textdata.arabicshaping,true),
+            unicodedata          = splitdefinition(textfiles.unicodedata,textdata.unicodedata,true),
+            bidimirroring        = splitdefinition(textfiles.bidimirroring,textdata.bidimirroring,true),
+            linebreak            = splitdefinition(textfiles.linebreak,textdata.linebreak,true),
+            eastasianwidth       = splitdefinition(textfiles.eastasianwidth,textdata.eastasianwidth,true),
+            standardizedvariants = splitdefinition(textfiles.standardizedvariants,textdata.standardizedvariants,false),
+            arabicshaping        = splitdefinition(textfiles.arabicshaping,textdata.arabicshaping,true),
+            casefolding          = splitdefinition(textfiles.casefolding,textdata.casefolding,true),
             index                = splitindex(textdata.index),
         }
+        --
+        for k, v in sortedhash(textfiles) do
+            report("using: %s",v)
+        end
         return true
     else
         preamble = nil
@@ -536,11 +629,99 @@ end
 --    [0xFE01]="centered form",
 -- }
 
+-- local variants_style={
+--    [0xFE00]="chancery style",
+--    [0xFE01]="roundhand style",
+-- }
+
+-- local variants_90={
+--    [0xFE00]="rotated 90 degrees",
+-- }
+--
+-- local variants_180={
+--    [0xFE01]="rotated 180 degrees",
+-- }
+--
+-- local variants_270={
+--    [0xFE02]="rotated 270 degrees",
+-- }
+--
+-- local variants_expanded={
+--    [0xFE00]="expanded",
+-- }
+--
+-- local variants_90_180={
+--    [0xFE00]="rotated 90 degrees",
+--    [0xFE01]="rotated 180 degrees",
+-- }
+--
+-- local variants_90_180_270={
+--    [0xFE00]="rotated 90 degrees",
+--    [0xFE01]="rotated 180 degrees",
+--    [0xFE02]="rotated 270 degrees",
+-- }
+--
+-- local variants_180_270={
+--    [0xFE01]="rotated 180 degrees",
+--    [0xFE02]="rotated 270 degrees",
+-- }
+--
+-- local variants_90_270={
+--    [0xFE00]="rotated 90 degrees",
+--    [0xFE02]="rotated 270 degrees",
+-- }
+
 function scripts.unicode.save(filename)
     if preamble then
-        local data = table.serialize(characters.data,"characters.data", { hexify = true, noquotes = true })
-        data = gsub(data,"%{%s+%[0xFE0E%]=\"text style\",%s+%[0xFE0F%]=\"emoji style\",%s+%}","variants_emoji")
-        data = gsub(data,"%{%s+%[0xFE00%]=\"corner%-justified form\",%s+%[0xFE01%]=\"centered form\",%s+%}","variants_forms")
+     -- for k, v in next, characters.data do
+     --     v.adobename = nil
+     -- end
+        --
+        characters.data[0x1FE3].uccode={ 0x3C5, 0x308, 0x301 }
+        characters.data[0x1FD3].uccode={ 0x3B9, 0x308, 0x301 }
+        characters.data[0x00DF].uccode={ 0x53, 0x53 }
+        --
+        local data = table.serialize(characters.data,"characters.data", {
+            hexify   = true,
+            noquotes = true,
+        })
+        data = gsub(data,
+            "%{%s+%[0xFE0E%]=\"text style\",%s+%[0xFE0F%]=\"emoji style\",%s+%}",
+            "variants_emoji"
+        )
+        data = gsub(data,
+            "%{%s+%[0xFE00%]=\"corner%-justified form\",%s+%[0xFE01%]=\"centered form\",%s+%}",
+            "variants_forms"
+        )
+        data = gsub(data,
+            "%{%s+%[0xFE00%]=\"chancery style\",%s+%[0xFE01%]=\"roundhand style\",%s+%}",
+            "variants_style"
+        )
+        data = gsub(data,
+            "%{%s+%[0xFE00%]=\"dotted form\",%s+%}",
+            "variants_dotted"
+        )
+        data = gsub(data,
+            "%{%s+%[0xFE00%]=\"expanded\",%s+%}",
+            "variants_expanded"
+        )
+        data = gsub(data,
+            "%{%s+%[0xFE0%d%]=\"rotated (%d+) degrees\",%s+%}",
+            "variants_%1"
+        )
+        data = gsub(data,
+            "%{%s+%[0xFE0%d%]=\"rotated (%d+) degrees\"," ..
+              "%s*%[0xFE0%d%]=\"rotated (%d+) degrees\"," ..
+              "%s+%}",
+            "variants_%1_%2"
+        )
+        data = gsub(data,
+            "%{%s+%[0xFE0%d%]=\"rotated (%d+) degrees\"," ..
+              "%s*%[0xFE0%d%]=\"rotated (%d+) degrees\"," ..
+              "%s*%[0xFE0%d%]=\"rotated (%d+) degrees\"," ..
+              "%s+%}",
+            "variants_%1_%2_%3"
+        )
         io.savedata(filename,preamble .. data)
     end
 end
@@ -609,7 +790,7 @@ function scripts.unicode.extras() -- old code
  --     v.synonym  = nil
  --     v.synonyms = nil
  -- end
-    for k, v in table.sortedhash(index) do
+    for k, v in sortedhash(index) do
         local d = data[v]
         if d and d.description ~= upper(k) then
             local synonyms = d.synonyms
@@ -633,6 +814,53 @@ function scripts.unicode.extras() -- old code
             end
         end
     end
+--     --
+--     for name, block in sortedhash(characters.blocks) do
+--         if block.math then
+--             local isalphabet = find(name,"lowercase") or find(name,"uppercase") or find(name,"letterlike")
+--             for unicode=block.first,block.last do
+--                 local c = data[unicode]
+-- if c.mathspec and #c.mathspec == 0 then
+--     c.mathspec = { c.mathspec }
+-- end
+--                 if c.mathclass then
+--                     if isalphabet and c.mathclass ~= "variable" then
+--                         report("CHECK %C : %s",unicode,c.description)
+--                     end
+--                 elseif c.mathspec then
+--                     -- skip
+--                 else
+--                     report("%s : %C : %s",name,unicode,c.description)
+--                     if isalphabet then
+--                         c.mathclass = "variable"
+--                     end
+--                 end
+--             end
+--             local gaps = block.gaps
+--             if gaps then
+--                 for gap, unicode in sortedhash(gaps) do
+--                     local c = data[u]
+-- if c.mathspec and #c.mathspec == 0 then
+--     c.mathspec = { c.mathspec }
+-- end
+--                     if c.mathclass then
+--                         if isalphabet and c.mathclass ~= "variable" then
+--                             report("CHECK %C : %s",gap,c.description)
+--                         end
+--                         -- skip
+--                     elseif c.mathspec then
+--                         -- skip
+--                     else
+--                         report("%s : %U -> %C : %s",name,gap,unicode,c.description)
+--                         if isalphabet then
+--                             c.mathclass = "variable"
+--                         end
+--                     end
+--                 end
+--             end
+--         end
+--     end
+
 end
 
 do
@@ -737,7 +965,7 @@ else
         scripts.unicode.save("char-def-new.lua")
         scripts.unicode.emoji("char-emj-new.lua")
         report("saved file %a","char-def-new.lua")
-        report("saved file %a (current 12.0, check for updates, see above!)","char-emj-new.lua")
+        report("saved file %a (current 15.1, check for updates, see above!)","char-emj-new.lua")
     else
         report("nothing to do")
     end

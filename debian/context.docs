@@ -1,0 +1,5 @@
+debian/changelog.Debian.prerelease
+debian/MANIFEST.nonfree
+debian/MANIFEST.doc-nonfree
+debian/README.MarkIV
+debian/Release_Notes

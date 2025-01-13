@@ -1,4 +1,4 @@
-% language=uk
+% language=us runpath=texruns:manuals/luametatex
 
 \environment luametatex-style
 
@@ -14,39 +14,73 @@
 \libindex {subtypes}
 \libindex {values}
 
-\TEX's nodes are represented in \LUA\ as userdata objects with a variable set of
-fields or by a numeric identifier when requested. When you print a node userdata
+\TEX's nodes are represented in \LUA\ as user data objects with a variable set of
+fields or by a numeric identifier when requested. When you print a node user data
 object you will see these numbers. In the following syntax tables the type of
-such a userdata object is represented as \syntax {<node>}.
+such a user data object is represented as \syntax {<node>}.
 
 \blank
 \dontleavehmode {\bf The return values of \type {node.types} are:} \showtypes
 \blank
 
-In \ETEX\ the \prm {lastnodetype} primitive has been introduced. With this
-primitive the valid range of numbers is still $[-1,15]$ and glyph nodes (formerly
-known as char nodes) have number~0. That way macro packages can use the same
-symbolic names as in traditional \ETEX. But you need to keep in mind that these
-\ETEX\ node numbers are different from the real internal ones. When you set \prm
-{internalcodesmode} to a non|-|zero value, the internal codes will be used in
-the \ETEX\ introspection commands \prm {lastnodetype} and \prm {currentiftype}.
-
 You can ask for a list of fields with \type {node.fields} and for valid subtypes
-with \type {node.subtypes}. The \type {node.values} function reports some used
-values. Valid arguments are \type {glue}, \type {style} and \type {math}. Keep in
-mind that the setters normally expect a number, but this helper gives you a list
-of what numbers matter. For practical reason the \type {pagestate} values are
-also reported with this helper, but they are backend specific.
+with \type {node.subtypes}. There are plenty specific field values and you can
+some idea about them by calling \type {tex.get*values()} which returns a table if
+numbers (exclusive numbers or bits):
 
-\def\ShowValues#1{
+\starttexdefinition ShowTeXValues #1
     \blank
     \dontleavehmode
-    {\bf The return values of \type {node.values("#1")} are:}
+%     {\bf The return values of \type {tex.get#1values()} are:}\space
+    {\bf #1:}\space
     \showvalues{#1}
+%     \showhexvalues{#1}
     \blank
-}
+\stoptexdefinition
 
-\ShowValues{glue} \ShowValues{style} \ShowValues{math} \ShowValues{pagestate}
+\ShowTeXValues{fill}
+\ShowTeXValues{alignmentcontext}
+\ShowTeXValues{appendlinecontext}
+% \ShowTeXValues{automigration}
+\ShowTeXValues{charactertag}
+\ShowTeXValues{direction}
+\ShowTeXValues{discoption}
+\ShowTeXValues{discstate}
+% \ShowTeXValues{error}
+% \ShowTeXValues{flag}
+% \ShowTeXValues{frozenpar}
+\ShowTeXValues{glyphoption}
+\ShowTeXValues{group}
+\ShowTeXValues{hyphenation}
+\ShowTeXValues{io}
+\ShowTeXValues{kerneloption}
+\ShowTeXValues{listanchor}
+\ShowTeXValues{listgeometry}
+\ShowTeXValues{listsign}
+\ShowTeXValues{mathclassoption}
+\ShowTeXValues{mathcontrol}
+\ShowTeXValues{mathparameter}
+\ShowTeXValues{mathstylename}
+\ShowTeXValues{mathstyle}
+% \ShowTeXValues{mathvariant}
+% \ShowTeXValues{mode}
+\ShowTeXValues{noadoption}
+\ShowTeXValues{normalizeline}
+\ShowTeXValues{normalizepar}
+\ShowTeXValues{packtype}
+\ShowTeXValues{pagecontext}
+\ShowTeXValues{partrigger}
+\ShowTeXValues{parcontext}
+\ShowTeXValues{parmode}
+% \ShowTeXValues{runstate}
+% \ShowTeXValues{shapingpenalties}
+% \ShowTeXValues{specialmathclass}
+% \ShowTeXValues{textcontrol}
+
+There are a lot of helpers, especially for direct nodes. When possible they adapt
+to the kind of node they get passed. Often multiple values are returned which
+lessens the number of additional calls. It will take a while before all gets
+documented (which is no big deal as the main usage for them is in \CONTEXT).
 
 \stopsection
 
@@ -94,22 +128,22 @@ horizontal lists while others are unique for vertical lists. The possible
 fields are \showfields {hlist}.
 
 \starttabulate[|l|l|p|]
-\DB field              \BC type   \BC explanation \NC \NR
+\DB field             \BC type   \BC explanation \NC \NR
 \TB
-\NC \type{subtype}     \NC number \NC \showsubtypes{list} \NC \NR
-\NC \type{attr}        \NC node   \NC list of attributes \NC \NR
-\NC \type{width}       \NC number \NC the width of the box \NC \NR
-\NC \type{height}      \NC number \NC the height of the box \NC \NR
-\NC \type{depth}       \NC number \NC the depth of the box \NC \NR
-\NC \type{direction}   \NC number \NC the direction of this box, see~\in [dirnodes] \NC \NR
-\NC \type{shift}       \NC number \NC a displacement perpendicular to the character
+\NC \type{subtype}    \NC number \NC \showsubtypes{list} \NC \NR
+\NC \type{attr}       \NC node   \NC list of attributes \NC \NR
+\NC \type{width}      \NC number \NC the width of the box \NC \NR
+\NC \type{height}     \NC number \NC the height of the box \NC \NR
+\NC \type{depth}      \NC number \NC the depth of the box \NC \NR
+\NC \type{direction}  \NC number \NC the direction of this box, see~\in [dirnodes] \NC \NR
+\NC \type{shift}      \NC number \NC a displacement perpendicular to the character
                                       (hlist) or line (vlist) progression direction \NC \NR
-\NC \type{glue_order}  \NC number \NC a number in the range $[0,4]$, indicating the
+\NC \type{glueorder}  \NC number \NC a number in the range $[0,4]$, indicating the
                                       glue order \NC \NR
-\NC \type{glue_set}    \NC number \NC the calculated glue ratio \NC \NR
-\NC \type{glue_sign}   \NC number \NC 0 = \type {normal}, 1 = \type {stretching}, 2 =
-                                      \type {shrinking} \NC \NR
-\NC \type{list}        \NC node   \NC the first node of the body of this list \NC \NR
+\NC \type{glueset}    \NC number \NC the calculated glue ratio \NC \NR
+\NC \type{gluesign}   \NC number \NC 0 = \type {normal}, 1 = \type {stretching}, 2 =
+                                     \type {shrinking} \NC \NR
+\NC \type{list}       \NC node   \NC the first node of the body of this list \NC \NR
 \LL
 \stoptabulate
 
@@ -133,9 +167,10 @@ more sense.
 \topicindex {nodes+rules}
 \topicindex {rules}
 
-Contrary to traditional \TEX, \LUATEX\ has more \prm {rule} subtypes because we
-also use rules to store reuseable objects and images. User nodes are invisible
-and can be intercepted by a callback. The supported fields are \showfields {rule}.
+Contrary to traditional \TEX, \LUATEX\ has more \prm {hrule} and \prm {vrule}
+subtypes because we also use rules to store reuseable objects and images. User
+nodes are invisible and can be intercepted by a callback. The supported fields
+are \showfields {rule}.
 
 \starttabulate[|l|l|p|]
 \DB field            \BC type   \BC explanation \NC \NR
@@ -174,12 +209,12 @@ discussed here (yet).
 
 \stopsubsection
 
-\startsubsection[title={\nod {ins} nodes}]
+\startsubsection[title={\nod {insert} nodes}]
 
 \topicindex {nodes+insertions}
 \topicindex {insertions}
 
-This node relates to the \prm {insert} primitive and support the fields: \showfields{ins}.
+This node relates to the \prm {insert} primitive and support the fields: \showfields{insert}.
 
 \starttabulate[|l|l|p|]
 \DB field          \BC type   \BC explanation \NC \NR
@@ -194,7 +229,7 @@ This node relates to the \prm {insert} primitive and support the fields: \showfi
 \stoptabulate
 
 There is a set of extra fields that concern the associated glue: \type {width},
-\type {stretch}, \type {stretch_order}, \type {shrink} and \type {shrink_order}.
+\type {stretch}, \type {stretchorder}, \type {shrink} and \type {shrinkorder}.
 These are all numbers.
 
 A warning: never assign a node list to the \type {head} field unless you are sure
@@ -303,14 +338,14 @@ Math nodes represent the boundaries of a math formula, normally wrapped into
 \starttabulate[|l|l|p|]
 \DB field                \BC type   \BC explanation \NC \NR
 \TB
-\NC \type{subtype}       \NC number \NC \showsubtypes{math} \NC \NR
-\NC \type{attr}          \NC node   \NC list of attributes \NC \NR
-\NC \type{surround}      \NC number \NC width of the \prm {mathsurround} kern \NC \NR
-\NC \type{width}         \NC number \NC the horizontal or vertical displacement \NC \NR
-\NC \type{stretch}       \NC number \NC extra (positive) displacement or stretch amount \NC \NR
-\NC \type{stretch_order} \NC number \NC factor applied to stretch amount \NC \NR
-\NC \type{shrink}        \NC number \NC extra (negative) displacement or shrink amount\NC \NR
-\NC \type{shrink_order}  \NC number \NC factor applied to shrink amount \NC \NR
+\NC \type{subtype}      \NC number \NC \showsubtypes{math} \NC \NR
+\NC \type{attr}         \NC node   \NC list of attributes \NC \NR
+\NC \type{surround}     \NC number \NC width of the \prm {mathsurround} kern \NC \NR
+\NC \type{width}        \NC number \NC the horizontal or vertical displacement \NC \NR
+\NC \type{stretch}      \NC number \NC extra (positive) displacement or stretch amount \NC \NR
+\NC \type{stretchorder} \NC number \NC factor applied to stretch amount \NC \NR
+\NC \type{shrink}       \NC number \NC extra (negative) displacement or shrink amount\NC \NR
+\NC \type{shrinkorder}  \NC number \NC factor applied to shrink amount \NC \NR
 \LL
 \stoptabulate
 
@@ -326,21 +361,21 @@ The glue fields only kick in when the \type {surround} fields is zero.
 Skips are about the only type of data objects in traditional \TEX\ that are not a
 simple value. They are inserted when \TEX\ sees a space in the text flow but also
 by \prm {hskip} and \prm {vskip}. The structure that represents the glue
-components of a skip internally is called a \nod {glue_spec}. In \LUAMETATEX\ we
+components of a skip internally is called a \nod {gluespec}. In \LUAMETATEX\ we
 don't use the spec itself but just its values. A glue node has the fields:
 \showfields {glue}.
 
 \starttabulate[|l|l|pA{flushleft,tolerant}|]
-\DB field                \BC type   \BC explanation \NC \NR
+\DB field               \BC type   \BC explanation \NC \NR
 \TB
-\NC \type{subtype}       \NC number \NC \showsubtypes{glue} \NC \NR
-\NC \type{attr}          \NC node   \NC list of attributes \NC \NR
-\NC \type{leader}        \NC node   \NC pointer to a box or rule for leaders \NC \NR
-\NC \type{width}         \NC number \NC the horizontal or vertical displacement \NC \NR
-\NC \type{stretch}       \NC number \NC extra (positive) displacement or stretch amount \NC \NR
-\NC \type{stretch_order} \NC number \NC factor applied to stretch amount \NC \NR
-\NC \type{shrink}        \NC number \NC extra (negative) displacement or shrink amount\NC \NR
-\NC \type{shrink_order}  \NC number \NC factor applied to shrink amount \NC \NR
+\NC \type{subtype}      \NC number \NC \showsubtypes{glue} \NC \NR
+\NC \type{attr}         \NC node   \NC list of attributes \NC \NR
+\NC \type{leader}       \NC node   \NC pointer to a box or rule for leaders \NC \NR
+\NC \type{width}        \NC number \NC the horizontal or vertical displacement \NC \NR
+\NC \type{stretch}      \NC number \NC extra (positive) displacement or stretch amount \NC \NR
+\NC \type{stretchorder} \NC number \NC factor applied to stretch amount \NC \NR
+\NC \type{shrink}       \NC number \NC extra (negative) displacement or shrink amount\NC \NR
+\NC \type{shrinkorder}  \NC number \NC factor applied to shrink amount \NC \NR
 \LL
 \stoptabulate
 
@@ -350,14 +385,14 @@ suits the \TEX\ internals well so we decided to stick to that naming.
 The effective width of some glue subtypes depends on the stretch or shrink needed
 to make the encapsulating box fit its dimensions. For instance, in a paragraph
 lines normally have glue representing spaces and these stretch or shrink to make
-the content fit in the available space. The \type {effective_glue} function that
+the content fit in the available space. The \type {effectiveglue} function that
 takes a glue node and a parent (hlist or vlist) returns the effective width of
 that glue item. When you pass \type {true} as third argument the value will be
 rounded.
 
 \stopsubsection
 
-\startsubsection[title={\nod {glue_spec} nodes}]
+\startsubsection[title={\nod {gluespec} nodes}]
 
 \topicindex {nodes+glue}
 \topicindex {gluespec}
@@ -368,7 +403,7 @@ is not seen in node lists. For instance the state of expression scanning (\type
 nodes. A glue, which has five components, is stored in a node as well, so, where
 most registers store just a number, a skip register (of internal quantity) uses a
 pointer to a glue spec node. It has similar fields as glue nodes: \showfields
-{glue_spec}, which is not surprising because in the past (and other engines than
+{gluespec}, which is not surprising because in the past (and other engines than
 \LUATEX) a glue node also has its values stored in a glue spec. This has some
 advantages because often the values are the same, so for instance spacing related
 skips were not resolved immediately but pointed to the current value of a space
@@ -377,13 +412,13 @@ resolve these quantities immediately and we put the current values in the glue
 nodes.
 
 \starttabulate[|l|l|pA{flushleft,tolerant}|]
-\DB field                \BC type   \BC explanation \NC \NR
+\DB field               \BC type   \BC explanation \NC \NR
 \TB
-\NC \type{width}         \NC number \NC the horizontal or vertical displacement \NC \NR
-\NC \type{stretch}       \NC number \NC extra (positive) displacement or stretch amount \NC \NR
-\NC \type{stretch_order} \NC number \NC factor applied to stretch amount \NC \NR
-\NC \type{shrink}        \NC number \NC extra (negative) displacement or shrink amount\NC \NR
-\NC \type{shrink_order}  \NC number \NC factor applied to shrink amount \NC \NR
+\NC \type{width}        \NC number \NC the horizontal or vertical displacement \NC \NR
+\NC \type{stretch}      \NC number \NC extra (positive) displacement or stretch amount \NC \NR
+\NC \type{stretchorder} \NC number \NC factor applied to stretch amount \NC \NR
+\NC \type{shrink}       \NC number \NC extra (negative) displacement or shrink amount\NC \NR
+\NC \type{shrinkorder}  \NC number \NC factor applied to shrink amount \NC \NR
 \LL
 \stoptabulate
 
@@ -403,12 +438,12 @@ The \prm {kern} command creates such nodes but for instance the font and math
 machinery can also add them. There are not that many fields: \showfields {kern}.
 
 \starttabulate[|l|l|p|]
-\DB field                   \BC type   \BC explanation \NC \NR
+\DB field            \BC type   \BC explanation \NC \NR
 \TB
-\NC \type{subtype}          \NC number \NC \showsubtypes{kern} \NC \NR
-\NC \type{attr}             \NC node   \NC list of attributes \NC \NR
-\NC \type{kern}             \NC number \NC fixed horizontal or vertical advance \NC \NR
-\NC \type{expansion_factor} \NC number \NC multiplier related to hz for font kerns \NC \NR
+\NC \type{subtype}   \NC number \NC \showsubtypes{kern} \NC \NR
+\NC \type{attr}      \NC node   \NC list of attributes \NC \NR
+\NC \type{kern}      \NC number \NC fixed horizontal or vertical advance \NC \NR
+\NC \type{expansion} \NC number \NC multiplier related to hz for font kerns \NC \NR
 \LL
 \stoptabulate
 
@@ -449,30 +484,30 @@ it considers some input to be text. Glyph nodes are relatively large and have ma
 fields: \showfields {glyph}.
 
 \starttabulate[|l|l|p|]
-\DB field                   \BC type    \BC explanation \NC \NR
+\DB field            \BC type    \BC explanation \NC \NR
 \TB
-\NC \type{subtype}          \NC number  \NC bit field \NC \NR
-\NC \type{attr}             \NC node    \NC list of attributes \NC \NR
-\NC \type{char}             \NC number  \NC the character index in the font \NC \NR
-\NC \type{font}             \NC number  \NC the font identifier \NC \NR
-\NC \type{lang}             \NC number  \NC the language identifier \NC \NR
-\NC \type{left}             \NC number  \NC the frozen \type {\lefthyphenmnin} value \NC \NR
-\NC \type{right}            \NC number  \NC the frozen \type {\righthyphenmnin} value \NC \NR
-\NC \type{uchyph}           \NC boolean \NC the frozen \prm {uchyph} value \NC \NR
-\NC \type{state}            \NC number  \NC a user field (replaces the component list) \NC \NR
-\NC \type{xoffset}          \NC number  \NC a virtual displacement in horizontal direction \NC \NR
-\NC \type{yoffset}          \NC number  \NC a virtual displacement in vertical direction \NC \NR
-\NC \type{width}            \NC number  \NC the (original) width of the character \NC \NR
-\NC \type{height}           \NC number  \NC the (original) height of the character\NC \NR
-\NC \type{depth}            \NC number  \NC the (original) depth of the character\NC \NR
-\NC \type{expansion_factor} \NC number  \NC the to be applied expansion_factor \NC \NR
-\NC \type{data}             \NC number  \NC a general purpose field for users (we had room for it) \NC \NR
+\NC \type{subtype}   \NC number  \NC bit field \NC \NR
+\NC \type{attr}      \NC node    \NC list of attributes \NC \NR
+\NC \type{char}      \NC number  \NC the character index in the font \NC \NR
+\NC \type{font}      \NC number  \NC the font identifier \NC \NR
+\NC \type{language}  \NC number  \NC the language identifier \NC \NR
+\NC \type{left}      \NC number  \NC the frozen \type {\lefthyphenmnin} value \NC \NR
+\NC \type{right}     \NC number  \NC the frozen \type {\righthyphenmnin} value \NC \NR
+\NC \type{uchyph}    \NC boolean \NC the frozen \prm {uchyph} value \NC \NR
+\NC \type{state}     \NC number  \NC a user field (replaces the component list) \NC \NR
+\NC \type{xoffset}   \NC number  \NC a virtual displacement in horizontal direction \NC \NR
+\NC \type{yoffset}   \NC number  \NC a virtual displacement in vertical direction \NC \NR
+\NC \type{width}     \NC number  \NC the (original) width of the character \NC \NR
+\NC \type{height}    \NC number  \NC the (original) height of the character\NC \NR
+\NC \type{depth}     \NC number  \NC the (original) depth of the character\NC \NR
+\NC \type{expansion} \NC number  \NC the to be applied expansion factor \NC \NR
+\NC \type{data}      \NC number  \NC a general purpose field for users (we had room for it) \NC \NR
 \LL
 \stoptabulate
 
 The \type {width}, \type {height} and \type {depth} values are read|-|only. The
-\type {expansion_factor} is assigned in the par builder and used in the backend.
-Valid bits for the \type {subtype} field are:
+\type {expansion} is assigned in the par builder and used in the backend. Valid
+bits for the \type {subtype} field are:
 
 \starttabulate[|c|l|]
 \DB bit \BC meaning   \NC \NR
@@ -485,8 +520,8 @@ Valid bits for the \type {subtype} field are:
 \LL
 \stoptabulate
 
-The \type {expansion_factor} has been introduced as part of the separation
-between front- and backend. It is the result of extensive experiments with a more
+The \type {expansion} has been introduced as part of the separation between
+front- and backend. It is the result of extensive experiments with a more
 efficient implementation of expansion. Early versions of \LUATEX\ already
 replaced multiple instances of fonts in the backend by scaling but contrary to
 \PDFTEX\ in \LUATEX\ we now also got rid of font copies in the frontend and
@@ -494,16 +529,21 @@ replaced them by expansion factors that travel with glyph nodes. Apart from a
 cleaner approach this is also a step towards a better separation between front-
 and backend.
 
-The \type {is_char} function checks if a node is a glyph node with a subtype still
+The \type {ischar} function checks if a node is a glyph node with a subtype still
 less than 256. This function can be used to determine if applying font logic to a
 glyph node makes sense. The value \type {nil} gets returned when the node is not
 a glyph, a character number is returned if the node is still tagged as character
 and \type {false} gets returned otherwise. When nil is returned, the id is also
-returned. The \type {is_glyph} variant doesn't check for a subtype being less
+returned. The \type {isglyph} variant doesn't check for a subtype being less
 than 256, so it returns either the character value or nil plus the id. These
 helpers are not always faster than separate calls but they sometimes permit
-making more readable tests. The \type {uses_font} helpers takes a node
+making more readable tests. The \type {usesfont} helpers takes a node
 and font id and returns true when a glyph or disc node references that font.
+
+The \type {isnextchar} and \type {isprevchar} return a next node, a character
+code (or false) and an node id or next character code. The four \type {is}
+checkers take a node and optionally a font, data, state, scale, xscale and yscale
+value that are then checked.
 
 \stopsubsection
 
@@ -521,37 +561,37 @@ nodes: \showfields {boundary} are the only fields.
 \TB
 \NC \type{subtype} \NC number \NC \showsubtypes{boundary} \NC \NR
 \NC \type{attr}    \NC node   \NC list of attributes \NC \NR
-\NC \type{value}   \NC number \NC values 0--255 are reserved \NC \NR
+\NC \type{data}    \NC number \NC values 0--255 are reserved \NC \NR
 \LL
 \stoptabulate
 
 \stopsubsection
 
-\startsubsection[title={\nod {local_par} nodes}]
+\startsubsection[title={\nod {par} nodes}]
 
 \topicindex {nodes+paragraphs}
 \topicindex {paragraphs}
 
 This node is inserted at the start of a paragraph. You should not mess
-too much with this one. Valid fields are: \showfields {local_par}.
+too much with this one. Valid fields are: \showfields {par}.
 
 \starttabulate[|l|l|p|]
-\DB field                  \BC type   \BC explanation \NC \NR
+\DB field                   \BC type   \BC explanation \NC \NR
 \TB
-\NC \type{attr}            \NC node   \NC list of attributes \NC \NR
-\NC \type{pen_inter}       \NC number \NC local interline penalty (from \lpr {localinterlinepenalty}) \NC \NR
-\NC \type{pen_broken}      \NC number \NC local broken penalty (from \lpr {localbrokenpenalty}) \NC \NR
-\NC \type{dir}             \NC string \NC the direction of this par. see~\in [dirnodes] \NC \NR
-\NC \type{box_left}        \NC node   \NC the \lpr {localleftbox} \NC \NR
-\NC \type{box_left_width}  \NC number \NC width of the \lpr {localleftbox} \NC \NR
-\NC \type{box_right}       \NC node   \NC the \lpr {localrightbox} \NC \NR
-\NC \type{box_right_width} \NC number \NC width of the \lpr {localrightbox} \NC \NR
+\NC \type{attr}             \NC node   \NC list of attributes \NC \NR
+\NC \type{interlinepenalty} \NC number \NC local interline penalty (from \prm {localinterlinepenalty}) \NC \NR
+\NC \type{brokenpenalty}    \NC number \NC local broken penalty (from \prm {localbrokenpenalty}) \NC \NR
+\NC \type{dir}              \NC string \NC the direction of this par. see~\in [dirnodes] \NC \NR
+\NC \type{leftbox}          \NC node   \NC the \prm {localleftbox} \NC \NR
+\NC \type{leftboxwidth}     \NC number \NC width of the \prm {localleftbox} \NC \NR
+\NC \type{rightbox}         \NC node   \NC the \prm {localrightbox} \NC \NR
+\NC \type{rightboxwidth}    \NC number \NC width of the \prm {localrightbox} \NC \NR
+\NC \type{middlebox}        \NC node   \NC the \prm {localmiddlebox} (zero width) \NC \NR
 \LL
 \stoptabulate
 
-A warning: never assign a node list to the \type {box_left} or \type {box_right}
-field unless you are sure its internal link structure is correct, otherwise an
-error may result.
+A warning: never assign a node list to one of the box fields unless you are sure
+its internal link structure is correct, otherwise an error may result.
 
 \stopsubsection
 
@@ -561,7 +601,7 @@ error may result.
 \topicindex {directions}
 
 Direction nodes mark parts of the running text that need a change of direction
-and the \prm {textdir} command generates them. Again this is a small node, we
+and the \prm {textdirection} command generates them. Again this is a small node, we
 just have \showfields {dir}.
 
 \starttabulate[|l|l|p|]
@@ -612,8 +652,8 @@ into a single node type with separate subtypes for differentiation: \showfields
 {noad}.
 
 Many object fields in math mode are either simple characters in a specific family
-or math lists or node lists: \type {math_char}, \type {math_text_char}, {sub_box}
-and \type {sub_mlist} and \type {delim}. These are endpoints and therefore the
+or math lists or node lists: \type {mathchar}, \type {mathtextchar}, {subbox}
+and \type {submlist} and \type {delimiter}. These are endpoints and therefore the
 \type {next} and \type {prev} fields of these these subnodes are unused.
 
 Some of the more elaborate noads have an option field. The values in this bitset
@@ -639,10 +679,10 @@ are common:
 
 \stopsubsubsection
 
-\startsubsubsection[title={\nod {math_char} and \nod {math_text_char} subnodes}]
+\startsubsubsection[title={\nod {mathchar} and \nod {mathtextchar} subnodes}]
 
 These are the most common ones, as they represent characters, and they both have
-the same fields: \showfields {math_char}.
+the same fields: \showfields {mathchar}.
 
 \starttabulate[|l|l|p|]
 \DB field       \BC type   \BC explanation \NC \NR
@@ -653,20 +693,20 @@ the same fields: \showfields {math_char}.
 \LL
 \stoptabulate
 
-The \nod {math_char} is the simplest subnode field, it contains the character and
+The \nod {mathchar} is the simplest subnode field, it contains the character and
 family for a single glyph object. The family eventually resolves on a reference
-to a font. The \nod {math_text_char} is a special case that you will not normally
+to a font. The \nod {mathtextchar} is a special case that you will not normally
 encounter, it arises temporarily during math list conversion (its sole function
 is to suppress a following italic correction).
 
 \stopsubsubsection
 
-\startsubsubsection[title={\nod {sub_box} and \nod {sub_mlist} subnodes}]
+\startsubsubsection[title={\nod {subbox} and \nod {submlist} subnodes}]
 
-These two subnode types are used for subsidiary list items. For \nod {sub_box},
-the \type {list} points to a \quote {normal} vbox or hbox. For \nod {sub_mlist},
+These two subnode types are used for subsidiary list items. For \nod {subbox},
+the \type {list} points to a \quote {normal} vbox or hbox. For \nod {submlist},
 the \type {list} points to a math list that is yet to be converted. Their fields
-are: \showfields {sub_box}.
+are: \showfields {subbox}.
 
 \starttabulate[|l|l|p|]
 \DB field       \BC type \BC explanation \NC \NR
@@ -681,26 +721,26 @@ its internal link structure is correct, otherwise an error is triggered.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\nod {delim} subnodes}]
+\startsubsubsection[title={\nod {delimiter} subnodes}]
 
 There is a fifth subnode type that is used exclusively for delimiter fields. As
 before, the \type {next} and \type {prev} fields are unused, but we do have:
-\showfields {delim}.
+\showfields {delimiter}.
 
 \starttabulate[|l|l|p|]
-\DB field             \BC type   \BC explanation \NC \NR
+\DB field              \BC type   \BC explanation \NC \NR
 \TB
-\NC \type{attr}       \NC node   \NC list of attributes \NC \NR
-\NC \type{small_char} \NC number \NC character index of base character \NC \NR
-\NC \type{small_fam}  \NC number \NC family number of base character \NC \NR
-\NC \type{large_char} \NC number \NC character index of next larger character \NC \NR
-\NC \type{large_fam}  \NC number \NC family number of next larger character \NC \NR
+\NC \type{attr}        \NC node   \NC list of attributes \NC \NR
+\NC \type{smallchar}   \NC number \NC character index of base character \NC \NR
+\NC \type{smallfamily} \NC number \NC family number of base character \NC \NR
+\NC \type{largechar}   \NC number \NC character index of next larger character \NC \NR
+\NC \type{largefamily} \NC number \NC family number of next larger character \NC \NR
 \LL
 \stoptabulate
 
-The fields \type {large_char} and \type {large_fam} can be zero, in that case the
-font that is set for the \type {small_fam} is expected to provide the large
-version as an extension to the \type {small_char}.
+The fields \type {largechar} and \type {largefamily} can be zero, in that case
+the font that is set for the \type {smallfamily} is expected to provide the large
+version as an extension to the \type {smallchar}.
 
 \stopsubsubsection
 
@@ -731,13 +771,13 @@ Accent nodes deal with stuff on top or below a math constructs. They support:
 \starttabulate[|l|l|p|]
 \DB field             \BC type        \BC explanation \NC \NR
 \TB
-\NC \type{subtype}    \NC number      \NC \showsubtypes{accent} \NC \NR
-\NC \type{nucleus}    \NC kernel node \NC base \NC \NR
-\NC \type{sub}        \NC kernel node \NC subscript \NC \NR
-\NC \type{sup}        \NC kernel node \NC superscript \NC \NR
-\NC \type{accent}     \NC kernel node \NC top accent \NC \NR
-\NC \type{bot_accent} \NC kernel node \NC bottom accent \NC \NR
-\NC \type{fraction}   \NC number      \NC larger step criterium (divided by 1000) \NC \NR
+\NC \type{subtype}      \NC number      \NC \showsubtypes{accent} \NC \NR
+\NC \type{nucleus}      \NC kernel node \NC base \NC \NR
+\NC \type{sub}          \NC kernel node \NC subscript \NC \NR
+\NC \type{sup}          \NC kernel node \NC superscript \NC \NR
+\NC \type{topaccent}    \NC kernel node \NC top accent \NC \NR
+\NC \type{bottomaccent} \NC kernel node \NC bottom accent \NC \NR
+\NC \type{fraction}     \NC number      \NC larger step criterium (divided by 1000) \NC \NR
 \LL
 \stoptabulate
 
@@ -755,8 +795,6 @@ but don't rely on that for the future. Fields are: \showfields {style}.
 \NC \type{style} \NC string \NC contains the style \NC \NR
 \LL
 \stoptabulate
-
-Valid styles are: \showvalues{style}.
 
 \stopsubsubsection
 
@@ -812,7 +850,7 @@ is correct, otherwise an error can be triggered.
 \NC \type{sub}     \NC kernel node    \NC subscript \NC \NR
 \NC \type{sup}     \NC kernel node    \NC superscript \NC \NR
 \NC \type{left}    \NC delimiter node \NC \NC \NR
-\NC \type{degree}  \NC kernel node    \NC only set by \lpr {Uroot} \NC \NR
+\NC \type{degree}  \NC kernel node    \NC only set by \prm {Uroot} \NC \NR
 \NC \type{width}   \NC number         \NC required width \NC \NR
 \NC \type{options} \NC number         \NC bitset of rendering options \NC \NR
 \LL
@@ -826,22 +864,22 @@ Fraction nodes are also used for delimited cases, hence the \type {left} and
 \type {right} fields among: \showfields {fraction}.
 
 \starttabulate[|l|l|p|]
-\DB field          \BC type           \BC explanation \NC \NR
+\DB field              \BC type           \BC explanation \NC \NR
 \TB
-\NC \type{attr}    \NC node           \NC list of attributes \NC \NR
-\NC \type{width}   \NC number         \NC (optional) width of the fraction \NC \NR
-\NC \type{num}     \NC kernel node    \NC numerator \NC \NR
-\NC \type{denom}   \NC kernel node    \NC denominator \NC \NR
-\NC \type{left}    \NC delimiter node \NC left side symbol \NC \NR
-\NC \type{right}   \NC delimiter node \NC right side symbol \NC \NR
-\NC \type{middle}  \NC delimiter node \NC middle symbol \NC \NR
-\NC \type{options} \NC number         \NC bitset of rendering options \NC \NR
+\NC \type{attr}        \NC node           \NC list of attributes \NC \NR
+\NC \type{width}       \NC number         \NC (optional) width of the fraction \NC \NR
+\NC \type{numerator}   \NC kernel node    \NC numerator \NC \NR
+\NC \type{denominator} \NC kernel node    \NC denominator \NC \NR
+\NC \type{left}        \NC delimiter node \NC left side symbol \NC \NR
+\NC \type{right}       \NC delimiter node \NC right side symbol \NC \NR
+\NC \type{middle}      \NC delimiter node \NC middle symbol \NC \NR
+\NC \type{options}     \NC number         \NC bitset of rendering options \NC \NR
 \LL
 \stoptabulate
 
-Warning: never assign a node list to the \type {num}, or \type {denom} field
-unless you are sure its internal link structure is correct, otherwise an error
-can result.
+Warning: never assign a node list to the \type {numerator}, or \type
+{denominator} field unless you are sure its internal link structure is correct,
+otherwise an error can result.
 
 \stopsubsubsection
 
@@ -854,14 +892,14 @@ renderer and might get adapted in the process.
 \starttabulate[|l|l|p|]
 \DB field          \BC type           \BC explanation \NC \NR
 \TB
-\NC \type{subtype} \NC number         \NC \showsubtypes{fence} \NC \NR
-\NC \type{attr}    \NC node           \NC list of attributes \NC \NR
-\NC \type{delim}   \NC delimiter node \NC delimiter specification \NC \NR
-\NC \type{italic}  \NC number         \NC italic correction \NC \NR
-\NC \type{height}  \NC number         \NC required height \NC \NR
-\NC \type{depth}   \NC number         \NC required depth \NC \NR
-\NC \type{options} \NC number         \NC bitset of rendering options \NC \NR
-\NC \type{class}   \NC number         \NC spacing related class \NC \NR
+\NC \type{subtype}   \NC number         \NC \showsubtypes{fence} \NC \NR
+\NC \type{attr}      \NC node           \NC list of attributes \NC \NR
+\NC \type{delimiter} \NC delimiter node \NC delimiter specification \NC \NR
+\NC \type{italic}    \NC number         \NC italic correction \NC \NR
+\NC \type{height}    \NC number         \NC required height \NC \NR
+\NC \type{depth}     \NC number         \NC required depth \NC \NR
+\NC \type{options}   \NC number         \NC bitset of rendering options \NC \NR
+\NC \type{class}     \NC number         \NC spacing related class \NC \NR
 \LL
 \stoptabulate
 
@@ -878,7 +916,7 @@ renderer and might get adapted in the process.
 The \type {node} library provides methods that facilitate dealing with (lists of)
 nodes and their values. They allow you to create, alter, copy, delete, and insert
 node, the core objects within the typesetter. Nodes are represented in \LUA\ as
-userdata. The various parts within a node can be accessed using named fields.
+user data. The various parts within a node can be accessed using named fields.
 
 Each node has at least the three fields \type {next}, \type {id}, and \type
 {subtype}. The other available fields depend on the \type {id}.
@@ -886,7 +924,7 @@ Each node has at least the three fields \type {next}, \type {id}, and \type
 \startitemize[intro]
 
 \startitem
-    The \type {next} field returns the userdata object for the next node in a
+    The \type {next} field returns the user data object for the next node in a
     linked list of nodes, or \type {nil}, if there is no next node.
 \stopitem
 
@@ -1027,10 +1065,10 @@ there is no node with that id.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {fields} and \type {has_field}}]
+\startsubsubsection[title={\type {fields} and \type {hasfield}}]
 
 \libindex {fields}
-\libindex {has_field}
+\libindex {hasfield}
 
 This function returns an indexed table with valid field names for a particular
 type of node.
@@ -1043,11 +1081,11 @@ The function accepts a string or number, so \typ {node.fields ("glyph")} returns
 \inlineluavalue { node.fields ("glyph") } and \typ {node.fields (12)} gives
 \inlineluavalue { node.fields (12) }.
 
-The \type {has_field} function returns a boolean that is only true if \type {n}
+The \type {hasfield} function returns a boolean that is only true if \type {n}
 is actually a node, and it has the field.
 
 \startfunctioncall
-<boolean> t = node.has_field(<node> n, <string> field)
+<boolean> t = node.hasfield(<node> n, <string> field)
 \stopfunctioncall
 
 This function probably is not that useful but some nodes don't have a \type
@@ -1055,18 +1093,18 @@ This function probably is not that useful but some nodes don't have a \type
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {is_node}}]
+\startsubsubsection[title={\type {isnode}}]
 
 \topicindex {nodes+functions}
 
-\libindex {is_node}
+\libindex {isnode}
 
 \startfunctioncall
-<boolean|integer> t = node.is_node(<any> item)
+<boolean|integer> t = node.isnode(<any> item)
 \stopfunctioncall
 
 This function returns a number (the internal index of the node) if the argument
-is a userdata object of type \type {<node>} and false when no node is passed.
+is a user data object of type \type {<node>} and false when no node is passed.
 
 \stopsubsubsection
 
@@ -1090,11 +1128,11 @@ back somehow.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {free}, \type {flush_node} and \type {flush_list}}]
+\startsubsubsection[title={\type {free}, \type {flushnode} and \type {flushlist}}]
 
 \libindex{free}
-\libindex{flush_node}
-\libindex{flush_list}
+\libindex{flushnode}
+\libindex{flushlist}
 
 The next one frees node \type {n} from \TEX's memory. Be careful: no checks are
 done on whether this node is still pointed to from a register or some \type
@@ -1104,11 +1142,11 @@ you used their content for something else you need to set them to nil first.
 
 \startfunctioncall
 <node> next = node.free(<node> n)
-flush_node(<node> n)
+flushnode(<node> n)
 \stopfunctioncall
 
 The \type {free} function returns the next field of the freed node, while the
-\type {flush_node} alternative returns nothing.
+\type {flushnode} alternative returns nothing.
 
 A list starting with node \type {n} can be flushed from \TEX's memory too. Be
 careful: no checks are done on whether any of these nodes is still pointed to
@@ -1116,19 +1154,19 @@ from a register or some \type {next} field: it is up to you to make sure that th
 internal data structures remain correct.
 
 \startfunctioncall
-node.flush_list(<node> n)
+node.flushlist(<node> n)
 \stopfunctioncall
 
-When you free for instance a discretionary node, \type {flush_list} is applied to
+When you free for instance a discretionary node, \type {flushlist} is applied to
 the \type {pre}, \type {post}, \type {replace} so you don't need to do that
 yourself. Assigning them \type {nil} won't free those lists!
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {copy} and \type {copy_list}}]
+\startsubsubsection[title={\type {copy} and \type {copylist}}]
 
 \libindex{copy}
-\libindex{copy_list}
+\libindex{copylist}
 
 This creates a deep copy of node \type {n}, including all nested lists as in the case
 of a hlist or vlist node. Only the \type {next} field is not copied.
@@ -1141,8 +1179,8 @@ A deep copy of the node list that starts at \type {n} can be created too. If
 \type {m} is also given, the copy stops just before node \type {m}.
 
 \startfunctioncall
-<node> m = node.copy_list(<node> n)
-<node> m = node.copy_list(<node> n, <node> m)
+<node> m = node.copylist(<node> n)
+<node> m = node.copylist(<node> n, <node> m)
 \stopfunctioncall
 
 Note that you cannot copy attribute lists this way. However, there is normally no
@@ -1182,12 +1220,9 @@ tail node.
 <node> tail = node.slide(<node> n)
 \stopfunctioncall
 
-After some callbacks automatic sliding takes place. This feature can be turned
-off with \type {node.fix_node_lists(false)} but you better make sure then that
-you don't mess up lists. In most cases \TEX\ itself only uses \type {next}
-pointers but your other callbacks might expect proper \type {prev} pointers too.
-Future versions of \LUATEX\ can add more checking but this will not influence
-usage.
+In most cases \TEX\ itself only uses \type {next} pointers but your other
+callbacks might expect proper \type {prev} pointers too. So, when you run into
+issues or are in doubt, apply the slide function before you return the list.
 
 \stopsubsubsection
 
@@ -1251,12 +1286,12 @@ changed. When the third argument is passed, the node is freed.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {insert_before}}]
+\startsubsubsection[title={\type {insertbefore}}]
 
-\libindex {insert_before}
+\libindex {insertbefore}
 
 \startfunctioncall
-<node> head, new = node.insert_before(<node> head, <node> current, <node> new)
+<node> head, new = node.insertbefore(<node> head, <node> current, <node> new)
 \stopfunctioncall
 
 This function inserts the node \type {new} before \type {current} into the list
@@ -1268,12 +1303,12 @@ will become \type {new}.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {insert_after}}]
+\startsubsubsection[title={\type {insertafter}}]
 
-\libindex {insert_after}
+\libindex {insertafter}
 
 \startfunctioncall
-<node> head, new = node.insert_after(<node> head, <node> current, <node> new)
+<node> head, new = node.insertafter(<node> head, <node> current, <node> new)
 \stopfunctioncall
 
 This function inserts the node \type {new} after \type {current} into the list
@@ -1284,12 +1319,12 @@ field). If \type {head} is initially \type {nil}, it will become \type {new}.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {last_node}}]
+\startsubsubsection[title={\type {lastnode}}]
 
-\libindex {last_node}
+\libindex {lastnode}
 
 \startfunctioncall
-<node> n = node.last_node()
+<node> n = node.lastnode()
 \stopfunctioncall
 
 This function pops the last node from \TEX's \quote{current list}. It returns
@@ -1346,12 +1381,12 @@ If the above is unclear to you, see the section \quote {For Statement} in the
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {traverse_id}}]
+\startsubsubsection[title={\type {traverseid}}]
 
-\libindex {traverse_id}
+\libindex {traverseid}
 
 \startfunctioncall
-<node> t, subtype = node.traverse_id(<number> id, <node> n)
+<node> t, subtype = node.traverseid(<number> id, <node> n)
 \stopfunctioncall
 
 This is an iterator that loops over all the nodes in the list that starts at
@@ -1377,52 +1412,139 @@ See the previous section for details. The change is in the local function \type
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {traverse_char} and \type {traverse_glyph}}]
+\startsubsubsection[title={\type {traversechar} and \type {traverseglyph}}]
 
-\libindex {traverse_char}
-\libindex {traverse_glyph}
+\libindex {traversechar}
+\libindex {traverseglyph}
 
-The \type{traverse_char} iterator loops over the \nod {glyph} nodes in a list.
+The \type {traversechar} iterator loops over the \nod {glyph} nodes in a list.
 Only nodes with a subtype less than 256 are seen.
 
 \startfunctioncall
-<node> n, font, char = node.traverse_char(<node> n)
+<direct> n, char, font = node.direct.traversechar(<direct> n)
 \stopfunctioncall
 
-The \type{traverse_glyph} iterator loops over a list and returns the list and
+The \type{traverseglyph} iterator loops over a list and returns the list and
 filters all glyphs:
 
 \startfunctioncall
-<node> n, font, char = node.traverse_glyph(<node> n)
+<direct> n, char, font = node.traverseglyph(<direct> n)
 \stopfunctioncall
+
+These functions are only available for direct nodes.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {traverse_list}}]
+\startsubsubsection[title={\type {traverselist}}]
 
-\libindex {traverse_list}
+\libindex {traverselist}
 
 This iterator loops over the \nod {hlist} and \nod {vlist} nodes in a list.
 
 \startfunctioncall
-<node> n, id, subtype, list = node.traverse_list(<node> n)
+<direct> n, id, subtype, list = node.traverselist(<direct> n)
 \stopfunctioncall
 
 The four return values can save some time compared to fetching these fields but
-in practice you seldom need them all. So consider it a (side effect of
-experimental) convenience.
+in practice you seldom need them all. This function is only available for direct
+nodes.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {find_node}}]
+\startsubsubsection[title={\type {traversecontent}}]
 
-\libindex {find_node}
+\libindex {traversecontent}
+
+This iterator loops over nodes that have content: \nod {hlist}, \nod {vlist}, \nod {glue}
+with leaders, \nod {glyphs}, \nod {disc} and \nod {rules} nodes.
+
+\startfunctioncall
+<direct> n, id, subtype[, list|leader] = node.traverselist(<direct> n)
+\stopfunctioncall
+
+The four return values can save some time compared to fetching these fields but
+in practice you seldom need them all. This function is only available for direct
+nodes.
+
+\stopsubsubsection
+
+\startsubsubsection[title={Reverse traversing}]
+
+The traversers also support backward traversal. An optional extra boolean triggers
+this. Yet another optional boolean will automatically start at the end of the
+given list.
+
+\starttyping
+\setbox0\hbox{1 2 3 4 5}
+
+local l = tex.box[0].list
+for n in node.traverse(l) do
+    print("1>",n)
+end
+for n in node.traverse(l,true) do
+    print("2>",n)
+end
+for n in node.traverse(l,true,true) do
+    print("3>",n)
+end
+for n in node.traverseid(nodes.nodecodes.glyph,l) do
+    print("4>",n)
+end
+for n in node.traverseid(nodes.nodecodes.glyph,l,true) do
+    print("5>",n)
+end
+for n in node.traverseid(nodes.nodecodes.glyph,l,true,true) do
+    print("6>",n)
+end
+\stoptyping
+
+This produces something similar to this (the glyph subtype indicates that it has
+been processed by the font handlers):
+
+\starttyping
+1>	<node :    nil <=   1112 =>    590 : glyph 32768>
+1>	<node :   1112 <=    590 =>   1120 : glue spaceskip>
+1>	<node :    590 <=   1120 =>    849 : glyph 32768>
+1>	<node :   1120 <=    849 =>   1128 : glue spaceskip>
+1>	<node :    849 <=   1128 =>    880 : glyph 32768>
+1>	<node :   1128 <=    880 =>   1136 : glue spaceskip>
+1>	<node :    880 <=   1136 =>   1020 : glyph 32768>
+1>	<node :   1136 <=   1020 =>   1144 : glue spaceskip>
+1>	<node :   1020 <=   1144 =>    nil : glyph 32768>
+2>	<node :    nil <=   1112 =>    590 : glyph 32768>
+3>	<node :   1020 <=   1144 =>    nil : glyph 32768>
+3>	<node :   1136 <=   1020 =>   1144 : glue spaceskip>
+3>	<node :    880 <=   1136 =>   1020 : glyph 32768>
+3>	<node :   1128 <=    880 =>   1136 : glue spaceskip>
+3>	<node :    849 <=   1128 =>    880 : glyph 32768>
+3>	<node :   1120 <=    849 =>   1128 : glue spaceskip>
+3>	<node :    590 <=   1120 =>    849 : glyph 32768>
+3>	<node :   1112 <=    590 =>   1120 : glue spaceskip>
+3>	<node :    nil <=   1112 =>    590 : glyph 32768>
+4>	<node :    nil <=   1112 =>    590 : glyph 32768>
+4>	<node :    590 <=   1120 =>    849 : glyph 32768>
+4>	<node :    849 <=   1128 =>    880 : glyph 32768>
+4>	<node :    880 <=   1136 =>   1020 : glyph 32768>
+4>	<node :   1020 <=   1144 =>    nil : glyph 32768>
+5>	<node :    nil <=   1112 =>    590 : glyph 32768>
+6>	<node :   1020 <=   1144 =>    nil : glyph 32768>
+6>	<node :    880 <=   1136 =>   1020 : glyph 32768>
+6>	<node :    849 <=   1128 =>    880 : glyph 32768>
+6>	<node :    590 <=   1120 =>    849 : glyph 32768>
+6>	<node :    nil <=   1112 =>    590 : glyph 32768>
+\stoptyping
+
+\stopsubsection
+
+\startsubsubsection[title={\type {findnode}}]
+
+\libindex {findnode}
 
 This helper returns the location of the first match at or after node \type {n}:
 
 \startfunctioncall
-<node> n = node.find_node(<node> n, <integer> subtype)
-<node> n, subtype = node.find_node(<node> n)
+<node> n = node.findnode(<node> n, <integer> subtype)
+<node> n, subtype = node.findnode(<node> n)
 \stopfunctioncall
 
 \stopsubsubsection
@@ -1436,12 +1558,12 @@ This helper returns the location of the first match at or after node \type {n}:
 
 \libindex {setglue}
 
-You can set the properties of a glue in one go. If you pass no values, the glue
-will become a zero glue.
+You can set the five properties of a glue in one go. If a non|-|numeric value is
+passed the property becomes zero.
 
 \startfunctioncall
 node.setglue(<node> n)
-node.setglue(<node> n,width,stretch,shrink,stretch_order,shrink_order)
+node.setglue(<node> n,width,stretch,shrink,stretchorder,shrinkorder)
 \stopfunctioncall
 
 When you pass values, only arguments that are numbers are assigned so
@@ -1463,8 +1585,8 @@ When a list node is passed, you set the glue, order and sign instead.
 The next call will return 5 values or nothing when no glue is passed.
 
 \startfunctioncall
-<integer> width, <integer> stretch, <integer> shrink, <integer> stretch_order,
-    <integer> shrink_order = node.getglue(<node> n)
+<integer> width, <integer> stretch, <integer> shrink, <integer> stretchorder,
+    <integer> shrinkorder = node.getglue(<node> n)
 \stopfunctioncall
 
 When the second argument is false, only the width is returned (this is consistent
@@ -1475,15 +1597,15 @@ glue and the sign.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {is_zero_glue}}]
+\startsubsubsection[title={\type {iszeroglue}}]
 
-\libindex {is_zero_glue}
+\libindex {iszeroglue}
 
 This function returns \type {true} when the width, stretch and shrink properties
 are zero.
 
 \startfunctioncall
-<boolean> isglue = node.is_zero_glue(<node> n)
+<boolean> isglue = node.iszeroglue(<node> n)
 \stopfunctioncall
 
 \stopsubsubsection
@@ -1504,61 +1626,56 @@ dedicated functions in the \type {node} library.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\nod {attribute_list} nodes}]
+\startsubsubsection[title={\nod {attribute} nodes}]
 
 \topicindex {nodes+attributes}
 
-An \type {attribute_list} item is used as a head pointer for a list of attribute
-items. It has only one user|-|visible field:
+An \type {attribute} comes in two variants, indicated by subtype. Because attributes
+are stored in a sorted linked list, and because they are shared, the first node is a
+list reference node and the following ones are value nodes. So, most attribute nodes
+are value nodes. These are forward linked lists. The reference node has fields:
+
+\starttabulate[|l|l|p|]
+\DB field        \BC type \BC explanation \NC \NR
+\TB
+\NC \type{next}  \NC node   \NC pointer to the first attribute \NC \NR
+\NC \type{count} \NC number \NC the reference count \NC \NR
+\LL
+\stoptabulate
+
+Value nodes have these:
 
 \starttabulate[|l|l|p|]
 \DB field       \BC type \BC explanation \NC \NR
 \TB
-\NC \type{next} \NC node \NC pointer to the first attribute \NC \NR
-\LL
-\stoptabulate
-
-\stopsubsubsection
-
-\startsubsubsection[title={\nod {attr} nodes}]
-
-A normal node's attribute field will point to an item of type \nod
-{attribute_list}, and the \type {next} field in that item will point to the first
-defined \quote {attribute} item, whose \type {next} will point to the second
-\quote {attribute} item, etc.
-
-\starttabulate[|l|l|p|]
-\DB field         \BC type   \BC explanation \NC \NR
-\TB
 \NC \type{next}   \NC node   \NC pointer to the next attribute \NC \NR
-\NC \type{number} \NC number \NC the attribute type id \NC \NR
+\NC \type{index}  \NC number \NC the attribute index \NC \NR
 \NC \type{value}  \NC number \NC the attribute value \NC \NR
 \LL
 \stoptabulate
 
-As mentioned it's better to use the official helpers rather than edit these
-fields directly. For instance the \type {prev} field is used for other purposes
-and there is no double linked list.
+Because there are assumptions to how these list are build you should rely on the
+helpers, also because details might change.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {current_attr}}]
+\startsubsubsection[title={\type {currentattr}}]
 
-\libindex{current_attr}
+\libindex{currentattr}
 
 This returns the currently active list of attributes, if there is one.
 
 \startfunctioncall
-<node> m = node.current_attr()
+<node> m = node.currentattr()
 \stopfunctioncall
 
-The intended usage of \type {current_attr} is as follows:
+The intended usage of \type {currentattr} is as follows:
 
 \starttyping
 local x1 = node.new("glyph")
-x1.attr = node.current_attr()
+x1.attr = node.currentattr()
 local x2 = node.new("glyph")
-x2.attr = node.current_attr()
+x2.attr = node.currentattr()
 \stoptyping
 
 or:
@@ -1566,25 +1683,25 @@ or:
 \starttyping
 local x1 = node.new("glyph")
 local x2 = node.new("glyph")
-local ca = node.current_attr()
+local ca = node.currentattr()
 x1.attr = ca
 x2.attr = ca
 \stoptyping
 
-The attribute lists are ref counted and the assignment takes care of incrementing
-the refcount. You cannot expect the value \type {ca} to be valid any more when
-you assign attributes (using \type {tex.setattribute}) or when control has been
-passed back to \TEX.
+The attribute lists are reference counted and the assignment takes care of
+incrementing the count. You cannot expect the value \type {ca} to be valid any
+more when you assign attributes (using \type {tex.setattribute}) or when control
+has been passed back to \TEX.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {has_attribute}}]
+\startsubsubsection[title={\type {hasattribute}}]
 
-\libindex {has_attribute}
+\libindex {hasattribute}
 
 \startfunctioncall
-<number> v = node.has_attribute(<node> n, <number> id)
-<number> v = node.has_attribute(<node> n, <number> id, <number> val)
+<number> v = node.hasattribute(<node> n, <number> id)
+<number> v = node.hasattribute(<node> n, <number> id, <number> val)
 \stopfunctioncall
 
 Tests if a node has the attribute with number \type {id} set. If \type {val} is
@@ -1593,12 +1710,12 @@ or, if no match is found, \type {nil}.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {get_attribute}}]
+\startsubsubsection[title={\type {getattribute}}]
 
-\libindex {get_attribute}
+\libindex {getattribute}
 
 \startfunctioncall
-<number> v = node.get_attribute(<node> n, <number> id)
+<number> v = node.getattribute(<node> n, <number> id)
 \stopfunctioncall
 
 Tests if a node has an attribute with number \type {id} set. It returns the
@@ -1607,12 +1724,12 @@ zero attributes is assumed.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {find_attribute}}]
+\startsubsubsection[title={\type {findattribute}}]
 
-\libindex {find_attribute}
+\libindex {findattribute}
 
 \startfunctioncall
-<number> v, <node> n = node.find_attribute(<node> n, <number> id)
+<number> v, <node> n = node.findattribute(<node> n, <number> id)
 \stopfunctioncall
 
 Finds the first node that has attribute with number \type {id} set. It returns
@@ -1620,12 +1737,12 @@ the value and the node if there is a match and otherwise nothing.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {set_attribute}}]
+\startsubsubsection[title={\type {setattribute}}]
 
-\libindex {set_attribute}
+\libindex {setattribute}
 
 \startfunctioncall
-node.set_attribute(<node> n, <number> id, <number> val)
+node.setattribute(<node> n, <number> id, <number> val)
 \stopfunctioncall
 
 Sets the attribute with number \type {id} to the value \type {val}. Duplicate
@@ -1633,15 +1750,15 @@ assignments are ignored.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {unset_attribute}}]
+\startsubsubsection[title={\type {unsetattribute}}]
 
-\libindex {unset_attribute}
+\libindex {unsetattribute}
 
 \startfunctioncall
 <number> v =
-    node.unset_attribute(<node> n, <number> id)
+    node.unsetattribute(<node> n, <number> id)
 <number> v =
-    node.unset_attribute(<node> n, <number> id, <number> val)
+    node.unsetattribute(<node> n, <number> id, <number> val)
 \stopfunctioncall
 
 Unsets the attribute with number \type {id}. If \type {val} is also supplied, it
@@ -1657,45 +1774,48 @@ If the attribute was actually deleted, returns its old value. Otherwise, returns
 
 \startsubsection[title={Glyph handling}][library=node]
 
-\startsubsubsection[title={\type {first_glyph}}]
+\startsubsubsection[title={\type {firstglyphnode}, \type {firstchar}, \type {firstglyph}}]
 
-\libindex {first_glyph}
+\libindex {firstglyphnode}
+\libindex {firstchar}
+\libindex {firstglyph}
 
 \startfunctioncall
-<node> n = node.first_glyph(<node> n)
-<node> n = node.first_glyph(<node> n, <node> m)
+<node> n = node.firstglyphnode(<node> n)
+<node> n = node.firstglyphnode(<node> n, <node> m)
 \stopfunctioncall
 
 Returns the first node in the list starting at \type {n} that is a glyph node
 with a subtype indicating it is a glyph, or \type {nil}. If \type {m} is given,
 processing stops at (but including) that node, otherwise processing stops at the
-end of the list.
+end of the list. The \type {char} and \type {glyph} variants check for the
+protected field being (yet) unset or (already) set.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {is_char} and \type {is_glyph}}]
+\startsubsubsection[title={\type {ischar} and \type {isglyph}}]
 
-\libindex {is_char}
-\libindex {is_glyph}
+\libindex {ischar}
+\libindex {isglyph}
 
 The subtype of a glyph node signals if the glyph is already turned into a character reference
 or not.
 
 \startfunctioncall
-<boolean> b = node.is_char(<node> n)
-<boolean> b = node.is_glyph(<node> n)
+<boolean> b = node.ischar(<node> n)
+<boolean> b = node.isglyph(<node> n)
 \stopfunctioncall
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {has_glyph}}]
+\startsubsubsection[title={\type {hasglyph}}]
 
-\libindex {has_glyph}
+\libindex {hasglyph}
 
 This function returns the first glyph or disc node in the given list:
 
 \startfunctioncall
-<node> n = node.has_glyph(<node> n)
+<node> n = node.hasglyph(<node> n)
 \stopfunctioncall
 
 \stopsubsubsection
@@ -1731,14 +1851,14 @@ word boundaries are possible).
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {unprotect_glyph[s]}}]
+\startsubsubsection[title={\type {unprotectglyph[s]}}]
 
-\libindex {unprotect_glyphs}
-\libindex {unprotect_glyph}
+\libindex {unprotectglyphs}
+\libindex {unprotectglyph}
 
 \startfunctioncall
-node.unprotect_glyph(<node> n)
-node.unprotect_glyphs(<node> n,[<node> n])
+node.unprotectglyph(<node> n)
+node.unprotectglyphs(<node> n,[<node> n])
 \stopfunctioncall
 
 Subtracts 256 from all glyph node subtypes. This and the next function are
@@ -1747,14 +1867,14 @@ processing. The second argument is optional and indicates the end of a range.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {protect_glyph[s]}}]
+\startsubsubsection[title={\type {protectglyph[s]}}]
 
-\libindex {protect_glyphs}
-\libindex {protect_glyph}
+\libindex {protectglyphs}
+\libindex {protectglyph}
 
 \startfunctioncall
-node.protect_glyph(<node> n)
-node.protect_glyphs(<node> n,[<node> n])
+node.protectglyph(<node> n)
+node.protectglyphs(<node> n,[<node> n])
 \stopfunctioncall
 
 Adds 256 to all glyph node subtypes in the node list starting at \type {n},
@@ -1765,12 +1885,12 @@ optional and indicates the end of a range.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {protrusion_skippable}}]
+\startsubsubsection[title={\type {protrusionskippable}}]
 
-\libindex {protrusion_skippable}
+\libindex {protrusionskippable}
 
 \startfunctioncall
-<boolean> skippable = node.protrusion_skippable(<node> n)
+<boolean> skippable = node.protrusionskippable(<node> n)
 \stopfunctioncall
 
 Returns \type {true} if, for the purpose of line boundary discovery when
@@ -1778,10 +1898,10 @@ character protrusion is active, this node can be skipped.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {check_discretionary}, \type {check_discretionaries}}]
+\startsubsubsection[title={\type {checkdiscretionary}, \type {checkdiscretionaries}}]
 
-\libindex{check_discretionary}
-\libindex{check_discretionaries}
+\libindex{checkdiscretionary}
+\libindex{checkdiscretionaries}
 
 When you fool around with disc nodes you need to be aware of the fact that they
 have a special internal data structure. As long as you reassign the fields when
@@ -1791,8 +1911,8 @@ the linebreak routine kicks in. You can call this function to check the list for
 issues with disc nodes.
 
 \startfunctioncall
-node.check_discretionary(<node> n)
-node.check_discretionaries(<node> head)
+node.checkdiscretionary(<node> n)
+node.checkdiscretionaries(<node> head)
 \stopfunctioncall
 
 The plural variant runs over all disc nodes in a list, the singular variant
@@ -1800,15 +1920,15 @@ checks one node only (it also checks if the node is a disc node).
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {flatten_discretionaries}}]
+\startsubsubsection[title={\type {flattendiscretionaries}}]
 
-\libindex {flatten_discretionaries}
+\libindex {flattendiscretionaries}
 
 This function will remove the discretionaries in the list and inject the replace
 field when set.
 
 \startfunctioncall
-<node> head, count = node.flatten_discretionaries(<node> n)
+<node> head, count = node.flattendiscretionaries(<node> n)
 \stopfunctioncall
 
 \stopsubsubsection
@@ -1870,21 +1990,6 @@ of \type {hpack} for a few memory allocation caveats.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {prepend_prevdepth}}]
-
-\libindex {prepend_prevdepth}
-
-This function is somewhat special in the sense that it is an experimental helper
-that adds the interlinespace to a line keeping the baselineskip and lineskip into
-account.
-
-\startfunctioncall
-<node> n, <number> delta =
-    node.prepend_prevdepth(<node> n,<number> prevdepth)
-\stopfunctioncall
-
-\stopsubsubsection
-
 \startsubsubsection[title={\type {dimensions}, \type {rangedimensions}, \type {naturalwidth}}]
 
 \libindex{dimensions}
@@ -1905,10 +2010,10 @@ is also possible:
 
 \startfunctioncall
 <number> w, <number> h, <number> d  =
-    node.dimensions(<number> glue_set, <number> glue_sign, <number> glue_order,
+    node.dimensions(<number> glueset, <number> gluesign, <number> glueorder,
         <node> n)
 <number> w, <number> h, <number> d  =
-    node.dimensions(<number> glue_set, <number> glue_sign, <number> glue_order,
+    node.dimensions(<number> glueset, <number> gluesign, <number> glueorder,
         <node> n, <node> t)
 \stopfunctioncall
 
@@ -1921,9 +2026,9 @@ example in code like this, which prints the width of the space in between the
 \setbox0 = \hbox to 20pt {a b}
 
 \directlua{print (node.dimensions(
-    tex.box[0].glue_set,
-    tex.box[0].glue_sign,
-    tex.box[0].glue_order,
+    tex.box[0].glueset,
+    tex.box[0].gluesign,
+    tex.box[0].glueorder,
     tex.box[0].head.next,
     node.tail(tex.box[0].head)
 )) }
@@ -1956,27 +2061,27 @@ A simple and somewhat more efficient variant is this:
 
 \startsubsection[title={Math}][library=node]
 
-\startsubsubsection[title={\type {mlist_to_hlist}}]
+\startsubsubsection[title={\type {mlisttohlist}}]
 
-\libindex {mlist_to_hlist}
+\libindex {mlisttohlist}
 
 \startfunctioncall
 <node> h =
-    node.mlist_to_hlist(<node> n, <string> display_type, <boolean> penalties)
+    node.mlisttohlist(<node> n, <string> display_type, <boolean> penalties)
 \stopfunctioncall
 
 This runs the internal mlist to hlist conversion, converting the math list in
 \type {n} into the horizontal list \type {h}. The interface is exactly the same
-as for the callback \cbk {mlist_to_hlist}.
+as for the callback \cbk {mlisttohlist}.
 
 \stopsubsubsection
 
-\startsubsubsection[title={\type {end_of_math}}]
+\startsubsubsection[title={\type {endofmath}}]
 
-\libindex {end_of_math}
+\libindex {endofmath}
 
 \startfunctioncall
-<node> t = node.end_of_math(<node> start)
+<node> t = node.endofmath(<node> start)
 \stopfunctioncall
 
 Looks for and returns the next \type {math_node} following the \type {start}. If
@@ -2004,16 +2109,16 @@ table. In fact, this model, where \TEX\ manages memory is real fast and one of
 the reasons why plugging in callbacks that operate on nodes is quite fast too.
 Each node gets a number that is in fact an index in the memory table and that
 number often is reported when you print node related information. You go from
-userdata nodes and there numeric references and back with:
+user data nodes and there numeric references and back with:
 
 \startfunctioncall
 <integer> d = node.todirect(<node> n))
 <node> n = node.tonode(<integer> d))
 \stopfunctioncall
 
-The userdata model is rather robust as it is a virtual interface with some
+The user data model is rather robust as it is a virtual interface with some
 additional checking while the more direct access which uses the node numbers
-directly. However, even with userdata you can get into troubles when you free
+directly. However, even with user data you can get into troubles when you free
 nodes that are no longer allocated or mess up lists. if you apply \type
 {tostring} to a node you see its internal (direct) number and id.
 
@@ -2095,7 +2200,17 @@ consistency. You can of course always define additional accessors using \type
 {getfield} and \type {setfield} with little overhead. When the second argument of
 \type {setattributelist} is \type {true} the current attribute list is assumed.
 
-In \CONTEXT\ some of the not performance|-|critical userdata variants are
+The \type {reverse} function reverses a given list. The \type {exchange} function
+swaps two nodes; it takes upto three arguments: a head node, and one or two to be
+swapped nodes. When there is no third argument, it will assume that the node
+following node is to be used. So we have:
+
+\starttyping
+head = node.direct.reverse(head)
+head = node.direct.exchange(head,first,[second])
+\stoptyping
+
+In \CONTEXT\ some of the not performance|-|critical user data variants are
 emulated in \LUA\ and not in the engine, so we retain downward compatibility.
 
 \def\yes{$+$} \def\nop{$-$}
@@ -2110,32 +2225,33 @@ emulated in \LUA\ and not in the engine, so we retain downward compatibility.
 \starttabulate[|l|c|c|]
 \DB function \BC node \BC direct \NC emulated \NC \NR
 \TB
-\supported {check_discretionaries}   \nop \yes \yes
-\supported {check_discretionary}     \nop \yes \yes
+\supported {checkdiscretionaries}    \nop \yes \yes
+\supported {checkdiscretionary}      \nop \yes \yes
+\supported {copylist}                \yes \yes \relax
+%supported {copyonly}                \nop \yes \relax
 \supported {copy}                    \yes \yes \relax
-\supported {copy_list}               \yes \yes \relax
-%supported {copy_only}               \nop \yes \relax
 \supported {count}                   \nop \yes \yes
-\supported {current_attr}            \yes \yes \relax
+\supported {currentattributes}       \yes \yes \relax
 \supported {dimensions}              \nop \yes \yes
-\supported {effective_glue}          \nop \yes \yes
-\supported {end_of_math}             \nop \yes \yes
-\supported {find_attribute}          \nop \yes \yes
-%supported {find_attribute_range}    \nop \yes \relax
-%supported {find_node}               \nop \yes \relax
-\supported {first_glyph}             \nop \yes \yes
-\supported {flatten_discretionaries} \nop \yes \yes
-\supported {flush_list}              \yes \yes \relax
-\supported {flush_node}              \yes \yes \relax
+\supported {effectiveglue}           \nop \yes \yes
+\supported {endofmath}               \nop \yes \yes
+\supported {findattributerange}      \nop \yes \relax
+\supported {findattribute}           \nop \yes \yes
+\supported {findnode}                \nop \yes \relax
+\supported {firstglyph}              \nop \yes \yes
+\supported {flattendiscretionaries}  \nop \yes \yes
+\supported {flushlist}               \yes \yes \relax
+\supported {flushnode}               \yes \yes \relax
 \supported {free}                    \yes \yes \relax
-\supported {get_attribute}           \yes \yes \relax
-\supported {get_properties_table}    \yes \yes \relax
-\supported {get_synctex_fields}      \nop \yes \relax
+\supported {getattributes}           \nop \yes \relax
+\supported {getattribute}            \yes \yes \relax
+\supported {getpropertiestable}      \yes \yes \relax
+\supported {getsynctexfields}        \nop \yes \relax
 \supported {getattributelist}        \nop \yes \relax
 \supported {getboth}                 \nop \yes \relax
 \supported {getbox}                  \nop \yes \relax
+\supported {getclass}                \nop \yes \relax
 \supported {getchar}                 \nop \yes \relax
-\supported {getstate}                \nop \yes \relax
 \supported {getdata}                 \nop \yes \relax
 \supported {getdepth}                \nop \yes \relax
 \supported {getdirection}            \nop \yes \relax
@@ -2145,65 +2261,89 @@ emulated in \LUA\ and not in the engine, so we retain downward compatibility.
 \supported {getfield}                \yes \yes \relax
 \supported {getfont}                 \nop \yes \relax
 \supported {getglue}                 \nop \yes \yes
-%supported {getglyphdata}            \nop \yes \relax % experiment
+\supported {getglyphdata}            \nop \yes \relax % old experiment
+\supported {getglyphdimensions}      \nop \yes \yes
+\supported {getglyphscript}          \nop \yes \relax % new experiment
+\supported {getglyphstate}           \nop \yes \relax % new experiment
 \supported {getheight}               \nop \yes \relax
 \supported {getid}                   \nop \yes \relax
+\supported {getindex}                \nop \yes \relax
+\supported {getkerndimension}        \nop \yes \yes
 \supported {getkern}                 \nop \yes \relax
-\supported {getlang}                 \nop \yes \relax
+\supported {getlanguage}             \nop \yes \relax
 \supported {getleader}               \nop \yes \relax
 \supported {getlist}                 \nop \yes \relax
 \supported {getnext}                 \nop \yes \relax
 \supported {getnormalizedline}       \nop \yes \relax
 \supported {getnucleus}              \nop \yes \relax
 \supported {getoffsets}              \nop \yes \relax
+\supported {getoptions}              \nop \yes \relax
 \supported {getorientation}          \nop \yes \relax
+\supported {getparstate}             \nop \yes \relax
 \supported {getpenalty}              \nop \yes \relax
 \supported {getpost}                 \nop \yes \relax
-\supported {getpre}                  \nop \yes \relax
 \supported {getprev}                 \nop \yes \relax
+\supported {getpre}                  \nop \yes \relax
 \supported {getproperty}             \yes \yes \relax
 \supported {getreplace}              \nop \yes \relax
+\supported {getscales}               \nop \yes \relax
+\supported {getscript}               \nop \yes \relax
 \supported {getshift}                \nop \yes \relax
-\supported {getsub}                  \nop \yes \relax
+\supported {getstate}                \nop \yes \relax
+\supported {getsubpre}               \nop \yes \relax
 \supported {getsubtype}              \nop \yes \relax
+\supported {getsub}                  \nop \yes \relax
+\supported {getsuppre}               \nop \yes \relax
 \supported {getsup}                  \nop \yes \relax
+\supported {getprime}                \nop \yes \relax
+\supported {gettotal}                \yes \yes \relax
+%supported {getwhatever}             \nop \yes \relax % experiment for myself
 \supported {getwhd}                  \nop \yes \relax
 \supported {getwidth}                \nop \yes \relax
-\supported {has_attribute}           \yes \yes \relax
-\supported {has_dimensions}          \nop \yes \relax
-\supported {has_field}               \yes \yes \relax
-\supported {has_glyph}               \nop \yes \yes
+\supported {getxscale}               \nop \yes \relax
+\supported {getxyscale}              \nop \yes \relax
+\supported {getyscale}               \nop \yes \relax
+\supported {hasattribute}            \yes \yes \relax
+\supported {hasdimensions}           \nop \yes \relax
+\supported {hasfield}                \yes \yes \relax
+\supported {hasglyphoption}          \nop \yes \yes
+\supported {hasglyph}                \nop \yes \yes
 \supported {hpack}                   \nop \yes \yes
-%supported {ignore_math_skip}        \nop \yes \relax
-\supported {insert_after}            \yes \yes \relax
-\supported {insert_before}           \yes \yes \relax
-\supported {is_char}                 \nop \yes \relax
-\supported {is_direct}               \nop \yes \relax
-\supported {is_glyph}                \nop \yes \relax
-\supported {is_node}                 \yes \yes \relax
-\supported {is_valid}                \nop \yes \relax
-\supported {is_zero_glue}            \nop \yes \yes
+\supported {hyphenating}             \nop \yes \yes
+\supported {ignoremathskip}          \nop \yes \relax
+\supported {insertafter}             \yes \yes \relax
+\supported {insertbefore}            \yes \yes \relax
+\supported {ischar}                  \nop \yes \relax
+\supported {isdirect}                \nop \yes \relax
+\supported {isglyph}                 \nop \yes \relax
+\supported {isnextchar}              \nop \yes \relax
+\supported {isnextglyph}             \nop \yes \relax
+\supported {isnode}                  \yes \yes \relax
+\supported {isprevchar}              \nop \yes \relax
+\supported {isprevglyph}             \nop \yes \relax
+\supported {isvalid}                 \nop \yes \relax
+\supported {iszeroglue}              \nop \yes \yes
 \supported {kerning}                 \nop \yes \yes
-\supported {last_node}               \nop \yes \yes
+\supported {lastnode}                \nop \yes \yes
 \supported {length}                  \nop \yes \yes
 \supported {ligaturing}              \nop \yes \yes
-\supported {make_extensible}         \nop \yes \yes
-\supported {mlist_to_hlist}          \nop \yes \yes
+\supported {makeextensible}          \nop \yes \yes
+\supported {migrate}                 \nop \yes \relax
+\supported {mlisttohlist}            \nop \yes \yes
 \supported {naturalwidth}            \nop \yes \yes
 \supported {new}                     \yes \yes \relax
-\supported {prepend_prevdepth}       \nop \yes \yes
-\supported {protect_glyphs}          \nop \yes \yes
-\supported {protect_glyph}           \nop \yes \yes
-\supported {protrusion_skippable}    \nop \yes \yes
+\supported {protectglyphs}           \nop \yes \yes
+\supported {protectglyph}            \nop \yes \yes
+\supported {protrusionskippable}     \nop \yes \yes
 \supported {rangedimensions}         \nop \yes \yes
 \supported {remove}                  \yes \yes \relax
-\supported {set_attribute}           \yes \yes \relax
-\supported {set_synctex_fields}      \nop \yes \relax
+\supported {setattributes}           \nop \yes \relax
+\supported {setattribute}            \yes \yes \relax
+\supported {setsynctexfields}        \nop \yes \relax
 \supported {setattributelist}        \nop \yes \relax
 \supported {setboth}                 \nop \yes \relax
 \supported {setbox}                  \nop \yes \relax
 \supported {setchar}                 \nop \yes \relax
-\supported {setstate}                \nop \yes \relax
 \supported {setdata}                 \nop \yes \relax
 \supported {setdepth}                \nop \yes \relax
 \supported {setdirection}            \nop \yes \relax
@@ -2213,45 +2353,63 @@ emulated in \LUA\ and not in the engine, so we retain downward compatibility.
 \supported {setfield}                \yes \yes \relax
 \supported {setfont}                 \nop \yes \relax
 \supported {setglue}                 \yes \yes \relax
-%supported {setglyphdata}            \nop \yes \relax % experiment
+\supported {setglyphdata}            \nop \yes \relax % old experiment
+\supported {setglyphscript}          \nop \yes \relax % new experiment
+\supported {setglyphstate}           \nop \yes \relax % new experiment
 \supported {setheight}               \nop \yes \relax
+\supported {setindex}                \nop \yes \relax
 \supported {setkern}                 \nop \yes \relax
-\supported {setlang}                 \nop \yes \relax
+\supported {setlanguage}             \nop \yes \relax
 \supported {setleader}               \nop \yes \relax
 \supported {setlink}                 \nop \yes \relax
 \supported {setlist}                 \nop \yes \relax
 \supported {setnext}                 \nop \yes \relax
 \supported {setnucleus}              \nop \yes \relax
 \supported {setoffsets}              \nop \yes \relax
+\supported {setoptions}              \nop \yes \relax
 \supported {setorientation}          \nop \yes \relax
 \supported {setpenalty}              \nop \yes \relax
+\supported {setpost}                 \nop \yes \relax
 \supported {setprev}                 \nop \yes \relax
+\supported {setpre}                  \nop \yes \relax
 \supported {setproperty}             \yes \yes \relax
+\supported {setreplace}              \nop \yes \relax
+\supported {setscales}               \nop \yes \relax
+\supported {setscript}               \nop \yes \relax
 \supported {setshift}                \nop \yes \relax
 \supported {setsplit}                \nop \yes \relax
-\supported {setsub}                  \nop \yes \relax
+\supported {setstate}                \nop \yes \relax
+\supported {setsubpre}               \nop \yes \relax
 \supported {setsubtype}              \nop \yes \relax
+\supported {setsub}                  \nop \yes \relax
+\supported {setsuppre}               \nop \yes \relax
 \supported {setsup}                  \nop \yes \relax
+\supported {setprime}                \nop \yes \relax
 \supported {setwhd}                  \nop \yes \relax
 \supported {setwidth}                \nop \yes \relax
 \supported {slide}                   \nop \yes \yes
-\supported {start_of_par}            \nop \yes \relax
+\supported {startofpar}              \nop \yes \relax
 \supported {subtype}                 \nop \nop \relax
 \supported {tail}                    \yes \yes \relax
 \supported {todirect}                \nop \yes \relax
 \supported {tonode}                  \nop \yes \relax
 \supported {tostring}                \yes \nop \relax
+\supported {total}                   \nop \yes \relax
+\supported {tovaliddirect}           \nop \yes \relax
+\supported {traversechar}            \yes \yes \relax
+\supported {traversecontent}         \yes \yes \relax
+\supported {traverseglyph}           \yes \yes \relax
+\supported {traverseid}              \yes \yes \relax
+\supported {traverselist}            \yes \yes \relax
 \supported {traverse}                \yes \yes \relax
-\supported {traverse_char}           \yes \yes \relax
-\supported {traverse_glyph}          \yes \yes \relax
-\supported {traverse_id}             \yes \yes \relax
-\supported {traverse_list}           \yes \yes \relax
 \supported {type}                    \yes \nop \relax
-\supported {unprotect_glyphs}        \nop \yes \yes
-\supported {unprotect_glyph}         \nop \yes \yes
-\supported {unset_attribute}         \yes \yes \relax
+\supported {unprotectglyphs}         \nop \yes \yes
+\supported {unprotectglyph}          \nop \yes \yes
+\supported {unsetattributes}         \nop \yes \relax
+\supported {unsetattribute}          \yes \yes \relax
 \supported {usedlist}                \nop \yes \yes
-\supported {uses_font}               \nop \yes \yes
+\supported {usesfont}                \nop \yes \yes
+\supported {verticalbreak}           \nop \yes \relax
 \supported {vpack}                   \nop \yes \yes
 \supported {write}                   \yes \yes \relax
 \LL
@@ -2278,21 +2436,14 @@ true for the \type {width}, \type {height} and \type {depth} of glue nodes. Thes
 actually access the spec node properties, and here we can set as well as get the
 values.
 
-In some places \LUATEX\ can do a bit of extra checking for valid node lists and
-you can enable that with:
-
-\startfunctioncall
-node.fix_node_lists(<boolean> b)
-\stopfunctioncall
-
 You can set and query the \SYNCTEX\ fields, a file number aka tag and a line
 number, for a glue, kern, hlist, vlist, rule and math nodes as well as glyph
 nodes (although this last one is not used in native \SYNCTEX).
 
 \startfunctioncall
-node.set_synctex_fields(<integer> f, <integer> l)
+node.direct.setsynctexfields(<integer> f, <integer> l)
 <integer> f, <integer> l =
-    node.get_synctex_fields(<node> n)
+    node.direct.getsynctexfields(<node> n)
 \stopfunctioncall
 
 Of course you need to know what you're doing as no checking on sane values takes
@@ -2342,9 +2493,8 @@ This is experimental code and might take a while to become frozen.
 \topicindex {nodes+properties}
 \topicindex {properties}
 
-\libindex{flush_properties_table}
-\libindex{get_properties_table}
-\libindex{set_properties_mode}
+\libindex{getpropertiestable}
+\libindex{setpropertiesmode}
 
 Attributes are a convenient way to relate extra information to a node. You can
 assign them at the \TEX\ end as well as at the \LUA\ end and consult them at the
@@ -2441,8 +2591,7 @@ with \CONTEXT\ uses the \type {injections} subtable and you should not mess with
 that one!
 
 There are a few helper functions that you normally should not touch as user: \typ
-{flush_properties_table} will wipe the table (normally a bad idea), \typ
-{get_properties_table} and will give the table that stores properties (using
+{getpropertiestable} and will give the table that stores properties (using
 direct entries) and you can best not mess too much with that one either because
 \LUATEX\ itself will make sure that entries related to nodes will get wiped when
 nodes get freed, so that the \LUA\ garbage collector can do its job. In fact, the
@@ -2469,13 +2618,9 @@ to do that at the lua end e.g.\ using a metatable \type {__index} method. That
 way it is under macro package control. When deleting a node, we could keep the
 slot (e.g. setting it to false) but it could make memory consumption raise
 unneeded when we have temporary large node lists and after that only small lists.
-Both are not done.
-
-So in the end this is what happens now: when a node is copied, and it has a table
-as property, the new node will share that table. If the second argument of \typ
-{set_properties_mode} is \type {true} then a metatable approach is chosen: the
-copy gets its own table with the original table as metatable. If you use the
-generic font loader the mode is enabled that way.
+Both are not done because in the end this is what happens now: when a node is
+copied, and it has a table as property, the new node will share that table. The
+copy gets its own table with the original table as metatable.
 
 A few more experiments were done. For instance: copy attributes to the properties
 so that we have fast access at the \LUA\ end. In the end the overhead is not

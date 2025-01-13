@@ -32,12 +32,13 @@
 \def\dpofstring#1{\dimexpr\clf_strdp{#1}\scaledpoint\relax}
 \def\hdofstring#1{\dimexpr\clf_strhd{#1}\scaledpoint\relax}
 
-\def\widthofstring         {\the\wdofstring}
-\def\heightofstring        {\the\htofstring}
-\def\depthofstring         {\the\dpofstring}
-\def\heightanddepthofstring{\the\hdofstring}
+\def\widthofstring  {\the\wdofstring}
+\def\heightofstring {\the\htofstring}
+\def\depthofstring  {\the\dpofstring}
+\def\totalofstring  {\the\hdofstring}
 
-\let\htdpofstring           \hdofstring
+\let\heightanddepthofstring\totalofstring
+\let\htdpofstring          \hdofstring
 
 \let\hd\htdp % if yes then move this
 

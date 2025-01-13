@@ -9,37 +9,36 @@ if not modules then modules = { } end modules ['attr-ini'] = {
 local next, type = next, type
 local osexit = os.exit
 
---[[ldx--
-<p>We start with a registration system for atributes so that we can use the
-symbolic names later on.</p>
---ldx]]--
+-- We start with a registration system for atributes so that we can use the symbolic
+-- names later on.
 
-local nodes           = nodes
-local context         = context
-local storage         = storage
-local commands        = commands
+local nodes             = nodes
+local context           = context
+local storage           = storage
+local commands          = commands
 
-local implement       = interfaces.implement
+local implement         = interfaces.implement
 
-attributes            = attributes or { }
-local attributes      = attributes
+attributes              = attributes or { }
+local attributes        = attributes
 
-local sharedstorage   = storage.shared
+local sharedstorage     = storage.shared
 
-local texsetattribute = tex.setattribute
+local texsetattribute   = tex.setattribute
 
-attributes.names      = attributes.names    or { }
-attributes.numbers    = attributes.numbers  or { }
-attributes.list       = attributes.list     or { }
-attributes.states     = attributes.states   or { }
-attributes.handlers   = attributes.handlers or { }
-attributes.unsetvalue = -0x7FFFFFFF
+attributes.names        = attributes.names    or { }
+attributes.numbers      = attributes.numbers  or { }
+attributes.list         = attributes.list     or { }
+attributes.states       = attributes.states   or { }
+attributes.handlers     = attributes.handlers or { }
+attributes.unsetvalue   = -0x7FFFFFFF
 
-local currentfont     = font.current
+local currentfont       = font.current
+local currentattributes = nodes and nodes.currentattributes or node.currentattributes or node.current_attr -- no nodes table yet
 
-local names           = attributes.names
-local numbers         = attributes.numbers
-local list            = attributes.list
+local names             = attributes.names
+local numbers           = attributes.numbers
+local list              = attributes.list
 
 storage.register("attributes/names",   names,   "attributes.names")
 storage.register("attributes/numbers", numbers, "attributes.numbers")
@@ -53,17 +52,13 @@ storage.register("attributes/list",    list,    "attributes.list")
 --     end
 -- end
 
---[[ldx--
-<p>We reserve this one as we really want it to be always set (faster).</p>
---ldx]]--
+-- We reserve this one as we really want it to be always set (faster).
 
 names[0], numbers["fontdynamic"] = "fontdynamic", 0
 
---[[ldx--
-<p>private attributes are used by the system and public ones are for users. We use dedicated
-ranges of numbers for them. Of course a the <l n='context'/> end a private attribute can be
-accessible too, so a private attribute can have a public appearance.</p>
---ldx]]--
+-- Private attributes are used by the system and public ones are for users. We use
+-- dedicated ranges of numbers for them. Of course a the TeX end a private attribute
+-- can be accessible too, so a private attribute can have a public appearance.
 
 sharedstorage.attributes_last_private = sharedstorage.attributes_last_private or   15 -- very private
 sharedstorage.attributes_last_public  = sharedstorage.attributes_last_public  or 1024 -- less private
@@ -127,7 +122,7 @@ local function showlist(what,list)
 end
 
 function attributes.showcurrent()
-    showlist("current",node.current_attr())
+    showlist("current",currentattributes())
 end
 
 function attributes.ofnode(n)
@@ -140,7 +135,7 @@ local store = { }
 
 function attributes.save(name)
     name = name or ""
-    local n = node.current_attr()
+    local n = currentattributes()
     n = n and n.next
     local t = { }
     while n do

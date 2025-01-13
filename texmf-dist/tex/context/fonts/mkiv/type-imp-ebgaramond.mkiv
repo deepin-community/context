@@ -29,10 +29,15 @@
 \definefontfeature
   [eb-garamond-normal]
   [default]
-  [mode=node,ccmp=yes,calt=yes,
-   liga=yes,dlig=yes,hlig=yes,
-   kern=yes,mark=yes,mkmk=yes,
-   onum=yes,pnum=yes,salt=yes,
+  [mode=node,
+   ccmp=yes,
+   calt=yes,
+   dlig=no,
+   hlig=no,
+ % salt=yes,
+ % onum=yes,
+   onum=no,
+   pnum=yes,
    script=latn]
 
 \definefontfeature
@@ -40,36 +45,73 @@
   [eb-garamond-normal]
   [smcp=yes,c2sc=yes]
 
+\definefontfeature
+  [ysabeau-smallcaps]
+  [default]
+  [smcp=yes,c2sc=yes]
+
+% \loadtypescriptfile[ebgaramond]
+%
+% \definefontfeature
+%   [eb-garamond-normal]
+%   [eb-garamond-normal]
+%   [dlig=no,hlig=no]
+%
+% \setupbodyfont[ebgaramond]
+%
+% \starttext
+%     No weird over the top ligatures.
+% \stoptext
+
 \starttypescriptcollection[ebgaramond]
 
-  % \starttypescript [serif] [ebgaramond]
-  %     \loadfontgoodies[ebgaramond]
-  %     \setups[font:fallback:serif]
-  %     \definefontsynonym [Serif]       [file:ebgaramond-regular] [features=eb-garamond-normal]
-  %     \definefontsynonym [SerifItalic] [file:ebgaramond-italic]  [features=eb-garamond-normal]
-  %     \definefontsynonym [SerifBold]   [file:ebgaramond-regular] [features=eb-garamond-normal] % there is no bold
-  %     \definefontsynonym [SerifCaps]   [Serif]                   [features=eb-garamond-smallcaps]
-  % \stoptypescript
+  % \pushglobalsetups
+  %     \startsetups[ebgaramond]
+  %       % \setmathfenceparameter   \c!alternative{1}%
+  %     \stopsetups
+  % \popglobalsetups
 
-  % \starttypescript[ebgaramond]
-  %     \definetypeface [ebgaramond] [rm] [serif] [ebgaramond] [default] [designsize=auto]
-  %     \definetypeface [ebgaramond] [tt] [mono]  [dejavu]     [default] [rscale=0.8] % rather arbitrary but seldom mixed anyway
-  %     \definetypeface [ebgaramond] [mm] [math]  [bonum]      [default] [rscale=0.8] % rather arbitrary but seldom mixed anyway
-  % \stoptypescript
+    \doifunknownfontfeature {ebgaramond-math-bold} {\definefontfeature[ebgaramond-math-bold][boldened]}
 
-    \starttypescript [serif] [ebgaramond]
+    \starttypescript [\s!serif] [ebgaramond]
         \setups[font:fallback:serif]
-        \definefontsynonym [Serif]          [file:ebgaramond-regular]   [features=eb-garamond-normal]
-        \definefontsynonym [SerifItalic]    [file:ebgaramond-italic]    [features=eb-garamond-normal]
-        \definefontsynonym [SerifBold]      [file:ebgaramond-bold]      [features=eb-garamond-normal]
-        \definefontsynonym [SerifBoldItalic][file:ebgaramond-bolditalic][features=eb-garamond-normal]
-        \definefontsynonym [SerifCaps]      [Serif]                     [features=eb-garamond-smallcaps]
+        \definefontsynonym [\s!Serif]          [\s!file:ebgaramond-regular]   [\s!features=eb-garamond-normal,\s!goodies=ebgaramond-text]
+        \definefontsynonym [\s!SerifItalic]    [\s!file:ebgaramond-italic]    [\s!features=eb-garamond-normal,\s!goodies=ebgaramond-text]
+        \definefontsynonym [\s!SerifBold]      [\s!file:ebgaramond-bold]      [\s!features=eb-garamond-normal,\s!goodies=ebgaramond-text]
+        \definefontsynonym [\s!SerifBoldItalic][\s!file:ebgaramond-bolditalic][\s!features=eb-garamond-normal,\s!goodies=ebgaramond-text]
+        \definefontsynonym [\s!SerifCaps]      [\s!Serif]                     [\s!features=eb-garamond-smallcaps]
     \stoptypescript
 
-    \starttypescript[ebgaramond]
-        \definetypeface [ebgaramond] [rm] [serif] [ebgaramond] [default]
-        \definetypeface [ebgaramond] [tt] [mono]  [dejavu]     [default] [rscale=0.8] % rather arbitrary but seldom mixed anyway
-        \definetypeface [ebgaramond] [mm] [math]  [bonum]      [default] [rscale=0.8] % rather arbitrary but seldom mixed anyway
+    \starttypescript [\s!sans] [ysabeau]
+        % \setups[font:fallback:sans]
+        \definefontsynonym [\s!Sans]          [\s!file:ysabeau-regular]       [\s!features=\s!default]
+        \definefontsynonym [\s!SansItalic]    [\s!file:ysabeau-italic]        [\s!features=\s!default]
+        \definefontsynonym [\s!SansBold]      [\s!file:ysabeau-bold]          [\s!features=\s!default]
+        \definefontsynonym [\s!SansBoldItalic][\s!file:ysabeau-bolditalic]    [\s!features=\s!default]
+        \definefontsynonym [\s!SansCaps]      [\s!Sans]                       [\s!features=ysabeau-smallcaps]
+     \stoptypescript
+
+    \starttypescript [\s!math] [ebgaramond,ebgaramond-nt]
+        \checkedmapfontsize[\typescripttwo][\s!script]      [.70]
+        \checkedmapfontsize[\typescripttwo][\s!scriptscript][.50]
+    \stoptypescript
+
+    \starttypescript [\s!math] [ebgaramond] [\s!name]
+        \definefontsynonym [\s!MathRoman]     [\s!file:garamond-math.otf] [\s!features={\s!math\mathsizesuffix,ebgaramond:mathextra,mathextra},\s!goodies=ebgaramond-math]
+        \definefontsynonym [\s!MathRomanBold] [\s!file:garamond-math.otf] [\s!features={\s!math\mathsizesuffix,ebgaramond-math-bold,ebgaramond:mathextra,mathextra},\s!goodies=ebgaramond-math]
+    \stoptypescript
+
+    \starttypescript [\s!math] [ebgaramond-nt] [\s!name]
+        \definefontsynonym [\s!MathRoman]     [\s!file:garamond-math.otf] [\s!features={\s!math\mathsizesuffix,ebgaramond:mathextra,mathextra}]
+        \definefontsynonym [\s!MathRomanBold] [\s!file:garamond-math.otf] [\s!features={\s!math\mathsizesuffix,ebgaramond-math-bold,ebgaramond:mathextra,mathextra}]
+    \stoptypescript
+
+    \starttypescript[ebgaramond,ebgaramond-nt]
+        \definetypeface [\typescriptone] [\s!rm] [\s!serif] [ebgaramond]     [\s!default]
+        \definetypeface [\typescriptone] [\s!ss] [\s!sans]  [ysabeau]        [\s!default]
+        \definetypeface [\typescriptone] [\s!tt] [\s!mono]  [dejavu]         [\s!default] [\s!rscale=0.8]
+      % \definetypeface [\typescriptone] [\s!mm] [\s!math]  [bonum]          [\s!default] [\s!rscale=0.8]
+        \definetypeface [\typescriptone] [\s!mm] [\s!math]  [\typescriptone] [\s!default]
     \stoptypescript
 
 \stoptypescriptcollection

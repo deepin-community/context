@@ -9,47 +9,47 @@ if not modules then modules = { } end modules ['s-languages-hyphenation'] = {
 moduledata.languages             = moduledata.languages             or { }
 moduledata.languages.hyphenation = moduledata.languages.hyphenation or { }
 
-local a_colormodel      = attributes.private('colormodel')
+local a_colormodel    = attributes.private('colormodel')
 
-local tex               = tex
-local context           = context
+local tex             = tex
+local context         = context
 
-local nodecodes         = nodes.nodecodes
-local nuts              = nodes.nuts
-local nodepool          = nuts.pool
+local nodecodes       = nodes.nodecodes
+local nuts            = nodes.nuts
+local nodepool        = nuts.pool
 
-local disc_code         = nodecodes.disc
-local glyph_code        = nodecodes.glyph
+local disc_code       = nodecodes.disc
+local glyph_code      = nodecodes.glyph
 
-local emwidths          = fonts.hashes.emwidths
-local exheights         = fonts.hashes.exheights
+local emwidths        = fonts.hashes.emwidths
+local exheights       = fonts.hashes.exheights
 
-local newkern           = nodepool.kern
-local newrule           = nodepool.rule
-local newglue           = nodepool.glue
+local newkern         = nodepool.kern
+local newrule         = nodepool.rule
+local newglue         = nodepool.glue
 
-local insert_node_after = nuts.insert_after
+local insertnodeafter = nuts.insertafter
 
-local nextglyph         = nuts.traversers.glyph
+local nextglyph       = nuts.traversers.glyph
 
-local tonut             = nodes.tonut
-local tonode            = nodes.tonode
-local getid             = nuts.getid
-local getnext           = nuts.getnext
-local getdisc           = nuts.getdisc
-local getattr           = nuts.getattr
-local getfont           = nuts.getfont
-local getfield          = nuts.getfield
-local getlang           = nuts.getlang
-local setlang           = nuts.setlang
-local setlink           = nuts.setlink
-local setdisc           = nuts.setdisc
-local setfield          = nuts.setfield
-local free_node         = nuts.free
+local tonut           = nodes.tonut
+local tonode          = nodes.tonode
+local getid           = nuts.getid
+local getnext         = nuts.getnext
+local getdisc         = nuts.getdisc
+local getattr         = nuts.getattr
+local getfont         = nuts.getfont
+local getfield        = nuts.getfield
+local getlanguage     = nuts.getlanguage
+local setlanguage     = nuts.setlanguage
+local setlink         = nuts.setlink
+local setdisc         = nuts.setdisc
+local setfield        = nuts.setfield
+local free_node       = nuts.free
 
-local tracers           = nodes.tracers
-local colortracers      = tracers and tracers.colors
-local setnodecolor      = colortracers.set
+local tracers         = nodes.tracers
+local colortracers    = tracers and tracers.colors
+local setnodecolor    = colortracers.set
 
 -- maybe this will become code code
 
@@ -63,10 +63,12 @@ local states      = table.setmetatableindex(function(t,k)
     }
 end)
 
+local currentlanguage = language.current or function() return tex.language end
+
 interfaces.implement {
     name    = "storelanguagestate",
     actions = function()
-        states[tex.language] = {
+        states[currentlanguage()] = {
             lefthyphenmin  = tex.lefthyphenmin,
             righthyphenmin = tex.righthyphenmin,
             hyphenationmin = tex.hyphenationmin,
@@ -120,22 +122,11 @@ local function mark(head,marked,w,h,d,how)
         local ex      = exheights[font]
         local width   = w*em
         local rule    = newrule(width,h*ex,d*ex)
-        head, current = insert_node_after(head,current,newkern(-width/2))
-        head, current = insert_node_after(head,current,rule)
-        head, current = insert_node_after(head,current,newkern(-width/2))
-        head, current = insert_node_after(head,current,newglue(0))
+        head, current = insertnodeafter(head,current,newkern(-width/2))
+        head, current = insertnodeafter(head,current,rule)
+        head, current = insertnodeafter(head,current,newkern(-width/2))
+        head, current = insertnodeafter(head,current,newglue(0))
         setnodecolor(rule,how) -- ,getattr(current,a_colormodel))
-    end
-end
-
-local function getlanguage(head,l,left,right)
-    local t = { }
-    for n in nextglyph, tonut(head) do
-        t[n] = {
-            getlang(n),
-            getfield(n,"left"),
-            getfield(n,"right"),
-        }
     end
 end
 
@@ -151,7 +142,7 @@ function moduledata.languages.hyphenation.showhyphens(head)
         -- somehow assigning -1 fails
         for n in nextglyph, tonut(head) do
             cached[n] = {
-                getlang(n),
+                getlanguage(n),
                 getfield(n,"left"),
                 getfield(n,"right")
             }
@@ -164,7 +155,7 @@ function moduledata.languages.hyphenation.showhyphens(head)
             local lmin = s.lefthyphenmin
             local rmin = s.righthyphenmin
             for n in next, cached do
-                setlang(n,l)
+                setlanguage(n,l)
                 setfield(n,"left",lmin)
                 setfield(n,"right",rmin)
             end
@@ -176,7 +167,7 @@ function moduledata.languages.hyphenation.showhyphens(head)
             mark(head,marked[i],1/16,l/2,l/4,"hyphenation:"..(colorbytag and tags[i] or i))
         end
         for n, d in next, cached do
-            setlang(n,d[1])
+            setlanguage(n,d[1])
             setfield(n,"left",d[2])
             setfield(n,"right",d[3])
         end

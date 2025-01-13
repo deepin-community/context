@@ -4,16 +4,16 @@ README for using ConTeXt on Debian
 1. non free content
 -------------------
 
-Most of the ConTeXt documentation is distributed only in pdf format, which 
+Most of the ConTeXt documentation is distributed only in pdf format, which
 will be made available together with fonts which are not DFSG compatible
-in the 
+in the
 	context-nonfree
 package.
 
 2. generation of documentation
 ------------------------------
 
-The documentation and examples for various modules as distributed in 
+The documentation and examples for various modules as distributed in
 	/usr/share/doc/context/third/...
 can be generated from the input code by calling
 	texexec --module t-french.tex
@@ -25,11 +25,27 @@ for the example file.
 ----------------------------------------
 These files were generated using the texfont program, as follows:
 	texfont --encoding=texnansi --batch type-tmf.dat
-where the type-tmf.dat is located in 
+where the type-tmf.dat is located in
 	/usr/share/texmf/context/data
 
 4. ConTeXt over LuaTeX aka MarkIV
 ---------------------------------
 Please see the separate README.MarkIV
+
+5. ICC Color profiles
+---------------------
+The ICC profiles normally shipped with context in
+texmf-dist/tex/context/colors/icc/profiles/
+named:
+ - ecirgb_v2.icc
+ - ecirgb_v2_iccv4.icc
+ - isocoated_v2_300_eci.icc
+ - isocoated_v2_eci.icc
+ - srgb_v4_icc_preference.icc
+have been removed from the distribution as they fall under non-free
+licenses. This means, pdf/x and pdf/a creation (and probably some
+other operations) will fail. If one needs these files, please
+obtain them from some other sources and put them into the above
+directory.
 
 Norbert Preining, 2006-2007

@@ -469,19 +469,22 @@ local function copy(t,tables) -- taken from lua wiki, slightly adapted
         tables[t] = tcopy
     end
     for i,v in next, t do -- brrr, what happens with sparse indexed
+        local k
         if type(i) == "table" then
             if tables[i] then
-                i = tables[i]
+                k = tables[i]
             else
-                i = copy(i,tables)
+                k = copy(i,tables)
             end
+        else
+            k = i
         end
         if type(v) ~= "table" then
-            tcopy[i] = v
+            tcopy[k] = v
         elseif tables[v] then
-            tcopy[i] = tables[v]
+            tcopy[k] = tables[v]
         else
-            tcopy[i] = copy(v,tables)
+            tcopy[k] = copy(v,tables)
         end
     end
     local mt = getmetatable(t)
@@ -711,7 +714,11 @@ local function do_serialize(root,name,depth,level,indexed)
             elseif tv == "number" then
                 if tk == "number" then
                     if hexify then
-                        handle(format("%s [0x%X]=0x%X,",depth,k,v))
+                        if accurate then
+                            handle(format("%s [0x%X]=%q,",depth,k,v))
+                        else
+                            handle(format("%s [0x%X]=%s,",depth,k,v))
+                        end
                     elseif accurate then
                         handle(format("%s [%s]=%q,",depth,k,v))
                     else
@@ -719,7 +726,11 @@ local function do_serialize(root,name,depth,level,indexed)
                     end
                 elseif tk == "boolean" then
                     if hexify then
-                        handle(format("%s [%s]=0x%X,",depth,k and "true" or "false",v))
+                        if accurate then
+                            handle(format("%s [%s]=%q,",depth,k and "true" or "false",v))
+                        else
+                            handle(format("%s [%s]=%s,",depth,k and "true" or "false",v))
+                        end
                     elseif accurate then
                         handle(format("%s [%s]=%q,",depth,k and "true" or "false",v))
                     else
@@ -729,7 +740,12 @@ local function do_serialize(root,name,depth,level,indexed)
                     -- ignore
                 elseif noquotes and not reserved[k] and lpegmatch(propername,k) then
                     if hexify then
-                        handle(format("%s %s=0x%X,",depth,k,v))
+                        if accurate then
+                            handle(format("%s %s=%q,",depth,k,v))
+                        else
+--                             handle(format("%s %s=%s,",depth,k,v))
+                            handle(format("%s %s=0x%X,",depth,k,v))
+                        end
                     elseif accurate then
                         handle(format("%s %s=%q,",depth,k,v))
                     else
@@ -737,7 +753,12 @@ local function do_serialize(root,name,depth,level,indexed)
                     end
                 else
                     if hexify then
-                        handle(format("%s [%q]=0x%X,",depth,k,v))
+                        if accurate then
+                            handle(format("%s [%q]=%q,",depth,k,v))
+                        else
+--                             handle(format("%s [%q]=%s,",depth,k,v))
+                            handle(format("%s [%q]=0x%X,",depth,k,v))
+                        end
                     elseif accurate then
                         handle(format("%s [%q]=%q,",depth,k,v))
                     else

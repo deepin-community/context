@@ -8,9 +8,11 @@ if not modules then modules = { } end modules ['data-ini'] = {
 
 local next, type, getmetatable, rawset = next, type, getmetatable, rawset
 local gsub, find, gmatch, char = string.gsub, string.find, string.gmatch, string.char
-local filedirname, filebasename, filejoin = file.dirname, file.basename, file.join
+local filedirname, filebasename, filejoin, replacesuffix = file.dirname, file.basename, file.join, file.replacesuffix
 local ostype, osname, osuname, ossetenv, osgetenv = os.type, os.name, os.uname, os.setenv, os.getenv
 local sortedpairs = table.sortedpairs
+local isfile, currentdir = lfs.isfile, lfs.currentdir
+local expandlink = dir.expandlink
 
 local P, S, R, C, Cs, Cc, lpegmatch = lpeg.P, lpeg.S, lpeg.R, lpeg.C, lpeg.Cs, lpeg.Cc, lpeg.match
 
@@ -73,8 +75,9 @@ end
 -- Next comes the user's home path. We need this as later on we have
 -- to replace ~ with its value.
 
-do
+if not environment.homedir then
 
+    local oldhome = osgetenv('HOME')
     local homedir = osgetenv(ostype == "windows" and 'USERPROFILE' or 'HOME') or ''
 
     if not homedir or homedir == "" then
@@ -86,6 +89,7 @@ do
     ossetenv("HOME",       homedir) -- can be used in unix cnf files
     ossetenv("USERPROFILE",homedir) -- can be used in windows cnf files
 
+    environment.oldhome = oldhome
     environment.homedir = homedir
 
 end
@@ -101,11 +105,19 @@ do
         environment.ownmain = status and string.match(string.lower(status.banner),"this is ([%a]+)") or "luatex"
     end
 
-    local ownbin  = environment.ownbin  or args[-2] or arg[-2] or args[-1] or arg[-1] or arg[0] or "luatex"
+    local ownbin  = environment.ownbin  or os.selfbin or args[-2] or arg[-2] or args[-1] or arg[-1] or arg[0] or "luametatex"
     local ownpath = environment.ownpath or os.selfdir
 
-    ownbin  = file.collapsepath(ownbin)
+    ownbin  = file.collapsepath(ownbin)   -- This one an actually also contain the path!
     ownpath = file.collapsepath(ownpath)
+
+    -- We need to follow the symlink on osx - texlive. This only works luametatex and
+    -- lmtx so we might as wel forget about luatex/mkiv there. The regular context
+    -- installation doesn't have this link issue. I tried several variants but in the
+    -- end the chdir variants was most reliable. Everything else is ugly. (Experimtal
+    -- code is in data-osx.lua).
+
+    ownpath = expandlink(ownpath,trace_locating and report_initialization)
 
     if not ownpath or ownpath == "" or ownpath == "unset" then
         ownpath = args[-1] or arg[-1]
@@ -120,31 +132,14 @@ do
         end
         if not ownpath or ownpath == "" then
             if os.binsuffix ~= "" then
-                binary = file.replacesuffix(binary,os.binsuffix)
+                binary = replacesuffix(binary,os.binsuffix)
             end
             local path = osgetenv("PATH")
             if path then
                 for p in gmatch(path,"[^"..io.pathseparator.."]+") do
                     local b = filejoin(p,binary)
-                    if lfs.isfile(b) then
-                        -- we assume that after changing to the path the currentdir function
-                        -- resolves to the real location and use this side effect here; this
-                        -- trick is needed because on the mac installations use symlinks in the
-                        -- path instead of real locations
-                        local olddir = lfs.currentdir()
-                        if lfs.chdir(p) then
-                            local pp = lfs.currentdir()
-                            if trace_locating and p ~= pp then
-                                report_initialization("following symlink %a to %a",p,pp)
-                            end
-                            ownpath = pp
-                            lfs.chdir(olddir)
-                        else
-                            if trace_locating then
-                                report_initialization("unable to check path %a",p)
-                            end
-                            ownpath =  p
-                        end
+                    if isfile(b) then
+                        ownpath = expandlink(p,trace_locating and report_initialization)
                         break
                     end
                 end

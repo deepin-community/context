@@ -1,0 +1,36 @@
+Description: Replace path in ConTeXt files.
+Origin: Dr. Werner Fink <werner@suse.de>
+Forwarded: No. Patch is specific to Linux Distribution.
+Author: Dr. Werner Fink <werner@suse.de>
+Last-Update: 20230330
+
+--- context.orig/texmf-dist/scripts/context/lua/mtxrun.lua
++++ context/texmf-dist/scripts/context/lua/mtxrun.lua
+@@ -22308,10 +22308,8 @@
+ else
+  resolvers.luacnfspec=concat ({
+   "home:texmf/web2c",
+-  "selfautoparent:/texmf-local/web2c",
+-  "selfautoparent:/texmf-context/web2c",
+-  "selfautoparent:/texmf-dist/web2c",
+-  "selfautoparent:/texmf/web2c",
++  "/etc/texmf/web2c",
++  "selfautodir:/share/texmf/web2c",
+  },";")
+ end
+ local unset_variable="unset"
+--- context.orig/texmf-dist/tex/context/base/mkiv/data-res.lua
++++ context/texmf-dist/tex/context/base/mkiv/data-res.lua
+@@ -140,10 +140,8 @@
+ else
+     resolvers.luacnfspec = concat ( {
+         "home:texmf/web2c",
+-        "selfautoparent:/texmf-local/web2c",
+-        "selfautoparent:/texmf-context/web2c",
+-        "selfautoparent:/texmf-dist/web2c",
+-        "selfautoparent:/texmf/web2c",
++        "/etc/texmf/web2c",
++        "selfautodir:/share/texmf/web2c",
+     }, ";")
+ end
+ 

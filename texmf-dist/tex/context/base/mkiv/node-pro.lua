@@ -65,11 +65,9 @@ do
 
 end
 
-processors.enabled = true -- this will become a proper state (like trackers)
-
 do
 
-    local has_glyph   = nodes.has_glyph
+    local hasglyph    = nodes.hasglyph
     local count_nodes = nodes.countall
 
     local texget      = tex.get
@@ -77,7 +75,7 @@ do
     local tracer      = processors.tracer
 
     local function pre_linebreak_filter(head,groupcode)
-        local found = force_processors or has_glyph(head)
+        local found = force_processors or hasglyph(head)
         if found then
             if trace_callbacks then
                 local before = count_nodes(head,true)
@@ -95,7 +93,7 @@ do
     end
 
     local function hpack_filter(head,groupcode,size,packtype,direction,attributes)
-        local found = force_processors or has_glyph(head)
+        local found = force_processors or hasglyph(head)
         if found then
             --
             -- yes or no or maybe an option
@@ -148,7 +146,7 @@ do
 end
 
 do
-    -- Beware, these are packaged boxes so no first_glyph test needed. Maybe some day I'll add a hash
+    -- Beware, these are packaged boxes so no firstglyph test needed. Maybe some day I'll add a hash
     -- with valid groupcodes. Watch out, much can pass twice, for instance vadjust passes two times,
 
     local actions     = tasks.actions("finalizers") -- head, where

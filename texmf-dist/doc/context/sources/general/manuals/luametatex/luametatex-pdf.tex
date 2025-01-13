@@ -1,4 +1,4 @@
-% language=uk
+% language=us runpath=texruns:manuals/luametatex
 
 % lua.newtable
 
@@ -83,12 +83,12 @@ pdfe.getstatus(<pdfe document>)
 The returned codes are:
 
 \starttabulate[|c|l|]
-\DB value       \BC explanation \NC \NR
+\DB value      \BC explanation \NC \NR
 \TB
-\NC \type {-2}  \NC the document failed to open \NC \NR
-\NC \type {-1}  \NC the document is (still) protected \NC \NR
-\NC \type {0}   \NC the document is not encrypted \NC \NR
-\NC \type {2}   \NC the document has been unencrypted \NC \NR
+\NC \type {-2} \NC the document is (still) protected \NC \NR
+\NC \type {-1} \NC the document failed to open \NC \NR
+\NC \type  {0} \NC the document is not encrypted \NC \NR
+\NC \type  {1} \NC the document has been unencrypted \NC \NR
 \LL
 \stoptabulate
 
@@ -182,6 +182,16 @@ n = getnumber (<pdfe array|dictionary>,index|key)
 b = getboolean(<pdfe array|dictionary>,index|key)
 n = getname   (<pdfe array|dictionary>,index|key)
 \stoptyping
+
+The \type {getstring} function has two extra variants:
+
+\starttyping
+s, h = getstring (<pdfe array|dictionary>,index|key,false)
+s    = getstring (<pdfe array|dictionary>,index|key,true)
+\stoptyping
+
+The first call returns the original string plus a boolean indicating if the
+string is hex encoded. The second call returns the unencoded string.
 
 \stopsubsection
 

@@ -6,6 +6,8 @@ if not modules then modules = { } end modules ['util-lib'] = {
     license   = "see context related readme files",
 }
 
+-- not used in context any more
+
 --[[
 
 The problem with library bindings is manyfold. They are of course platform
@@ -242,6 +244,8 @@ local function locate(required,version,trace,report,action)
 end
 
 resolvers.locatelib = locate -- for now
+
+-- swiglib is no longer officially supported
 
 do
 

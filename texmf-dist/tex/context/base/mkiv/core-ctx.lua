@@ -193,7 +193,7 @@ function ctxrunner.load(ctxname)
             for r, d, k in xml.elements(pattern,"/ctx:value[@name='old'") do
                 d[k] = jobname
             end
-            pattern =justtext(xml.tostring(pattern))
+            local pattern =justtext(xml.tostring(pattern))
             if preprocessor and preprocessor ~= "" and pattern and pattern ~= "" then
                 local noftreatments = #treatments + 1
                 local findpattern   = string.topattern(pattern)
@@ -327,8 +327,8 @@ function ctxrunner.preparedfile(name)
     return resolve(name) or name
 end
 
-local processfile       = commands.processfile
-local doifelseinputfile = commands.doifelseinputfile
+local ctx_processfile       = commands.processfile
+local ctx_doifelseinputfile = commands.doifelseinputfile
 
 implement {
     name      = "processfile",
@@ -337,9 +337,10 @@ implement {
     actions   = function(name,maxreadlevel) -- overloaded
         local prepname = resolve(name)
         if prepname then
-            return processfile(prepname,0)
+            return ctx_processfile(prepname,0)
+        else
+            return ctx_processfile(name,maxreadlevel)
         end
-        return processfile(name,maxreadlevel)
     end
 }
 
@@ -350,9 +351,10 @@ implement {
     actions   = function(name,depth)
         local prepname = resolve(name)
         if prepname then
-            return doifelseinputfile(prepname,0)
+            return ctx_doifelseinputfile(prepname,0)
+        else
+            return ctx_doifelseinputfile(name,depth)
         end
-        return doifelseinputfile(name,depth)
     end
 }
 

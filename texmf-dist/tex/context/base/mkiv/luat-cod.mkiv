@@ -15,8 +15,8 @@
 
 \unprotect
 
-%D We cannot use the following due to the fact that existing usage
-%D demanded duplicating hashes.
+%D We cannot use the following due to the fact that existing usage demanded
+%D duplicating hashes.
 %D
 %D \starttyping
 %D \def\expanded#1{\normalexpanded{\noexpand#1}} % ## mess
@@ -24,10 +24,9 @@
 
 \newif\ifproductionrun
 
-%D Originally we compiled the \LUA\ files externally and loaded
-%D then at runtime, but when the amount grew, we realized that
-%D we needed away to store them in the format, which is what
-%D bytecode arrays do. And so the following is obsolete:
+%D Originally we compiled the \LUA\ files externally and loaded then at runtime, but
+%D when the amount grew, we realized that we needed away to store them in the
+%D format, which is what bytecode arrays do. And so the following is obsolete:
 %D
 %D \starttyping
 %D \setnewconstant\ctxluaembeddingmode \plusone
@@ -36,16 +35,15 @@
 %D 1 = runtime compilation and embedding
 %D \stoptyping
 %D
-%D Allocation of \LUA\ engines has changed too. The original idea
-%D was to have multiple \LUA\ instances and it worked that way for
-%D several years. Hoewver in practice we used only one engine because
-%D scripts need to share data anyway. So eventually \LUATEX\ got only
-%D one instance. Because each call is reentrant there is not much
-%D danger for crashes.
+%D Allocation of \LUA\ engines has changed too. The original idea was to have
+%D multiple \LUA\ instances and it worked that way for several years. Hoewver in
+%D practice we used only one engine because scripts need to share data anyway. So
+%D eventually \LUATEX\ got only one instance. Because each call is reentrant there
+%D is not much danger for crashes.
 %D
-%D Most code here has changed after version 0.60 as part of adaption to
-%D new functionality. We no longer support the hooks for initializing
-%D code as this can be done at the \LUA\ end.
+%D Most code here has changed after version 0.60 as part of adaption to new
+%D functionality. We no longer support the hooks for initializing code as this can
+%D be done at the \LUA\ end.
 
 % we can drop the \zerocount as it's default
 

@@ -1,12 +1,13 @@
 if not modules then modules = { } end modules ['trac-vis'] = {
     version   = 1.001,
+    optimize  = true,
     comment   = "companion to trac-vis.mkiv",
     author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
     copyright = "PRAGMA ADE / ConTeXt Development Team",
     license   = "see context related readme files"
 }
 
-local node, nodes, attributes, fonts, tex = node, nodes, attributes, fonts, tex
+local node, nodes, attributes, tex = node, nodes, attributes, tex
 local type, tonumber, next, rawget = type, tonumber, next, rawget
 local gmatch = string.gmatch
 local formatters = string.formatters
@@ -27,14 +28,13 @@ local round = math.round
 -- todo: maybe also xoffset, yoffset of glyph
 -- todo: inline concat (more efficient)
 -- todo: tags can also be numbers (just add to hash)
+-- todo: make a lmtx variant (a few more efficient fetchers)
 
 local nodecodes           = nodes.nodecodes
 
 local nuts                = nodes.nuts
 local tonut               = nuts.tonut
-local tonode              = nuts.tonode
 
------ setfield            = nuts.setfield
 local setboth             = nuts.setboth
 local setlink             = nuts.setlink
 local setdisc             = nuts.setdisc
@@ -63,21 +63,21 @@ local getwidth            = nuts.getwidth
 local getdepth            = nuts.getdepth
 local getshift            = nuts.getshift
 local getexpansion        = nuts.getexpansion
+local getdirection        = nuts.getdirection
+local getstate            = nuts.getstate
 
 local isglyph             = nuts.isglyph
 
 local hpack_nodes         = nuts.hpack
 local vpack_nodes         = nuts.vpack
-local copy_list           = nuts.copy_list
-local copy_node           = nuts.copy_node
-local flush_node_list     = nuts.flush_list
-local insert_node_before  = nuts.insert_before
-local insert_node_after   = nuts.insert_after
+local copylist            = nuts.copylist
+local copy_node           = nuts.copy
+local insertnodebefore    = nuts.insertbefore
+local insertnodeafter     = nuts.insertafter
 local apply_to_nodes      = nuts.apply
 local find_tail           = nuts.tail
-local effectiveglue       = nuts.effective_glue
-
-local nextnode            = nuts.traversers.node
+local effectiveglue       = nuts.effectiveglue
+local flushnodelist       = nuts.flushlist
 
 local hpack_string        = nuts.typesetters.tohpack
 
@@ -166,10 +166,14 @@ local modes = {
     space         = 0x040000,
     depth         = 0x080000,
     marginkern    = 0x100000,
+    mathlistkern  = 0x200000,
+    dir           = 0x400000,
+    par           = 0x800000,
 }
 
 local usedfont, exheight, emwidth
-local l_penalty, l_glue, l_kern, l_fontkern, l_hbox, l_vbox, l_vtop, l_strut, l_whatsit, l_glyph, l_user, l_math, l_marginkern, l_italic, l_origin, l_discretionary, l_expansion, l_line, l_space, l_depth
+local l_penalty, l_glue, l_kern, l_fontkern, l_hbox, l_vbox, l_vtop, l_strut, l_whatsit, l_glyph, l_user, l_math, l_marginkern, l_mathlistkern, l_italic, l_origin, l_discretionary, l_expansion, l_line, l_space, l_depth,
+    l_dir, l_whatsit
 
 local enabled = false
 local layers  = { }
@@ -178,7 +182,9 @@ local preset_boxes  = modes.hbox + modes.vbox + modes.origin
 local preset_makeup = preset_boxes
                     + modes.kern + modes.glue + modes.penalty
 local preset_all    = preset_makeup
-                    + modes.fontkern + modes.marginkern + modes.whatsit + modes.glyph + modes.user + modes.math
+                    + modes.fontkern + modes.marginkern + modes.mathlistkern
+                    + modes.whatsit + modes.glyph + modes.user + modes.math
+                    + modes.dir + modes.whatsit
 
 function visualizers.setfont(id)
     usedfont = id or current_font()
@@ -223,12 +229,15 @@ local function initialize()
     l_math          = layers.math
     l_italic        = layers.italic
     l_marginkern    = layers.marginkern
+    l_mathlistkern  = layers.mathlistkern
     l_origin        = layers.origin
     l_discretionary = layers.discretionary
     l_expansion     = layers.expansion
     l_line          = layers.line
     l_space         = layers.space
     l_depth         = layers.depth
+    l_dir           = layers.dir
+    l_par           = layers.par
     --
     if not userrule then
        userrule = nuts.rules.userrule
@@ -366,10 +375,6 @@ for mode, value in next, modes do
     trackers.register(formatters["visualizers.%s"](mode), function(v) set(mode,v) end)
 end
 
-local raisepenalties = false
-
-directives.register("visualizers.raisepenalties",function(v) raisepenalties = v end)
-
 local fraction = 10
 
 trackers  .register("visualizers.reset",    function(v) set("reset", v) end)
@@ -389,10 +394,10 @@ local c_skip_b          = "trace:m"
 local c_glyph           = "trace:o"
 local c_ligature        = "trace:s"
 local c_white           = "trace:w"
-local c_math            = "trace:s"
-local c_origin          = "trace:o"
-local c_discretionary   = "trace:d"
-local c_expansion       = "trace:o"
+----- c_math            = "trace:s"
+----- c_origin          = "trace:o"
+----- c_discretionary   = "trace:d"
+----- c_expansion       = "trace:o"
 local c_depth           = "trace:o"
 local c_indent          = "trace:s"
 
@@ -410,8 +415,9 @@ local c_white_d         = "trace:dw"
 local c_math_d          = "trace:dr"
 local c_origin_d        = "trace:do"
 local c_discretionary_d = "trace:dd"
-local c_expansion_d     = "trace:do"
-local c_depth_d         = "trace:do"
+----- c_expansion_d     = "trace:do"
+----- c_depth_d         = "trace:do"
+----- c_indent_d        = "trace:ds"
 
 local function sometext(str,layer,color,textcolor,lap) -- we can just paste verbatim together .. no typesteting needed
     local text = hpack_string(str,usedfont)
@@ -463,11 +469,12 @@ end
 
 local caches = setmetatableindex("table")
 
-local fontkern, italickern, marginkern do
+local fontkern, italickern, marginkern, mathlistkern do
 
     local f_cache = caches["fontkern"]
     local i_cache = caches["italickern"]
     local m_cache = caches["marginkern"]
+    local l_cache = caches["mathlistkern"]
 
     local function somekern(head,current,cache,color,layer)
         local width = getkern(current)
@@ -493,7 +500,7 @@ local fontkern, italickern, marginkern do
             setattr(info,a_layer,layer)
             f_cache[kern] = info
         end
-        head = insert_node_before(head,current,copy_list(info))
+        head = insertnodebefore(head,current,copylist(info))
         return head, current
     end
 
@@ -507,6 +514,10 @@ local fontkern, italickern, marginkern do
 
     marginkern = function(head,current)
         return somekern(head,current,m_cache,c_glyph_d,l_marginkern)
+    end
+
+    mathlistkern = function(head,current)
+        return somekern(head,current,l_cache,c_glyph_d,l_mathlistkern)
     end
 
 end
@@ -537,7 +548,7 @@ local glyphexpansion do
                 setattr(info,a_layer,l_expansion)
                 f_cache[extra] = info
             end
-            head = insert_node_before(head,current,copy_list(info))
+            head = insertnodebefore(head,current,copylist(info))
             return head, current
         end
         return head, current
@@ -548,6 +559,8 @@ end
 local kernexpansion do
 
     local f_cache = caches["kernexpansion"]
+
+    -- in mkiv we actually need to reconstruct but let's not do that now
 
     kernexpansion = function(head,current)
         local extra = getexpansion(current)
@@ -571,7 +584,7 @@ local kernexpansion do
                 setattr(info,a_layer,l_expansion)
                 f_cache[extra] = info
             end
-            head = insert_node_before(head,current,copy_list(info))
+            head = insertnodebefore(head,current,copylist(info))
             return head, current
         end
         return head, current
@@ -604,13 +617,64 @@ local whatsit do
         if info then
             -- print("hit whatsit")
         else
-            local tag = whatsitcodes[what]
-            -- maybe different text colors per tag
-            info = sometext(formatters["W:%s"](tag and tags[tag] or what),usedfont,nil,c_white)
+            info = sometext(formatters["W:%s"](what),usedfont,nil,c_white)
             setattr(info,a_layer,l_whatsit)
             w_cache[what] = info
         end
-        head, current = insert_node_after(head,current,copy_list(info))
+        head, current = insertnodeafter(head,current,copylist(info))
+        return head, current
+    end
+
+end
+
+local dir, par do
+
+    local dircodes    = nodes.dircodes
+    local dirvalues   = nodes.dirvalues
+
+    local cancel_code = dircodes.cancel
+    local l2r_code    = dirvalues.l2r
+    local r2l_code    = dirvalues.r2l
+
+    local d_cache     = caches["dir"]
+
+    local tags = {
+        l2r    = "L2R",
+        r2l    = "R2L",
+        cancel = "CAN",
+        par    = "PAR",
+    }
+
+    par = function(head,current)
+        local what = "par" -- getsubtype(current)
+        local info = d_cache[what]
+        if info then
+            -- print("hit par")
+        else
+            info = sometext(formatters["L:%s"](what),usedfont,nil,c_white)
+            setattr(info,a_layer,l_dir)
+            d_cache[what] = info
+        end
+        return head, current
+    end
+
+    dir = function(head,current)
+        local what = getsubtype(current)
+        if what == cancelcode then
+            what = "cancel"
+        elseif getdirection(current) == r2l_code then
+            what = "r2l"
+        else
+            what = "l2r"
+        end
+        local info = d_cache[what]
+        if info then
+            -- print("hit dir")
+        else
+            info = sometext(formatters["D:%s"](what),usedfont,nil,c_white)
+            setattr(info,a_layer,l_dir)
+            d_cache[what] = info
+        end
         return head, current
     end
 
@@ -630,7 +694,7 @@ local user do
             setattr(info,a_layer,l_user)
             u_cache[what] = info
         end
-        head, current = insert_node_after(head,current,copy_list(info))
+        head, current = insertnodeafter(head,current,copylist(info))
         return head, current
     end
 
@@ -669,7 +733,7 @@ local math do
             setattr(info,a_layer,l_math)
             m_cache[tag][skip] = info
         end
-        head, current = insert_node_after(head,current,copy_list(info))
+        head, current = insertnodeafter(head,current,copylist(info))
         return head, current
     end
 
@@ -727,7 +791,7 @@ local ruledbox do
             end
             -- we need to trigger the right mode (else sometimes no whatits)
             local info = setlink(
-                this and copy_list(this) or nil,
+                this and copylist(this) or nil,
                 (dp == 0 and outlinerule and outlinerule(wd,ht,dp,linewidth)) or userrule {
                     width  = wd,
                     height = ht,
@@ -748,7 +812,7 @@ local ruledbox do
                 elseif trace_origin then
                     local size   = 2*size
                     local origin = o_cache[size]
-                    origin = copy_list(origin)
+                    origin = copylist(origin)
                     if getid(parent) == vlist_code then
                         setshift(origin,-shift)
                         info = setlink(current,new_kern(-size),origin,new_kern(-size-dp),info)
@@ -768,7 +832,7 @@ local ruledbox do
                 elseif trace_origin then
                     local size   = 2*size
                     local origin = o_cache[size]
-                    origin = copy_list(origin)
+                    origin = copylist(origin)
                     if getid(parent) == vlist_code then
                         info = setlink(current,new_kern(-wd-size-shift),origin,new_kern(-size+shift),info)
                     else
@@ -865,26 +929,26 @@ end
 
 local ruledglue do
 
-    local gluecodes           = nodes.gluecodes
-    local leadercodes         = nodes.gluecodes
+    local gluecodes             = nodes.gluecodes
 
-    local userskip_code       = gluecodes.userskip
-    local spaceskip_code      = gluecodes.spaceskip
-    local xspaceskip_code     = gluecodes.xspaceskip
-    local leftskip_code       = gluecodes.leftskip
-    local rightskip_code      = gluecodes.rightskip
-    local parfillskip_code    = gluecodes.parfillskip
-    local indentskip_code     = gluecodes.indentskip
-    local correctionskip_code = gluecodes.correctionskip
-
-    local cleaders_code       = leadercodes.cleaders
+    local userskip_code         = gluecodes.userskip
+    local spaceskip_code        = gluecodes.spaceskip
+    local xspaceskip_code       = gluecodes.xspaceskip
+    local zerospaceskip_code    = gluecodes.zerospaceskip or gluecodes.userskip
+ -- local keepskip_code         = gluecodes.keepskip or gluecodes.userskip
+    local leftskip_code         = gluecodes.leftskip
+    local rightskip_code        = gluecodes.rightskip
+    local parfillleftskip_code  = gluecodes.parfillleftskip or parfillskip_code
+    local parfillrightskip_code = gluecodes.parfillrightskip or parfillskip_code
+    local indentskip_code       = gluecodes.indentskip
+    local correctionskip_code   = gluecodes.correctionskip
 
     local g_cache_v = caches["vglue"]
     local g_cache_h = caches["hglue"]
 
     local tags = {
      -- [userskip_code]                   = "US",
-        [gluecodes.lineskip]              = "LS",
+        [gluecodes.lineskip]              = "LI",
         [gluecodes.baselineskip]          = "BS",
         [gluecodes.parskip]               = "PS",
         [gluecodes.abovedisplayskip]      = "DA",
@@ -900,18 +964,21 @@ local ruledglue do
         [gluecodes.medmuskip]             = "MM",
         [gluecodes.thickmuskip]           = "ML",
         [gluecodes.intermathskip]         = "IM",
+        [gluecodes.keepskip or 99]        = "KS",
         [gluecodes.mathskip]              = "MT",
-        [leadercodes.leaders]             = "NL",
-        [leadercodes.cleaders]            = "CL",
-        [leadercodes.xleaders]            = "XL",
-        [leadercodes.gleaders]            = "GL",
+        [gluecodes.leaders]               = "NL",
+        [gluecodes.cleaders]              = "CL",
+        [gluecodes.xleaders]              = "XL",
+        [gluecodes.gleaders]              = "GL",
      -- true                              = "VS",
      -- false                             = "HS",
         [leftskip_code]                   = "LS",
         [rightskip_code]                  = "RS",
         [spaceskip_code]                  = "SP",
         [xspaceskip_code]                 = "XS",
-        [parfillskip_code]                = "PF",
+        [zerospaceskip_code]              = "ZS",
+        [parfillleftskip_code]            = "PL",
+        [parfillrightskip_code]           = "PR",
         [indentskip_code]                 = "IN",
         [correctionskip_code]             = "CS",
     }
@@ -926,11 +993,11 @@ local ruledglue do
         if info then
             -- print("glue hit")
         else
-            if subtype == spaceskip_code or subtype == xspaceskip_code then
+            if subtype == spaceskip_code or subtype == xspaceskip_code or subtype == zerospaceskip_code then
                 info = sometext(amount,l_glue,c_space)
             elseif subtype == leftskip_code or subtype == rightskip_code then
                 info = sometext(amount,l_glue,c_skip_a)
-            elseif subtype == parfillskip_code or subtype == indentskip_code or subtype == correctionskip_code then
+            elseif subtype == parfillleftskip_code or subtype == parfillrightskip_code or subtype == indentskip_code or subtype == correctionskip_code then
                 info = sometext(amount,l_glue,c_indent)
             elseif subtype == userskip_code then
                 if width > 0 then
@@ -945,17 +1012,17 @@ local ruledglue do
             end
             (vertical and g_cache_v or g_cache_h)[amount] = info
         end
-        info = copy_list(info)
+        info = copylist(info)
         if vertical then
             info = vpack_nodes(info)
         end
-        head, current = insert_node_before(head,current,info)
+        head, current = insertnodebefore(head,current,info)
         return head, getnext(current)
     end
 
  -- ruledspace = function(head,current,parent)
  --     local subtype = getsubtype(current)
- --     if subtype == spaceskip_code or subtype == xspaceskip_code then
+ --     if subtype == spaceskip_code or subtype == xspaceskip_code or subtype == zerospaceskip_code then
  --         local width  = effectiveglue(current,parent)
  --         local amount = formatters["%s:%0.3f"](tags[subtype] or "HS",width*pt_factor)
  --         local info   = g_cache_h[amount]
@@ -965,8 +1032,8 @@ local ruledglue do
  --             info = sometext(amount,l_glue,c_space)
  --             g_cache_h[amount] = info
  --         end
- --         info = copy_list(info)
- --         head, current = insert_node_before(head,current,info)
+ --         info = copylist(info)
+ --         head, current = insertnodebefore(head,current,info)
  --         return head, getnext(current)
  --     else
  --         return head, current
@@ -978,7 +1045,7 @@ local ruledglue do
 
     ruledspace = function(head,current,parent)
         local subtype = getsubtype(current)
-        if subtype == spaceskip_code or subtype == xspaceskip_code then -- not yet all space
+        if subtype == spaceskip_code or subtype == xspaceskip_code or subtype == zerospaceskip_code then -- not yet all space
             local width = effectiveglue(current,parent)
             local info
             if subtype == spaceskip_code then
@@ -994,8 +1061,8 @@ local ruledglue do
                     g_cache_x[width] = info
                 end
             end
-            info = copy_list(info)
-            head, current = insert_node_before(head,current,info)
+            info = copylist(info)
+            head, current = insertnodebefore(head,current,info)
             return head, getnext(current)
         else
             return head, current
@@ -1024,11 +1091,11 @@ local ruledkern do
             end
             cache[kern] = info
         end
-        info = copy_list(info)
+        info = copylist(info)
         if vertical then
             info = vpack_nodes(info)
         end
-        head, current = insert_node_before(head,current,info)
+        head, current = insertnodebefore(head,current,info)
         return head, getnext(current)
     end
 
@@ -1052,8 +1119,8 @@ local ruleditalic do
             end
             i_cache[kern] = info
         end
-        info = copy_list(info)
-        head, current = insert_node_before(head,current,info)
+        info = copylist(info)
+        head, current = insertnodebefore(head,current,info)
         return head, getnext(current)
     end
 
@@ -1077,8 +1144,33 @@ local ruledmarginkern do
             end
             m_cache[kern] = info
         end
-        info = copy_list(info)
-        head, current = insert_node_before(head,current,info)
+        info = copylist(info)
+        head, current = insertnodebefore(head,current,info)
+        return head, getnext(current)
+    end
+
+end
+
+local ruledmathlistkern do
+
+    local l_cache = caches["mathlistkern"]
+
+    ruledmathlistkern = function(head,current)
+        local kern = getkern(current)
+        local info = l_cache[kern]
+        if not info then
+            local amount = formatters["%s:%0.3f"]("LK",kern*pt_factor)
+            if kern > 0 then
+                info = sometext(amount,l_mathlistkern,c_positive)
+            elseif kern < 0 then
+                info = sometext(amount,l_mathlistkern,c_negative)
+            else
+                info = sometext(amount,l_mathlistkern,c_zero)
+            end
+            l_cache[kern] = info
+        end
+        info = copylist(info)
+        head, current = insertnodebefore(head,current,info)
         return head, getnext(current)
     end
 
@@ -1100,7 +1192,7 @@ local ruleddiscretionary do
             d = new_hlist(kern)
             d_cache[true] = d
         end
-        insert_node_after(head,current,copy_list(d))
+        insertnodeafter(head,current,copylist(d))
         return head, current
     end
 
@@ -1110,6 +1202,10 @@ local ruledpenalty do
 
     local p_cache_v = caches["vpenalty"]
     local p_cache_h = caches["hpenalty"]
+
+    local raisepenalties = false
+
+    directives.register("visualizers.raisepenalties",function(v) raisepenalties = v end)
 
     ruledpenalty = function(head,current,vertical)
         local penalty = getpenalty(current)
@@ -1127,13 +1223,13 @@ local ruledpenalty do
             end
             (vertical and p_cache_v or p_cache_h)[penalty] = info
         end
-        info = copy_list(info)
+        info = copylist(info)
         if vertical then
             info = vpack_nodes(info)
         elseif raisepenalties then
             setshift(info,-65536*4)
         end
-        head, current = insert_node_before(head,current,info)
+        head, current = insertnodebefore(head,current,info)
         return head, getnext(current)
     end
 
@@ -1141,27 +1237,31 @@ end
 
 do
 
-    local disc_code       = nodecodes.disc
-    local kern_code       = nodecodes.kern
-    local glyph_code      = nodecodes.glyph
-    local glue_code       = nodecodes.glue
-    local penalty_code    = nodecodes.penalty
-    local whatsit_code    = nodecodes.whatsit
-    local user_code       = nodecodes.user
-    local math_code       = nodecodes.math
-    local hlist_code      = nodecodes.hlist
-    local vlist_code      = nodecodes.vlist
-    local marginkern_code = nodecodes.marginkern
+    local disc_code            = nodecodes.disc
+    local kern_code            = nodecodes.kern
+    local glyph_code           = nodecodes.glyph
+    local glue_code            = nodecodes.glue
+    local penalty_code         = nodecodes.penalty
+    local whatsit_code         = nodecodes.whatsit
+    local user_code            = nodecodes.user
+    local math_code            = nodecodes.math
+    local hlist_code           = nodecodes.hlist
+    local vlist_code           = nodecodes.vlist
+    local marginkern_code      = nodecodes.marginkern
+    local mathlistkern_code    = nodecodes.mathlistkern
+    local dir_code             = nodecodes.dir
+    local par_code             = nodecodes.par
 
     local kerncodes            = nodes.kerncodes
     local fontkern_code        = kerncodes.fontkern
     local italickern_code      = kerncodes.italiccorrection
     local leftmarginkern_code  = kerncodes.leftmarginkern
     local rightmarginkern_code = kerncodes.rightmarginkern
+    local mathlistkern_code    = kerncodes.mathlistkern
     ----- userkern_code        = kerncodes.userkern
 
-    local listcodes       = nodes.listcodes
-    local linelist_code   = listcodes.line
+    local listcodes            = nodes.listcodes
+    local linelist_code        = listcodes.line
 
     local cache
 
@@ -1186,73 +1286,27 @@ do
         local trace_line            = false
         local trace_space           = false
         local trace_depth           = false
+        local trace_dir             = false
+        local trace_par             = false
         local current               = head
         local previous              = nil
         local attr                  = unsetvalue
         local prev_trace_fontkern   = nil
-        local prev_trace_marginkern = nil
         local prev_trace_italic     = nil
+        local prev_trace_marginkern = nil
+--         local prev_trace_mathlist   = nil
         local prev_trace_expansion  = nil
-
-     -- local function setthem(t,k)
-     --     local v_trace_hbox          = band(k,     1) ~= 0
-     --     local v_trace_vbox          = band(k,     2) ~= 0
-     --     local v_trace_vtop          = band(k,     4) ~= 0
-     --     local v_trace_kern          = band(k,     8) ~= 0
-     --     local v_trace_glue          = band(k,    16) ~= 0
-     --     local v_trace_penalty       = band(k,    32) ~= 0
-     --     local v_trace_fontkern      = band(k,    64) ~= 0
-     --     local v_trace_strut         = band(k,   128) ~= 0
-     --     local v_trace_whatsit       = band(k,   256) ~= 0
-     --     local v_trace_glyph         = band(k,   512) ~= 0
-     --     local v_trace_simple        = band(k,  1024) ~= 0
-     --     local v_trace_user          = band(k,  2048) ~= 0
-     --     local v_trace_math          = band(k,  4096) ~= 0
-     --     local v_trace_italic        = band(k,  8192) ~= 0
-     --     local v_trace_origin        = band(k, 16384) ~= 0
-     --     local v_trace_discretionary = band(k, 32768) ~= 0
-     --     local v_trace_expansion     = band(k, 65536) ~= 0
-     --     local v_trace_line          = band(k,131072) ~= 0
-     --     local v_trace_space         = band(k,262144) ~= 0
-     --     local v_trace_depth         = band(k,524288) ~= 0
-     --     local v = function()
-     --         trace_hbox          = v_trace_hbox
-     --         trace_vbox          = v_trace_vbox
-     --         trace_vtop          = v_trace_vtop
-     --         trace_kern          = v_trace_kern
-     --         trace_glue          = v_trace_glue
-     --         trace_penalty       = v_trace_penalty
-     --         trace_fontkern      = v_trace_fontkern
-     --         trace_strut         = v_trace_strut
-     --         trace_whatsit       = v_trace_whatsit
-     --         trace_glyph         = v_trace_glyph
-     --         trace_simple        = v_trace_simple
-     --         trace_user          = v_trace_user
-     --         trace_math          = v_trace_math
-     --         trace_italic        = v_trace_italic
-     --         trace_origin        = v_trace_origin
-     --         trace_discretionary = v_trace_discretionary
-     --         trace_expansion     = v_trace_expansion
-     --         trace_line          = v_trace_line
-     --         trace_space         = v_trace_space
-     --         trace_depth         = v_trace_depth
-     --     end
-     --     t[k] = v
-     --     return v
-     -- end
-     --
-     -- if not cache then
-     --     cache = setmetatableindex(setthem)
-     -- end
 
         while current do
             local id = getid(current)
             local a = forced or getattr(current,a_visual) or unsetvalue
+            local subtype
             if a ~= attr then
-                prev_trace_fontkern   = trace_fontkern
-                prev_trace_italic     = trace_italic
-                prev_trace_marginkern = trace_marginkern
-                prev_trace_expansion  = trace_expansion
+                prev_trace_fontkern     = trace_fontkern
+                prev_trace_italic       = trace_italic
+                prev_trace_marginkern   = trace_marginkern
+--                 prev_trace_mathlistkern = trace_mathlistkern
+                prev_trace_expansion    = trace_expansion
                 attr = a
                 if a == unsetvalue then
                     trace_hbox          = false
@@ -1276,7 +1330,14 @@ do
                     trace_space         = false
                     trace_depth         = false
                     trace_marginkern    = false
-                    goto list
+                    trace_mathlistkern  = false
+                    trace_dir           = false
+                    trace_par           = false
+                    if id == kern_code then
+                        goto kern
+                    else
+                        goto list
+                    end
                 else -- dead slow:
                  -- cache[a]()
                     trace_hbox          = band(a,0x000001) ~= 0
@@ -1300,6 +1361,9 @@ do
                     trace_space         = band(a,0x040000) ~= 0
                     trace_depth         = band(a,0x080000) ~= 0
                     trace_marginkern    = band(a,0x100000) ~= 0
+                    trace_mathlistkern  = band(a,0x200000) ~= 0
+                    trace_dir           = band(a,0x400000) ~= 0
+                    trace_whatsit       = band(a,0x800000) ~= 0
                 end
             elseif a == unsetvalue then
                 goto list
@@ -1329,31 +1393,7 @@ do
                 end
                 setdisc(current,pre,post,replace)
             elseif id == kern_code then
-                local subtype = getsubtype(current)
-                if subtype == fontkern_code then
-                    if trace_fontkern or prev_trace_fontkern then
-                        head, current = fontkern(head,current)
-                    end
-                    if trace_expansion or prev_trace_expansion then
-                        head, current = kernexpansion(head,current)
-                    end
-                elseif subtype == italickern_code then
-                    if trace_italic or prev_trace_italic then
-                        head, current = italickern(head,current)
-                    elseif trace_kern then
-                        head, current = ruleditalic(head,current)
-                    end
-                elseif subtype == leftmarginkern_code or subtype == rightmarginkern_code then
-                    if trace_marginkern or prev_trace_marginkern then
-                        head, current = marginkern(head,current)
-                    elseif trace_kern then
-                        head, current = ruledmarginkern(head,current)
-                    end
-                else
-                    if trace_kern then
-                        head, current = ruledkern(head,current,vertical)
-                    end
-                end
+                goto kern
             elseif id == glue_code then
                 local content = getleader(current)
                 if content then
@@ -1385,8 +1425,49 @@ do
                 if trace_kern then
                     head, current = ruledkern(head,current,vertical,true)
                 end
+            elseif id == dir_code then
+                if trace_dir then
+                    head, current = dir(head,current)
+                end
+            elseif id == par_code then
+                if trace_par then
+                    head, current = par(head,current)
+                end
             end
             goto next
+            ::kern::
+            subtype = getsubtype(current)
+            if subtype == fontkern_code then
+                if trace_fontkern or prev_trace_fontkern then
+                    head, current = fontkern(head,current)
+                end
+                if trace_expansion or prev_trace_expansion then
+                    head, current = kernexpansion(head,current)
+                end
+            elseif subtype == italickern_code then
+                if trace_italic or prev_trace_italic then
+                    head, current = italickern(head,current)
+                elseif trace_kern then
+                    head, current = ruleditalic(head,current)
+                end
+            elseif subtype == leftmarginkern_code or subtype == rightmarginkern_code then
+                if trace_marginkern or prev_trace_marginkern then
+                    head, current = marginkern(head,current)
+                elseif trace_kern then
+                    head, current = ruledmarginkern(head,current)
+                end
+            elseif subtype == mathlistkern_code then
+                if trace_mathlist then -- or prev_trace_mathlist then
+                    head, current = mathlistkern(head,current)
+                elseif trace_kern then
+                    head, current = ruledmathlistkern(head,current)
+                end
+            else
+                if trace_kern then
+                    head, current = ruledkern(head,current,vertical)
+                end
+            end
+            goto next;
             ::list::
             if id == hlist_code then
                 local content = getlist(current)
@@ -1422,7 +1503,7 @@ do
     local function cleanup()
         for tag, cache in next, caches do
             for k, v in next, cache do
-                flush_node_list(v)
+                flushnodelist(v)
             end
         end
         cleanup = function()
@@ -1430,7 +1511,9 @@ do
         end
     end
 
-    local function handler(head)
+    luatex.registerstopactions(cleanup)
+
+    function visualizers.handler(head)
         if usedfont then
             starttiming(visualizers)
             head = visualize(head,true)
@@ -1440,10 +1523,6 @@ do
             return head, false
         end
     end
-
-    visualizers.handler = handler
-
-    luatex.registerstopactions(cleanup)
 
     function visualizers.box(n)
         if usedfont then
@@ -1465,6 +1544,7 @@ do
 
     local hlist_code = nodecodes.hlist
     local vlist_code = nodecodes.vlist
+    local nextnode   = nuts.traversers.node
 
     local last       = nil
     local used       = nil

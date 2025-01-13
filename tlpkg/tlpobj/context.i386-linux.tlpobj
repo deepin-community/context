@@ -1,12 +1,10 @@
 name context.i386-linux
 category Package
-revision 34112
+revision 70189
 shortdesc i386-linux files of context
-binfiles arch=i386-linux size=7
+binfiles arch=i386-linux size=982
  bin/i386-linux/context
- bin/i386-linux/contextjit
- bin/i386-linux/luatools
+ bin/i386-linux/context.lua
+ bin/i386-linux/luametatex
  bin/i386-linux/mtxrun
- bin/i386-linux/mtxrunjit
- bin/i386-linux/texexec
- bin/i386-linux/texmfstart
+ bin/i386-linux/mtxrun.lua

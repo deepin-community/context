@@ -41,7 +41,7 @@ if not modules then modules = { } end modules ['phys-dim'] = {
 
 local rawset, next = rawset, next
 local V, P, S, R, C, Cc, Cs, matchlpeg = lpeg.V, lpeg.P, lpeg.S, lpeg.R, lpeg.C, lpeg.Cc, lpeg.Cs, lpeg.match
-local format, lower = string.format, string.lower
+local format, lower, gsub = string.format, string.lower, string.gsub
 local appendlpeg = lpeg.append
 local utfchartabletopattern = lpeg.utfchartabletopattern
 local mergetable, mergedtable, keys, loweredkeys = table.merge, table.merged, table.keys, table.loweredkeys
@@ -68,7 +68,10 @@ local math_one       = Cs((P("$")    /"") * (1-P("$"))^1 * (P("$")/"")) / contex
 local math_two       = Cs((P("\\m {")/"") * (1-P("}"))^1 * (P("}")/"")) / context.m -- watch the space after \m
 
 local digit          = R("09")
-local sign           = S("+-")
+local plus           = P("+")
+local minus          = P("-")
+local plusminus      = P("±")
+local sign           = plus + minus
 local power          = S("^e")
 local digitspace     = S("~@_")
 local comma          = P(",")
@@ -80,8 +83,6 @@ local positive       = P("++") -- was p
 local negative       = P("--") -- was n
 local highspace      = P("//") -- was s
 local padding        = P("=")
-local plus           = P("+")
-local minus          = P("-")
 local space          = P(" ")
 local lparent        = P("(")
 local rparent        = P(")")
@@ -111,6 +112,7 @@ local dnegative      = negative    / "" / context.digitsnegative
 local dhighspace     = highspace   / "" / context.digitshighspace
 local dsomesign      = plus        / "" / context.digitsplus
                      + minus       / "" / context.digitsminus
+                     + plusminus   / "" / context.digitsplusminus
 local dpower         = power       / "" * ( powerdigits + lbrace * powerdigits * rbrace )
 
 local dpadding       = padding     / "" / context.digitszeropadding -- todo
@@ -152,7 +154,8 @@ local c_p = (ddigitspace^1 * dskipcomma)^0                    -- ___,
           * (ddigitspace^0 * ddigit * dintercomma)^0          -- _00, 000,
           * ddigitspace^0  * ddigit^0                         -- _00 000
           * (
-             dfinalperiod * ddigit * (dintercomma * ddigit)^0 -- .00
+             dfinalperiod * ddigit^1 * dpadding^1             -- .0=
+           + dfinalperiod * ddigit * (dintercomma * ddigit)^0 -- .00
            + dskipperiod  * dpadding^1                        -- .==
            + dsemiperiod  * ddigit * (dintercomma * ddigit)^0 -- :00
            + dsemiperiod  * dpadding^1                        -- :==
@@ -163,7 +166,8 @@ local p_c = (ddigitspace^1 * dskipperiod)^0                   -- ___.
           * (ddigitspace^0 * ddigit * dinterperiod)^0         -- _00. 000.
           * ddigitspace^0  * ddigit^0                         -- _00 000
           * (
-             dfinalcomma * ddigit * (dinterperiod * ddigit)^0 -- 00
+             dfinalcomma * ddigit^1 * dpadding^1              -- ,0=
+           + dfinalcomma * ddigit * (dinterperiod * ddigit)^0 -- 00
            + dskipcomma  * dpadding^1                         -- ,==
            + dsemicomma  * ddigit * (dinterperiod * ddigit)^0 -- :00
            + dsemicomma  * dpadding^1                         -- :==
@@ -265,7 +269,7 @@ local long_units = {
     Celsius                     = "celsius",
     Lumen                       = "lumen",
     Lux                         = "lux",
-    Bequerel                    = "bequerel",
+    Becquerel                   = "becquerel",
     Gray                        = "gray",
     Sievert                     = "sievert",
     Katal                       = "katal",
@@ -448,13 +452,19 @@ local short_units = { -- I'm not sure about casing
     s  = "second",
     g  = "gram",
     n  = "newton",
-    v  = "volt",
+    V  = "volt",
     t  = "tonne",
     l  = "liter",
  -- w  = "watt",
     W  = "watt",
  -- a  = "ampere",
     A  = "ampere",
+
+    Ω  = "ohm",
+
+--  C  = "coulomb", -- needs checking with (c)enti
+--  K  = "kelvin",  -- needs checking with (k)ilo
+--  N  = "newton",  -- needs checking with (n)ewton
 
     min = "minute",
 
@@ -531,9 +541,14 @@ local ctx_unitsO      = context.unitsO
 local ctx_unitsN      = context.unitsN
 local ctx_unitsC      = context.unitsC
 local ctx_unitsQ      = context.unitsQ
+local ctx_unitsRPM    = context.unitsRPM
+local ctx_unitsRTO    = context.unitsRTO
+local ctx_unitsRabout = context.unitsRabout
 local ctx_unitsNstart = context.unitsNstart
 local ctx_unitsNstop  = context.unitsNstop
 local ctx_unitsNspace = context.unitsNspace
+local ctx_unitsPopen  = context.unitsPopen
+local ctx_unitsPclose = context.unitsPclose
 
 local labels = languages.data.labels
 
@@ -599,7 +614,7 @@ labels.units = allocate {
     celsius                     = { labels = { en = [[\checkedtextcelsius]]      } }, -- 0x2103
     lumen                       = { labels = { en = [[lm]]                       } },
     lux                         = { labels = { en = [[lx]]                       } },
-    bequerel                    = { labels = { en = [[Bq]]                       } },
+    becquerel                   = { labels = { en = [[Bq]]                       } },
     gray                        = { labels = { en = [[Gy]]                       } },
     sievert                     = { labels = { en = [[Sv]]                       } },
     katal                       = { labels = { en = [[kat]]                      } },
@@ -856,35 +871,60 @@ local function update_parsers() -- todo: don't remap utf sequences
                         )^1,
     }
 
-
- -- local number = lpeg.patterns.number
-
-    local number = Cs( P("$")     * (1-P("$"))^1 * P("$")
-                     + P([[\m{]]) * (1-P("}"))^1 * P("}")
-                     + (1-R("az","AZ")-P(" "))^1 -- todo: catch { } -- not ok
-                   ) / ctx_unitsN
-
-    local start  = Cc(nil) / ctx_unitsNstart
-    local stop   = Cc(nil) / ctx_unitsNstop
-    local space  = Cc(nil) / ctx_unitsNspace
-
     -- todo: avoid \ctx_unitsNstart\ctx_unitsNstop (weird that it can happen .. now catched at tex end)
 
-    local p_c_combinedparser  = P { "start",
-        number = start * dleader * (p_c_dparser + number) * stop,
-        rule   = V("number")^-1 * unitparser,
-        space  = space,
-        start  = V("rule") * (V("space") * V("rule"))^0 + V("number")
-    }
+    local letter = R("az","AZ")
+    local bound  = #(1-letter)
+ -- local number = lpeg.patterns.number
+    local number = Cs( P("$")     * (1-P("$"))^1 * P("$")
+                     + P([[\m{]]) * (1-P("}"))^1 * P("}")
+                     + (1-letter-P(" "))^1 -- todo: catch { } -- not ok
+                   ) / ctx_unitsN
 
-    local c_p_combinedparser  = P { "start",
-        number = start * dleader * (c_p_dparser + number) * stop,
-        rule   = V("number")^-1 * unitparser,
-        space  = space,
-        start  = V("rule") * (V("space") * V("rule"))^0 + V("number")
-    }
+    local start   = Cc(nil) / ctx_unitsNstart
+    local stop    = Cc(nil) / ctx_unitsNstop
+    local space   = P(" ") * Cc(nil) / ctx_unitsNspace
+    local open    = P("(") * Cc(nil) / ctx_unitsPopen
+    local close   = P(")") * Cc(nil) / ctx_unitsPclose
 
-    return p_c_combinedparser, c_p_combinedparser
+    local range   = somespace
+                  * ( (P("±") + P("pm") * bound) / "" / ctx_unitsRPM
+                    + (P("–") + P("to") * bound) / "" / ctx_unitsRTO )
+                  * somespace
+
+    local about   = (P("±") + P("pm") * bound) / "" / ctx_unitsRabout
+                  * somespace
+
+    -- todo: start / stop
+
+    local function combine(parser)
+        return P { "start",
+            number  = start * dleader * (parser + number) * stop,
+            anumber = space
+                    * open
+                    * V("about")^-1
+                    * V("number")
+                    * close,
+            rule    = V("number")^-1
+                    * (V("range") * V("number") + V("anumber"))^-1,
+            unit    = unitparser,
+            about   = about,
+            range   = range,
+            space   = space,
+            start   = V("rule")
+                    * V("unit")
+                    * (V("space") * V("rule") * V("unit"))^0
+                    + open
+                    * V("number")
+                    * (V("range") * V("number"))^-1
+                    * close
+                    * dtrailer^-1
+                    * V("unit")
+                    + V("number")
+        }
+    end
+
+    return combine(p_c_dparser), combine(c_p_dparser)
 end
 
 local p_c_parser = nil
@@ -967,3 +1007,15 @@ implement { name = "digits_reverse", actions = makedigits,   arguments = { "stri
 implement { name = "unit_normal",    actions = makeunit,     arguments = "string"}
 implement { name = "unit_reverse",   actions = makeunit,     arguments = { "string", true } }
 implement { name = "registerunit",   actions = registerunit, arguments = "2 strings" }
+
+implement {
+    name      = "hyphenateddigits",
+    public    = true,
+    protected = true,
+    arguments = { "optional", "string" },
+    actions   = function(filler, digits)
+        digits = gsub(digits,"(%d)","%1\\digitsbreak ") -- space needed for following letters
+        digits = gsub(digits,"\\-$",filler)
+        context(digits)
+    end
+}

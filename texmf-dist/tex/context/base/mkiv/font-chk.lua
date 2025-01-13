@@ -9,6 +9,8 @@ if not modules then modules = { } end modules ['font-chk'] = {
 -- possible optimization: delayed initialization of vectors
 -- move to the nodes namespace
 
+-- This is old code and I'll make a nicer one for lmtx some day.
+
 local next = next
 local floor = math.floor
 
@@ -62,7 +64,7 @@ local implement            = interfaces.implement
 local glyph_code           = nodes.nodecodes.glyph
 
 local new_special          = nodes.pool.special -- todo: literal
-local hpack_node           = node.hpack
+local hpack_node           = nodes.hpack
 
 local nuts                 = nodes.nuts
 local tonut                = nuts.tonut
@@ -73,7 +75,7 @@ local setchar              = nuts.setchar
 local nextglyph            = nuts.traversers.glyph
 
 local remove_node          = nuts.remove
-local insert_node_after    = nuts.insert_after
+local insertnodeafter      = nuts.insertafter
 
 -- maybe in fonts namespace
 -- deletion can be option
@@ -248,11 +250,14 @@ local function addmissingsymbols(tfmdata) -- we can have an alternative with rul
             end
         end
     end
-    if #collected > 0 then
-        addcharacters(properties.id, {
-            type       = "real",
-            characters = collected,
-        })
+    if next(collected) then
+        local id = properties.id
+        if id then
+            addcharacters(properties.id, {
+                type       = "real",
+                characters = collected,
+            })
+        end
     end
 end
 
@@ -267,12 +272,6 @@ registerotffeature {
 
 fonts.loggers.add_placeholders        = function(id) addmissingsymbols(fontdata[id or true]) end
 fonts.loggers.category_to_placeholder = mapping
-
-function commands.getplaceholderchar(name)
-    local id = currentfont()
-    addmissingsymbols(fontdata[id])
-    context(getprivatenode(fontdata[id],name))
-end
 
 -- todo in luatex: option to add characters (just slots, no kerns etc)
 -- we can do that now so ...
@@ -325,7 +324,7 @@ function checkers.missing(head)
             local char, font = isglyph(node)
             local kind, char = placeholder(font,char)
             if kind == "node" then
-                insert_node_after(head,node,tonut(char))
+                insertnodeafter(head,node,tonut(char))
                 head = remove_node(head,node,true)
             elseif kind == "char" then
                 setchar(node,char)

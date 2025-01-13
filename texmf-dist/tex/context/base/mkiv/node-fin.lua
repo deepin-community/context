@@ -1,5 +1,6 @@
 if not modules then modules = { } end modules ['node-fin'] = {
     version   = 1.001,
+    optimize  = true,
     comment   = "companion to node-fin.mkiv",
     author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
     copyright = "PRAGMA ADE / ConTeXt Development Team",
@@ -16,57 +17,57 @@ local setmetatableindex = table.setmetatableindex
 
 local attributes, nodes, node = attributes, nodes, node
 
-local nuts               = nodes.nuts
-local tonut              = nodes.tonut
+local nuts             = nodes.nuts
+local tonut            = nodes.tonut
 
-local getnext            = nuts.getnext
-local getid              = nuts.getid
-local getlist            = nuts.getlist
-local getleader          = nuts.getleader
-local getattr            = nuts.getattr
-local getwidth           = nuts.getwidth
-local getwhd             = nuts.getwhd
-local getorientation     = nuts.getorientation
-local has_dimensions     = nuts.has_dimensions
-local getbox             = nuts.getbox
+local getnext          = nuts.getnext
+local getid            = nuts.getid
+local getlist          = nuts.getlist
+local getleader        = nuts.getleader
+local getattr          = nuts.getattr
+local getwidth         = nuts.getwidth
+local getwhd           = nuts.getwhd
+local getorientation   = nuts.getorientation
+local hasdimensions    = nuts.hasdimensions
+local getbox           = nuts.getbox
 
-local setlist            = nuts.setlist
-local setleader          = nuts.setleader
+local setlist          = nuts.setlist
+local setleader        = nuts.setleader
 
-local copy_node          = nuts.copy
-local insert_node_before = nuts.insert_before
-local insert_node_after  = nuts.insert_after
+local copy_node        = nuts.copy
+local insertnodebefore = nuts.insertbefore
+local insertnodeafter  = nuts.insertafter
 
-local nextnode           = nuts.traversers.node
+local nextnode         = nuts.traversers.node
 
-local nodecodes          = nodes.nodecodes
-local rulecodes          = nodes.rulecodes
+local nodecodes        = nodes.nodecodes
+local rulecodes        = nodes.rulecodes
 
-local boxrule_code       = rulecodes.box
-local imagerule_code     = rulecodes.image
-local emptyrule_code     = rulecodes.empty
+local boxrule_code     = rulecodes.box
+local imagerule_code   = rulecodes.image
+local emptyrule_code   = rulecodes.empty
 
-local glyph_code         = nodecodes.glyph
-local disc_code          = nodecodes.disc
-local glue_code          = nodecodes.glue
-local rule_code          = nodecodes.rule
-local hlist_code         = nodecodes.hlist
-local vlist_code         = nodecodes.vlist
+local glyph_code       = nodecodes.glyph
+local disc_code        = nodecodes.disc
+local glue_code        = nodecodes.glue
+local rule_code        = nodecodes.rule
+local hlist_code       = nodecodes.hlist
+local vlist_code       = nodecodes.vlist
 
-local texlists           = tex.lists
-local texgetnest         = tex.getnest
+local texlists         = tex.lists
+local texgetnest       = tex.getnest
 
-local states             = attributes.states
-local numbers            = attributes.numbers
-local a_trigger          = attributes.private('trigger')
-local triggering         = false
+local states           = attributes.states
+local numbers          = attributes.numbers
+local a_trigger        = attributes.private('trigger')
+local triggering       = false
 
-local implement          = interfaces.implement
+local implement        = interfaces.implement
 
-local starttiming        = statistics.starttiming
-local stoptiming         = statistics.stoptiming
-local loadstripped       = utilities.lua.loadstripped
-local unsetvalue         = attributes.unsetvalue
+local starttiming      = statistics.starttiming
+local stoptiming       = statistics.stoptiming
+local loadstripped     = utilities.lua.loadstripped
+local unsetvalue       = attributes.unsetvalue
 
 -- these two will be like trackers
 
@@ -162,13 +163,13 @@ function states.finalize(namespace,attribute,head) -- is this one ok?
         if id == hlist_code or id == vlist_code then
             local content = getlist(head)
             if content then
-                local list = insert_node_before(content,content,copy_node(nsnone)) -- two return values
+                local list = insertnodebefore(content,content,copy_node(nsnone)) -- two return values
                 if list ~= content then
                     setlist(head,list)
                 end
             end
         else
-            head = insert_node_before(head,head,copy_node(nsnone))
+            head = insertnodebefore(head,head,copy_node(nsnone))
         end
         return head, true
     end
@@ -198,20 +199,20 @@ local function process(attribute,head,inheritance,default) -- one attribute
                     if outer then
                         if default and outer == inheritance then
                             if current ~= default then
-                                head    = insert_node_before(head,stack,copy_node(nsdata[default]))
+                                head    = insertnodebefore(head,stack,copy_node(nsdata[default]))
                                 current = default
                             end
                         elseif current ~= outer then
-                            head    = insert_node_before(head,stack,copy_node(nsdata[c]))
+                            head    = insertnodebefore(head,stack,copy_node(nsdata[c])) -- hm, what is c ... bug
                             current = outer
                         end
                     elseif default and inheritance then
                         if current ~= default then
-                            head    = insert_node_before(head,stack,copy_node(nsdata[default]))
+                            head    = insertnodebefore(head,stack,copy_node(nsdata[default]))
                             current = default
                         end
                     elseif current > 0 then
-                        head    = insert_node_before(head,stack,copy_node(nsnone))
+                        head    = insertnodebefore(head,stack,copy_node(nsnone))
                         current = 0
                     end
                 end
@@ -235,7 +236,7 @@ local function process(attribute,head,inheritance,default) -- one attribute
                 -- end nested --
             end
         elseif id == rule_code then
-            check = has_dimensions(stack)
+            check = hasdimensions(stack)
         end
         -- much faster this way than using a check() and nested() function
         if check then
@@ -243,11 +244,11 @@ local function process(attribute,head,inheritance,default) -- one attribute
             if c then
                 if default and c == inheritance then
                     if current ~= default then
-                        head    = insert_node_before(head,stack,copy_node(nsdata[default]))
+                        head    = insertnodebefore(head,stack,copy_node(nsdata[default]))
                         current = default
                     end
                 elseif current ~= c then
-                    head    = insert_node_before(head,stack,copy_node(nsdata[c]))
+                    head    = insertnodebefore(head,stack,copy_node(nsdata[c]))
                     current = c
                 end
                 if leader then
@@ -280,11 +281,11 @@ local function process(attribute,head,inheritance,default) -- one attribute
                 end
             elseif default and inheritance then
                 if current ~= default then
-                    head    = insert_node_before(head,stack,copy_node(nsdata[default]))
+                    head    = insertnodebefore(head,stack,copy_node(nsdata[default]))
                     current = default
                 end
             elseif current > 0 then
-                head    = insert_node_before(head,stack,copy_node(nsnone))
+                head    = insertnodebefore(head,stack,copy_node(nsnone))
                 current = 0
             end
             check = false
@@ -325,7 +326,7 @@ local function selective(attribute,head,inheritance,default) -- two attributes
                         if default and outer == inheritance then
                             if current ~= default then
                                 local data = nsdata[default]
-                                head = insert_node_before(head,stack,copy_node(data[nsforced or getattr(stack,nsselector) or nsselector]))
+                                head = insertnodebefore(head,stack,copy_node(data[nsforced or getattr(stack,nsselector) or nsselector]))
                                 current = default
                             end
                         else
@@ -333,7 +334,7 @@ local function selective(attribute,head,inheritance,default) -- two attributes
                          -- local s = nsforced or getattr(stack,nsselector)
                             if current ~= outer or current_selector ~= s then
                                 local data = nsdata[outer]
-                                head = insert_node_before(head,stack,copy_node(data[nsforced or s or nsselector]))
+                                head = insertnodebefore(head,stack,copy_node(data[nsforced or s or nsselector]))
                                 current = outer
                                 current_selector = s
                             end
@@ -341,11 +342,11 @@ local function selective(attribute,head,inheritance,default) -- two attributes
                     elseif default and inheritance then
                         if current ~= default then
                             local data = nsdata[default]
-                            head    = insert_node_before(head,stack,copy_node(data[nsforced or getattr(stack,nsselector) or nsselector]))
+                            head    = insertnodebefore(head,stack,copy_node(data[nsforced or getattr(stack,nsselector) or nsselector]))
                             current = default
                         end
                     elseif current > 0 then
-                        head = insert_node_before(head,stack,copy_node(nsnone))
+                        head = insertnodebefore(head,stack,copy_node(nsnone))
                         current, current_selector = 0, 0
                     end
                 end
@@ -373,8 +374,9 @@ local function selective(attribute,head,inheritance,default) -- two attributes
                 -- so no redundant color stuff (only here, layers for instance should obey)
                 check = false
             else
-                check = has_dimensions(stack)
+                check = hasdimensions(stack)
             end
+        else
         end
         if check then
             local c = getattr(stack,attribute)
@@ -382,7 +384,7 @@ local function selective(attribute,head,inheritance,default) -- two attributes
                 if default and c == inheritance then
                     if current ~= default then
                         local data = nsdata[default]
-                        head = insert_node_before(head,stack,copy_node(data[nsforced or getattr(stack,nsselector) or nsselector]))
+                        head = insertnodebefore(head,stack,copy_node(data[nsforced or getattr(stack,nsselector) or nsselector]))
                         current = default
                     end
                 else
@@ -390,7 +392,7 @@ local function selective(attribute,head,inheritance,default) -- two attributes
                  -- local s = nsforced or getattr(stack,nsselector)
                     if current ~= c or current_selector ~= s then
                         local data = nsdata[c]
-                        head = insert_node_before(head,stack,copy_node(data[nsforced or s or nsselector]))
+                        head = insertnodebefore(head,stack,copy_node(data[nsforced or s or nsselector]))
                         current = c
                         current_selector = s
                     end
@@ -417,11 +419,11 @@ local function selective(attribute,head,inheritance,default) -- two attributes
             elseif default and inheritance then
                 if current ~= default then
                     local data = nsdata[default]
-                    head    = insert_node_before(head,stack,copy_node(data[nsforced or getattr(stack,nsselector) or nsselector]))
+                    head    = insertnodebefore(head,stack,copy_node(data[nsforced or getattr(stack,nsselector) or nsselector]))
                     current = default
                 end
             elseif current > 0 then
-                head = insert_node_before(head,stack,copy_node(nsnone))
+                head = insertnodebefore(head,stack,copy_node(nsnone))
                 current, current_selector = 0, 0
             end
             check = false
@@ -468,9 +470,9 @@ local function stacked(attribute,head,default) -- no triggering, no inheritance,
                     if a and current ~= a and nslistwise[a] then -- viewerlayer / needs checking, see below
                         local p = current
                         current = a
-                        head    = insert_node_before(head,stack,copy_node(nsdata[a]))
+                        head    = insertnodebefore(head,stack,copy_node(nsdata[a]))
                         list    = stacked(attribute,content,current) -- two return values
-                        head, stack = insert_node_after(head,stack,copy_node(nsnone))
+                        head, stack = insertnodeafter(head,stack,copy_node(nsnone))
                         current = p
                     else
                         list = stacked(attribute,content,current)
@@ -483,13 +485,13 @@ local function stacked(attribute,head,default) -- no triggering, no inheritance,
                 end
             end
         elseif id == rule_code then
-            check = has_dimensions(stack)
+            check = hasdimensions(stack)
         end
         if check then
             local a = getattr(stack,attribute)
             if a then
                 if current ~= a then
-                    head    = insert_node_before(head,stack,copy_node(nsdata[a]))
+                    head    = insertnodebefore(head,stack,copy_node(nsdata[a]))
                     depth   = depth + 1
                     current = a
                 end
@@ -506,7 +508,7 @@ local function stacked(attribute,head,default) -- no triggering, no inheritance,
             elseif default > 0 then
                 --
             elseif current > 0 then
-                head    = insert_node_before(head,stack,copy_node(nsnone))
+                head    = insertnodebefore(head,stack,copy_node(nsnone))
                 depth   = depth - 1
                 current = 0
             end
@@ -515,7 +517,7 @@ local function stacked(attribute,head,default) -- no triggering, no inheritance,
         stack = getnext(stack)
     end
     while depth > 0 do
-        head = insert_node_after(head,stack,copy_node(nsnone))
+        head = insertnodeafter(head,stack,copy_node(nsnone))
         depth = depth - 1
     end
     return head
@@ -554,12 +556,12 @@ local function stacker(attribute,head,default) -- no triggering, no inheritance,
                 if nslistwise then
                     local a = getattr(current,attribute)
                     if a and attrib ~= a and nslistwise[a] then -- viewerlayer
-                        head = insert_node_before(head,current,copy_node(nsdata[a]))
+                        head = insertnodebefore(head,current,copy_node(nsdata[a]))
                         list = stacker(attribute,content,a)
                         if list ~= content then
                             setlist(current,list)
                         end
-                        head, current = insert_node_after(head,current,copy_node(nsnone))
+                        head, current = insertnodeafter(head,current,copy_node(nsnone))
                     else
                         list = stacker(attribute,content,attrib)
                         if list ~= content then
@@ -574,7 +576,7 @@ local function stacker(attribute,head,default) -- no triggering, no inheritance,
                 end
             end
         elseif id == rule_code then
-            check = has_dimensions(current)
+            check = hasdimensions(current)
         end
 
         if check then
@@ -586,7 +588,7 @@ local function stacker(attribute,head,default) -- no triggering, no inheritance,
                 end
                 local n = nsstep(a)
                 if n then
-                    head = insert_node_before(head,current,n) -- a
+                    head = insertnodebefore(head,current,n) -- a
                 end
                 attrib = a
                 if leader then
@@ -615,7 +617,7 @@ local function stacker(attribute,head,default) -- no triggering, no inheritance,
     if stacked then
         local n = nsend()
         while n do
-            head = insert_node_after(head,previous,n)
+            head = insertnodeafter(head,previous,n)
             n = nsend()
         end
     end
@@ -634,100 +636,3 @@ end
 statistics.register("attribute processing time", function()
     return statistics.elapsedseconds(attributes,"front- and backend")
 end)
-
--- -- --
-
-do
-
-    local cleaners = { }
-    local trace    = true -- false
-
-    function attributes.cleanup()
-        if next(cleaners) then
-            local values = setmetatableindex("table")
-
-            if trace then
-                starttiming(values)
-            end
-
-            local function check(l)
-                for n, id in nextnode, l do
-                    if id == hlist_code or id == vlist_code or id == glue_code then
-                        local l = getlist(n)
-                        if l then
-                            check(l)
-                        end
-                    end
-                    for a in next, cleaners do
-                        local v = getattr(n,a)
-                        if v then
-                         -- values[a] = values[a] + 1
-                            values[a][v] = true
-                        end
-                    end
-                end
-            end
-
-            local top = texgetnest("ptr")
-            for i=1,top do
-                local l = texgetnest(i)
-                if l then
-                    check(tonut(l.head))
-                end
-            end
-
-            do local l
-                l = tonut(texlists.page_ins_head)       if l then check(l) end
-                l = tonut(texlists.contrib_head)        if l then check(l) end
-                l = tonut(texlists.page_discards_head)  if l then check(l) end
-                l = tonut(texlists.split_discards_head) if l then check(l) end
-                l = tonut(texlists.page_head)           if l then check(l) end
-            end
-
-            -- todo: traverseboxes
-
-            for i=0,65535 do
-                local b = getbox(i)
-                if b then
-                    local l = getlist(b)
-                    if l then
-                        check(l)
-                    end
-                end
-            end
-
-            for a, t in next, values do
-                cleaners[a](a,t)
-            end
-
-            if trace then
-                stoptiming(values)
-                local a = table.sortedkeys(values)
-                local t = statistics.elapsedtime(values)
-                local r = tex.getcount("realpageno")
-                if #a == 0 then
-                    logs.report("attributes","cleaning up at page %i took %s seconds, no attributes",r,t)
-                else
-                    logs.report("attributes","cleaning up at page %i took %s seconds, attributes: % t",r,t,a)
-                end
-            end
-        end
-    end
-
-    -- not yet used but when we do ... delay a call till we enable it (attr-ini.mkiv)
-
-    -- local function show(a,t) for k, v in next, t do print(a,k) end end
-    --
-    -- attributes.registercleaner(  1, show)
-    -- attributes.registercleaner(  2, show)
-
-    function attributes.registercleaner(a,f)
-        cleaners[a] = f
-    end
-
-    implement {
-        name    = "cleanupattributes",
-        actions = attributes.cleanup,
-    }
-
-end

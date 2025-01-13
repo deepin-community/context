@@ -284,10 +284,9 @@ local function dots(main,characters,id,size,unicode)
                 }
             end
         elseif unicode == 0x22EE then
-            -- weird height !
             characters[unicode] = {
                 width    = w,
-                height   = h+(1.4)*size,
+                height   = h+0.8*size,
                 depth    = 0,
                 commands = {
                     push, push, slot, pop, up4size, push, slot, pop, up4size, slot, pop,
@@ -296,7 +295,7 @@ local function dots(main,characters,id,size,unicode)
         elseif unicode == 0x22F1 then
             characters[unicode] = {
                 width    = 3*w + 6*size/18,
-                height   = 1.5*size,
+                height   = 0.7*size,
                 depth    = 0,
                 commands = {
                     push,
@@ -313,7 +312,7 @@ local function dots(main,characters,id,size,unicode)
         elseif unicode == 0x22F0 then
             characters[unicode] = {
                 width    = 3*w + 6*size/18,
-                height   = 1.5*size,
+                height   = 0.7*size,
                 depth    = 0,
                 commands = {
                     push,
@@ -422,7 +421,7 @@ local function stack(main,characters,id,size,unicode,u1,d12,u2)
     local mu = size/18
     characters[unicode] = {
         width    = w1,
-        height   = h1 + h2 + d12,
+        height   = h1 + h2 + d12*mu,
         depth    = d1,
         commands = {
             { "slot", id, u1 },
@@ -621,16 +620,14 @@ setmetatableindex(reverse, function(t,name)
     end
     local m = mathencodings[name]
     local r = { }
-    for u, i in next, m do
-        r[i] = u
+    if type(m) == "table" then
+        for u, i in next, m do
+            r[i] = u
+        end
     end
     reverse[name] = r
     return r
 end)
-
--- use char and font hash
---
--- commands  = { { "font", slot }, { "char", unicode } },
 
 local function copy_glyph(main,target,original,unicode,slot)
     local addprivate = fonts.helpers.addprivate
@@ -703,7 +700,7 @@ local function copy_glyph(main,target,original,unicode,slot)
                 vvi.glyph = addprivate(main,formatters["M-V-%H"](oldglyph),newdata)
             end
         end
-        return newdata
+        return glyphdata
     end
 end
 
@@ -719,8 +716,9 @@ function vfmath.define(specification,set,goodies)
     local start    = (trace_virtual or trace_timings) and os.clock()
     local okset    = { }
     local n        = 0
-    for s=1,#set do
-        local ss     = set[s]
+    local setlist  = set.recipe or set
+    for s=1,#setlist do
+        local ss     = setlist[s]
         local ssname = ss.name
         if add_optional and ss.optional then
             if trace_virtual then
@@ -837,7 +835,6 @@ function vfmath.define(specification,set,goodies)
         setmetatableindex(goodies,parent.goodies)
     end
     --
-    properties.virtualized = true
     properties.hasitalics  = true
     properties.hasmath     = true
     --
@@ -850,8 +847,10 @@ function vfmath.define(specification,set,goodies)
     -- we need to set some values in main as well (still?)
     --
     main.fullname      = properties.fullname
-    main.type          = "virtual"
     main.nomath        = false
+    --
+    properties.virtualized = true
+    main.type              = "virtual"
     --
     parameters.x_height = parameters.x_height or 0
     --
@@ -918,7 +917,7 @@ function vfmath.define(specification,set,goodies)
             else
                 local vectorname = ss.vector
                 if vectorname then
-                    local offset      = 0xFF000
+                    local offset      = 0xFF000 -- todo: -- private
                     local vector      = mathencodings[vectorname]
                     local rotcev      = reverse[vectorname]
                     local isextension = ss.extension
@@ -926,11 +925,11 @@ function vfmath.define(specification,set,goodies)
                         local fc       = fs.characters
                         local fd       = fs.descriptions
                         local si       = shared[s]
+                        local fontname = fs.properties.name or "unknown"
                         local skewchar = ss.skewchar
                         for unicode, index in next, vector do
                             local fci = fc[index]
                             if not fci then
-                                local fontname = fs.properties.name or "unknown"
                                 local rf = reported[fontname]
                                 if not rf then rf = { } reported[fontname] = rf end
                                 local rv = rf[vectorname]
@@ -1111,7 +1110,8 @@ function vfmath.define(specification,set,goodies)
     -- so better is to also reserve the id already which then involves some more
     -- management (so not now).
     fontlist[#fontlist+1] = {
-        id   = font.nextid(),
+     -- id   = font.nextid(),
+        id   = 0, -- self
         size = size,
     }
     vfmath.addmissing(main,#fontlist,size)

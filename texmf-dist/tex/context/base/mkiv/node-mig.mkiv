@@ -13,9 +13,9 @@
 
 \writestatus{loading}{ConTeXt Node Support / Migrations}
 
-%D This is very experimental and although it is used in a
-%D real project it mostly serves a testbed for Taco and me so
-%D as prelude to extending the inserts mechanism.
+%D This is very experimental and although it is used in a real project it mostly
+%D serves a testbed for Taco and me so as prelude to extending the inserts
+%D mechanism.
 %D
 %D \starttyping
 %D \automigrateinserts
@@ -42,20 +42,7 @@
 
 \registerctxluafile{node-mig}{}
 
-\newtoks\everyautomigratefootnotes
-\newtoks\everyautomigratemarks
-
-\def\automigrateinserts{\the\everyautomigratefootnotes} % soon default but does not work (yet) for notes in captions (themselves inserts)
-\def\automigratemarks  {\the\everyautomigratemarks}
-
-\appendtoks
-    \let\postponenotes\relax
-    \enableexperiments[inserts.migrate,inserts.migrate.nested]%
-\to \everyautomigratefootnotes
-
-\appendtoks
-    \writestatus\m!system{migration of marks is normally not needed}%
-    \enableexperiments[marks.migrate]%
-\to \everyautomigratemarks
+\protected\def\automigrateinserts{\setupinsertion[\c!anchoring=\v!auto]}
+          \let\automigratemarks   \relax
 
 \protect

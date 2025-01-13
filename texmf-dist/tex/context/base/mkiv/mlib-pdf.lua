@@ -23,11 +23,8 @@ local context         = context
 
 local allocate        = utilities.storage.allocate
 
-local copy_node       = node.copy
-local write_node      = node.write
-
 local pen_info        = mplib.pen_info
-local object_fields   = mplib.fields
+local getfields       = mplib.getfields or mplib.fields -- todo: in lmtx get them once and then use gettype
 
 local save_table      = false
 local force_stroke    = false
@@ -91,7 +88,7 @@ end
 
 function metapost.flushliteral(d)
     if savedliterals then
-        write_node(mpsliteral(savedliterals[d]))
+        context(mpsliteral(savedliterals[d]))
     else
         report_metapost("problem flushing literal %a",d)
     end
@@ -217,7 +214,7 @@ local function flushnormalpath(path, t, open)
     return t
 end
 
-local function flushconcatpath(path, t, open)
+local function flushconcatpath(path, t, open, transform)
     local pth, ith, nt
     local length = #path
     if t then
@@ -226,8 +223,10 @@ local function flushconcatpath(path, t, open)
         t = { }
         nt = 0
     end
-    nt = nt + 1
-    t[nt] = f_cm(sx,rx,ry,sy,tx,ty)
+    if transform then
+        nt = nt + 1
+        t[nt] = f_cm(sx,rx,ry,sy,tx,ty)
+    end
     for i=1,length do
         nt = nt + 1
         pth = path[i]
@@ -363,18 +362,20 @@ end
 local stack = { }
 
 local function pushproperties(figure)
+    -- maybe there will be getters in lmtx
     local boundingbox = figure:boundingbox()
+    local slot = figure:charcode() or 0
     local properties = {
         llx    = boundingbox[1],
         lly    = boundingbox[2],
         urx    = boundingbox[3],
         ury    = boundingbox[4],
-        slot   = figure:charcode(),
+        slot   = slot,
         width  = figure:width(),
         height = figure:height(),
         depth  = figure:depth(),
-        italic = figure:italcorr(),
-        number = figure:charcode() or 0,
+        italic = figure:italcorr(), -- figure:italic() in lmtx
+        number = slot,
     }
     insert(stack,properties)
     metapost.properties = properties
@@ -460,7 +461,7 @@ function metapost.flush(specification,result)
                                         result[#result+1] = evenodd and "W* n" or "W n"
                                     elseif objecttype == "stop_clip" then
                                         result[#result+1] = "Q"
-                                        miterlimit, linecap, linejoin, dashed = -1, -1, -1, "" -- was false
+                                        miterlimit, linecap, linejoin, dashed, linewidth = -1, -1, -1, "", false
                                     elseif objecttype == "start_bounds" or objecttype == "stop_bounds" then
                                         -- skip
                                     elseif objecttype == "start_group" then
@@ -475,7 +476,7 @@ function metapost.flush(specification,result)
                                                     bbox   = toboundingbox(object.path),
                                                 })
                                                 result = { }
-miterlimit, linecap, linejoin, dashed, linewidth = -1, -1, -1, "", false
+                                                miterlimit, linecap, linejoin, dashed, linewidth = -1, -1, -1, "", false
                                             else
                                                 insert(groupstack,false)
                                             end
@@ -490,7 +491,7 @@ miterlimit, linecap, linejoin, dashed, linewidth = -1, -1, -1, "", false
                                             result[#result+1] = reference
                                             result = pluginactions(data.after,result,flushfigure)
                                             result[#result+1] = "Q"
-miterlimit, linecap, linejoin, dashed, linewidth = -1, -1, -1, "", false
+                                            miterlimit, linecap, linejoin, dashed, linewidth = -1, -1, -1, "", false
                                         end
                                     else
                                         -- we use an indirect table as we want to overload
@@ -600,7 +601,7 @@ miterlimit, linecap, linejoin, dashed, linewidth = -1, -1, -1, "", false
                                                     for i=1,#savedpath do
                                                         local path = savedpath[i]
                                                         if transformed then
-                                                            flushconcatpath(path,result,open)
+                                                            flushconcatpath(path,result,open,i==1)
                                                         else
                                                             flushnormalpath(path,result,open)
                                                         end
@@ -610,7 +611,7 @@ miterlimit, linecap, linejoin, dashed, linewidth = -1, -1, -1, "", false
                                                 if flush then
                                                     -- ignore this path
                                                 elseif transformed then
-                                                    flushconcatpath(path,result,open)
+                                                    flushconcatpath(path,result,open,true)
                                                 else
                                                     flushnormalpath(path,result,open)
                                                 end
@@ -640,7 +641,7 @@ miterlimit, linecap, linejoin, dashed, linewidth = -1, -1, -1, "", false
                                                     for i=1,#savedhtap do
                                                         local path = savedhtap[i]
                                                         if transformed then
-                                                            flushconcatpath(path,result,open)
+                                                            flushconcatpath(path,result,open,i==1)
                                                         else
                                                             flushnormalpath(path,result,open)
                                                         end
@@ -649,7 +650,7 @@ miterlimit, linecap, linejoin, dashed, linewidth = -1, -1, -1, "", false
                                                     evenodd   = true
                                                 end
                                                 if transformed then
-                                                    flushconcatpath(path,result,open)
+                                                    flushconcatpath(path,result,open,true)
                                                 else
                                                     flushnormalpath(path,result,open)
                                                 end
@@ -744,9 +745,9 @@ function metapost.totable(result,askedfig)
         for o=1,#objects do
             local object = objects[o]
             local result = { }
-            local fields = object_fields(object) -- hm, is this the whole list, if so, we can get it once
+            local fields = getfields(object) -- hm, is this the whole list, if so, we can get it once
             for f=1,#fields do
-                local field = fields[f]
+                local field   = fields[f]
                 result[field] = object[field]
             end
             results[o] = result

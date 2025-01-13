@@ -46,7 +46,7 @@
 \let\setupFLOWcharts\setupFLOWchart
 \let\setupFLOWlines \setupFLOWline
 \let\setupFLOWshapes\setupFLOWshape
-\let\setupFLOWsets  \setupFLOWset
+%let\setupFLOWset  \setupFLOWsets
 
 \setupFLOWcharts
   [\c!width=12\bodyfontsize,
@@ -276,7 +276,7 @@
    \let\location   \FLOW_location
    \let\text       \FLOW_text
    \let\label      \FLOW_label
-   \let\comment    \FLOW_comment
+   \overloaded\let\comment    \FLOW_comment
    \let\exit       \FLOW_exit
    \let\connection \FLOW_connection
    \let\include    \FLOW_include
@@ -285,7 +285,7 @@
    \let\connect    \FLOW_connection
    \let\locate     \FLOW_location
    %
-   \let\includeFLOWchart\include
+   \overloaded\let\includeFLOWchart\include
 \to \everyFLOWchart
 
 \unexpanded\def\FLOW_name              #name{\clf_flow_set_name{#name}\ignorespaces}
@@ -322,12 +322,16 @@
   [n=0,
    x=1,
    y=1,
+   realx=1,
+   realy=1,
    text=,
    align=,
    set=\setups{flowcell:text:place}]
 
-\def\FLOWx{\getvariable{flowcell:text}{x}} % compatibility (for Willi)
-\def\FLOWy{\getvariable{flowcell:text}{y}} % compatibility (for Willi)
+\def\FLOWx    {\getvariable{flowcell:text}{x}}     % compatibility (for Willi)
+\def\FLOWy    {\getvariable{flowcell:text}{y}}     % compatibility (for Willi)
+\def\FLOWrealx{\getvariable{flowcell:text}{realx}} % compatibility (for Willi)
+\def\FLOWrealy{\getvariable{flowcell:text}{realy}} % compatibility (for Willi)
 
 \defineoverlay
   [flowcell:figure]
@@ -380,10 +384,12 @@
     \endgroup
 \stopsetups
 
-\unexpanded\def\doFLOWlabel#1#2#3%
+\unexpanded\def\doFLOWlabel#1#2#3#4#5%
   {\begingroup
    \def\FLOWx{#1}%
    \def\FLOWy{#2}%
+   \def\FLOWrealx{#4}%
+   \def\FLOWrealy{#5}%
    \strut
    \getFLOWtext{#3}%
    \endgroup}

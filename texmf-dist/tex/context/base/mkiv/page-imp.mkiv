@@ -102,6 +102,15 @@
 \installshipoutmethod \v!none
   {\page_shipouts_ignore}
 
+% \setuppaper[method=rotate,rotation=15] \showframe
+% \starttext \dorecurse{10}{\input knuth\endgraf} \stoptext
+
+\installshipoutmethod\v!rotate
+  {\page_shipouts_rotate}
+
+\protected\def\page_shipouts_rotate#1%
+  {\invokepagehandler\v!normal{\rotate[\c!rotation=\rootlayouttargetparameter\c!rotation]{#1}}}
+
 % extension mechanism
 
 \newcount\c_page_boxes_flush_n % set at the lua end
@@ -167,8 +176,13 @@
 
 % \def\page_shipout_box#1{\normalshipout\box#1\relax} % takes a number
 
+\def\page_shipout_show_box{\scratchcounter}
+
 \unexpanded\def\page_shipout_box#1%
-  {\clf_shipoutpage#1\relax
+  {\ifcase\tracingoutput\else
+     \page_shipout_show_box#1\relax
+   \fi
+   \clf_shipoutpage#1\relax
    \global\setbox#1\emptybox
    \global\deadcycles\zerocount}
 
@@ -322,13 +336,14 @@
      \gdef\arrangedrotationO{0}%
      \gdef\arrangedrotationE{180}%
      \processcommalist[#1]\doinstalledarrangedoption
-     \ifx\handlearrangedpage\undefined
+     \ifdefined\handlearrangedpage\else
        \global\arrangingpagesfalse
      \fi
      \setuppapersize
      \ifarrangingpages
         \ifconditional\c_page_shipouts_use_objects\else
           \clf_disablejobsave
+          \clf_synctexdisable
          %\disabledirective[job.save]%
         \fi
      \fi
@@ -355,6 +370,15 @@
 
 \installpagearrangement {\v!normal}
   {\global\arrangingpagesfalse}
+
+%D (WS:) Watch out with 2UP and A4/A5:
+%D
+%D \definepapersize [A4] [width=210mm,height=297mm]
+%D \definepapersize [A5] [width=148mm,height=210mm]
+%D
+%D 297 mm - 2 * 148 mm = 1 mm
+%D
+%D This is only visible when we have a full background.
 
 \installpagearrangement 2*16
   {\dosetuparrangement{4}{4}{16}{5}{5}%

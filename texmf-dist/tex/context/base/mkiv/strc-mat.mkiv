@@ -1,5 +1,4 @@
 %D \module
-%D \module
 %D   [       file=strc-mat,
 %D        version=2008.10.20,
 %D          title=\CONTEXT\ Structure Macros,
@@ -205,7 +204,10 @@
      \relax \relax \relax
      [\c!name=\v!formula,\s!counter=\v!formula,%
       \s!hascaption=\v!yes,\s!hastitle=\v!yes,\s!hasnumber=\v!yes,%\s!haslevel=#6,%
-      \c!reference=#1,\c!title=\namedformulaentry,\c!bookmark=]%
+      \c!reference=#1,%
+      \c!title=\namedformulaentry,%
+      \c!list=\currentplaceformulalist,%
+      \c!bookmark=\currentplaceformulabookmark]%
      [#2]%
    \glet\namedformulaentry\empty % \relax
    \glet#3\m_strc_counters_last_registered_index
@@ -315,7 +317,7 @@
 
 \def\theformuladestinationattribute#1%
   {\iflocation\ifx#1\relax\else\ifx#1\empty\else
-     \attribute\destinationattribute#1%
+     \c_attr_destination#1%
      \glet#1\relax
    \fi\fi\fi}
 
@@ -500,6 +502,8 @@
 %D
 %D Otherwise we get a missing \type {$$} error reported.
 
+\pushoverloadmode
+
 \let\reqno\eqno % no longer valid as we just nil it
 
 \let\math_native_leqno\leqno
@@ -513,6 +517,8 @@
 \let\leqno\normaleqno
 \let\reqno\normaleqno
 \let\eqno \normaleqno
+
+\popoverloadmode
 
 %D \macros
 %D   {startsubformulas}
@@ -617,7 +623,6 @@
 
 \setvalue{\??mathdisplayspacemodel\v!after:1}% old
   {\prevdepth .5\strutdp
-   \edef\p_spaceafter{\formulaparameter\c!spaceafter}%
    \ifx\p_spaceafter\v!none
      % nothing
    \else
@@ -634,7 +639,6 @@
 
 \setvalue{\??mathdisplayspacemodel\v!after:2}% old
   {\prevdepth\lineheight
-   \edef\p_spaceafter{\formulaparameter\c!spaceafter}%
    \ifx\p_spaceafter\v!none
      % nothing
    \else
@@ -665,11 +669,11 @@
      \else\ifx\p_spacebefore\empty
        \directvspacing\currentvspacing
      \else
-       \directvspacing{\p_spacebefore,\the\scratchdimen}%
+       \directvspacing\p_spacebefore
      \fi\fi
    \else
      \ifx\p_spacebefore\v!none
-       \directvspacing{\m_spacebefore}%
+       \directvspacing\m_spacebefore
      \else\ifx\p_spacebefore\empty
        \directvspacing{\m_spacebefore,\currentvspacing}%
      \else
@@ -703,7 +707,7 @@
        \else\ifx\p_spacebefore\empty
          \directvspacing\currentvspacing
        \else
-         \directvspacing{\p_spacebefore,\the\scratchdimen}%
+         \directvspacing\p_spacebefore
        \fi\fi
      \fi
   \else
@@ -972,6 +976,7 @@
      \rawprocesscommalist[\p_direct]\strc_formulas_option
    \fi
    % not : \def\strc_formulas_formula[##1]##2{\mathematics{##2}}%
+   \useformulastyleandcolor\c!style\c!color
    \mathematics{#2}%
    \endgroup}
 
@@ -1224,13 +1229,20 @@
   %\doifelsenextbgroup\strc_formulas_place_yes\strc_formulas_place_nop} % [ref]{}
    \strc_formulas_place_nop}
 
+\let\currentplaceformulabookmark\empty
+\let\currentplaceformulalist    \empty
+
 \def\strc_formulas_start_place_parameters[#1]%
   {\letdummyparameter\c!title    \empty
    \letdummyparameter\c!reference\empty
+   \letdummyparameter\c!bookmark \empty
+   \letdummyparameter\c!list     \empty
    \letdummyparameter\c!suffix   \empty
    \getdummyparameters[#1]%
    \edef\currentplaceformulatitle    {\dummyparameter\c!title}%
    \edef\currentplaceformulareference{\dummyparameter\c!reference}%
+   \edef\currentplaceformulalist     {\dummyparameter\c!list}%
+   \edef\currentplaceformulabookmark {\dummyparameter\c!bookmark}%
    \edef\currentplaceformulasuffix   {\dummyparameter\c!suffix}%
    \ifx\currentplaceformulatitle\empty\else
      \normalexpanded{\setformulalistentry{\currentplaceformulatitle}}%

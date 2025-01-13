@@ -1,7 +1,7 @@
-% language=uk
+% language=us runpath=texruns:manuals/tools
 
 % author    : Hans Hagen
-% copyright : PRAGMA ADE & ConTeXt Development Team
+% copyright : ConTeXt Development Team
 % license   : Creative Commons Attribution ShareAlike 4.0 International
 % reference : pragma-ade.nl | contextgarden.net | texlive (related) distributions
 % origin    : the ConTeXt distribution
@@ -116,13 +116,13 @@
         draw p shifted (center Page - center p) withpen pencircle scaled 2 withcolor .5white ;
         numeric dx ; dx := bbwidth(Page)/21 ;
         numeric dy ; dy := bbheight(Page)/30 ;
-        p := textext("\tt\bf\white\getvariable{document}{extra-1}") xsized(14*dx) ;
+        p := textext("\tt\bf\white\documentvariable{extra-1}") xsized(14*dx) ;
         p := p shifted (-lrcorner p) shifted lrcorner Page shifted (-1dx,8dy) ;
         draw p ;
-        p := textext("\tt\bf\white\getvariable{document}{extra-2}") xsized(14*dx) ;
+        p := textext("\tt\bf\white\documentvariable{extra-2}") xsized(14*dx) ;
         p := p shifted (-lrcorner p) shifted lrcorner Page shifted (-1dx,5dy) ;
         draw p ;
-        p := textext("\tt\bf\white\getvariable{document}{extra-3}") xsized(14*dx) ;
+        p := textext("\tt\bf\white\documentvariable{extra-3}") xsized(14*dx) ;
         p := p shifted (-lrcorner p) shifted lrcorner Page shifted (-1dx,2dy) ;
         draw p ;
         setbounds currentpicture to Page ;
@@ -1414,7 +1414,7 @@ be the shell return value of your script.
     \NC version   \NC \currentdate \NC \NR
     \NC website   \NC \documentvariable{website} \endash\
                       \documentvariable{support} \NC \NR
-    \NC copyright \NC \symbol[cc][cc-by-sa-nc] \NC \NR
+    \NC copyright \NC \symbol[cc][cc-by-sa] \NC \NR
 \stoptabulate
 
 \stopsubject

@@ -37,6 +37,8 @@ local conditionals      = tex.conditionals
 
 local ctx_latelua       = context.latelua
 
+local cheat = true
+
 local structures        = structures
 local lists             = structures.lists
 local sections          = structures.sections
@@ -96,7 +98,10 @@ local v_reference       = variables.reference
 local v_local           = variables["local"]
 local v_default         = variables.default
 
--- for the moment not public --
+local cheats = {
+    [variables.fit]   = true,
+    [variables.tight] = true,
+}
 
 local function zerostrippedconcat(t,separator)
     local f = 1
@@ -193,8 +198,13 @@ local function finalizer()
         if r then
             local i = r.internal
             local f = flaginternals[i]
+            local v = usedviews[i]
+            if cheat and v and cheats[v] then -- cheats check added, to be tested by RKB
+                -- this permits runs=2 with interactivity
+                r.view = v
+            end
             if f then
-                r.used = usedviews[i] or true
+                r.used = v or true
             end
         end
     end
@@ -232,7 +242,7 @@ function lists.addto(t) -- maybe more more here (saves parsing at the tex end)
     if numberdata then
         local numbers = numberdata.numbers
         if type(numbers) == "string" then
-            numberdata.numbers = counters.compact(numbers,nil,true)
+            counters.compact(numberdata,numbers,numberdata.level)
         end
     end
     local group = numberdata and numberdata.group
@@ -255,6 +265,14 @@ function lists.addto(t) -- maybe more more here (saves parsing at the tex end)
     local r = t.references
     if r and not r.section then
         r.section = structures.sections.currentid()
+    end
+    local b = r and t.block
+    if r and not b then
+        local s = r.section
+        if s then
+            s = structures.sections.tobesaved[s]
+            r.block = s and s.block or nil
+        end
     end
     local i = r and r.internal or 0 -- brrr
     if r and kind and name then
@@ -445,7 +463,8 @@ local function filtercollected(specification)
     elseif not wantedcriterium then
         block = documents.data.block
     else
-        block, criterium = wantedblock, wantedcriterium
+        block     = wantedblock
+        criterium = wantedcriterium
     end
     if block == "" then
         block = false
@@ -468,12 +487,41 @@ local function filtercollected(specification)
     specification.block     = block
     specification.all       = all
     --
+    if specification.atmost then
+        criterium = v_text
+    end
+    --
     if trace_lists then
         report_lists("filtering names %,t, criterium %a, block %a",sortedkeys(names), criterium, block or "*")
     end
     local result = filters[criterium](specification)
     if trace_lists then
         report_lists("criterium %a, block %a, found %a",specification.criterium, specification.block or "*", #result)
+    end
+    --
+    local levels = tonumber(specification.levels)
+    if levels then
+        local minlevel  = 1000
+        local found     = result
+        local nofresult = #result
+        for i=1,nofresult do
+            local v = found[i]
+            local l = v.metadata.level or 1
+            if l < minlevel then
+                minlevel = l
+            end
+        end
+        local maxlevel = minlevel + levels - 1
+        result    = { }
+        nofresult = 0
+        for i=1,#found do
+            local v = found[i]
+            local l = v.metadata.level or 1
+            if l >= minlevel and l <= maxlevel then
+                nofresult = nofresult + 1
+                result[nofresult] = v
+            end
+        end
     end
     --
     if sortorder then -- experiment
@@ -495,7 +543,7 @@ end
 filters[v_intro] = function(specification)
     local collected = specification.collected
     local result    = { }
-    local nofresult = #result
+    local nofresult = 0
     local all       = specification.all
     local names     = specification.names
     for i=1,#collected do
@@ -515,7 +563,7 @@ end
 filters[v_reference] = function(specification)
     local collected = specification.collected
     local result    = { }
-    local nofresult = #result
+    local nofresult = 0
     local names     = specification.names
     local sections  = sections.collected
     local reference = specification.reference
@@ -554,7 +602,7 @@ end
 filters[v_all] = function(specification)
     local collected = specification.collected
     local result    = { }
-    local nofresult = #result
+    local nofresult = 0
     local block     = specification.block
     local all       = specification.all
     local forced    = specification.forced
@@ -566,7 +614,7 @@ filters[v_all] = function(specification)
         if r and (not block or not r.block or block == r.block) then
             local metadata = v.metadata
             if metadata then
-                local name = metadata.name or false
+                local name  = metadata.name  or false
                 local sectionnumber = (r.section == 0) or sections[r.section]
                 if forced[name] or (sectionnumber and not metadata.nolist and (all or names[name])) then -- and not sectionnumber.hidenumber then
                     nofresult = nofresult + 1
@@ -588,7 +636,7 @@ filters[v_current] = function(specification)
     end
     local collected = specification.collected
     local result    = { }
-    local nofresult = #result
+    local nofresult = 0
     local depth     = specification.depth
     local block     = specification.block
     local all       = specification.all
@@ -634,7 +682,7 @@ filters[v_here] = function(specification)
     end
     local collected = specification.collected
     local result    = { }
-    local nofresult = #result
+    local nofresult = 0
     local depth     = specification.depth
     local block     = specification.block
     local all       = specification.all
@@ -679,7 +727,7 @@ filters[v_previous] = function(specification)
     end
     local collected = specification.collected
     local result    = { }
-    local nofresult = #result
+    local nofresult = 0
     local block     = specification.block
     local all       = specification.all
     local names     = specification.names
@@ -740,7 +788,7 @@ filters[v_component] = function(specification)
     -- special case, no structure yet
     local collected = specification.collected
     local result    = { }
-    local nofresult = #result
+    local nofresult = 0
     local all       = specification.all
     local names     = specification.names
     local component = resolvers.jobs.currentcomponent() or ""
@@ -766,7 +814,7 @@ end
 filters[v_default] = function(specification) -- is named
     local collected = specification.collected
     local result    = { }
-    local nofresult = #result
+    local nofresult = 0
     ----- depth     = specification.depth
     local block     = specification.block
     local criterium = specification.criterium
@@ -797,6 +845,7 @@ filters[v_default] = function(specification) -- is named
     for i=1,#collected do
         local v = collected[i]
         local r = v.references
+-- inspect(v)
         if r and (not block or not r.block or pblock == r.block) then
             local sectionnumber = sections[r.section]
             if sectionnumber then
@@ -835,14 +884,28 @@ function lists.getresult(r)
 end
 
 function lists.process(specification)
-    lists.result = filtercollected(specification)
-    local specials = settings_to_set(specification.extras or "")
-    specials = next(specials) and specials or nil
-    for i=1,#lists.result do
-        local r = lists.result[i]
-        local m = r.metadata
-        local s = specials and r.numberdata and specials[zerostrippedconcat(r.numberdata.numbers,".")] or ""
-        context.strclistsentryprocess(m.name,m.kind,i,s)
+    local result = filtercollected(specification)
+    local total  = #result
+    lists.result = result
+    if total > 0 then
+        local usedinternals = references.usedinternals
+        local usedviews     = references.usedviews
+        local specials = settings_to_set(specification.extras or "")
+              specials = next(specials) and specials or nil
+        for i=1,total do
+            local listentry  = result[i]
+            local metadata   = listentry.metadata
+            local numberdata = listentry.numberdata
+            local references = listentry.references
+            local special    = specials and numberdata and specials[zerostrippedconcat(numberdata.numbers,".")] or ""
+            if cheat and references then
+                -- this permits runs=2 with interactivity
+                local internal = references.internal
+                usedinternals[internal] = true
+                usedviews    [internal] = references.view
+            end
+            context.strclistsentryprocess(metadata.name,metadata.kind,i,special)
+        end
     end
 end
 
@@ -937,6 +1000,18 @@ function lists.hasnumberdata(name,n)
         end
     end
     return false
+end
+
+function lists.rawnumber(n,name)
+    local data = lists.result[n]
+    if data then
+        local numberdata = data.numberdata
+        if numberdata then
+            numberdata = numberdata.numbers
+            return numberdata and numberdata[getsectionlevel(name)] or numberdata[name] or 0
+        end
+    end
+    return 0
 end
 
 function lists.prefix(name,n,spec)
@@ -1050,6 +1125,7 @@ implement {
                     { "bookmark" },
                     { "marking" },
                     { "list" },
+                    { "reference" },
                 }
             },
             { "prefixdata", {
@@ -1063,6 +1139,7 @@ implement {
                 }
             },
             { "numberdata", {
+                    { "level", "integer" },
                     { "numbers" },
                     { "groupsuffix" },
                     { "group" },
@@ -1106,6 +1183,7 @@ implement {
             { "reference" },
             { "extras" },
             { "order" },
+            { "levels" },
         }
     }
 }
@@ -1212,7 +1290,7 @@ implement {
 implement { name = "doifelselisthastitle",  actions = { lists.hastitledata,  commands.doifelse }, arguments = { "string", "integer" } }
 implement { name = "doifelselisthaspage",   actions = { lists.haspagedata,   commands.doifelse }, arguments = { "string", "integer" } }
 implement { name = "doifelselisthasnumber", actions = { lists.hasnumberdata, commands.doifelse }, arguments = { "string", "integer" } }
-implement { name = "doifelselisthasentry",  actions = { lists.iscached,      commands.doifelse }, arguments = { "integer" } }
+implement { name = "doifelselisthasentry",  actions = { lists.iscached,      commands.doifelse }, arguments = "integer" }
 
 local function savedlisttitle(name,n,tag)
     local data = cached[tonumber(n)]
@@ -1270,7 +1348,13 @@ implement {
 implement {
     name      = "discardfromlist",
     actions   = lists.discard,
-    arguments = { "integer" }
+    arguments = "integer"
+}
+
+implement {
+    name      = "rawlistnumber",
+    actions   = { lists.rawnumber, context },
+    arguments = { "integer", "string" },
 }
 
 -- new and experimental and therefore off by default

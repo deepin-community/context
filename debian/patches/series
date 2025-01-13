@@ -1,3 +1,4 @@
-#texfont_fontforge
-#fix-context-stub
-#fix-for-old-lmodern-fonts
+texfont_fontforge
+fix_for_manual_pages
+#remove_selfautoparent
+#enable_socket

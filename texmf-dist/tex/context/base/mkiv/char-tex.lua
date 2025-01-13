@@ -42,17 +42,14 @@ local trace_defining        = false  trackers.register("characters.defining", fu
 
 local report_defining       = logs.reporter("characters")
 
---[[ldx--
-<p>In order to deal with 8-bit output, we need to find a way to go from <l n='utf'/> to
-8-bit. This is handled in the <l n='luatex'/> engine itself.</p>
-
-<p>This leaves us problems with characters that are specific to <l n='tex'/> like
-<type>{}</type>, <type>$</type> and alike. We can remap some chars that tex input files
-are sensitive for to a private area (while writing to a utility file) and revert then
-to their original slot when we read in such a file. Instead of reverting, we can (when
-we resolve characters to glyphs) map them to their right glyph there. For this purpose
-we can use the private planes 0x0F0000 and 0x100000.</p>
---ldx]]--
+-- In order to deal with 8-bit output, we need to find a way to go from UTF to
+-- 8-bit. This is handled in the 32 bit engine itself. This leaves us problems with
+-- characters that are specific to TeX, like curly braces and dollars. We can remap
+-- some chars that tex input files are sensitive for to a private area (while
+-- writing to a utility file) and revert then to their original slot when we read in
+-- such a file. Instead of reverting, we can (when we resolve characters to glyphs)
+-- map them to their right glyph there. For this purpose we can use the private
+-- planes 0x0F0000 and 0x100000.
 
 local low     = allocate()
 local high    = allocate()
@@ -67,12 +64,14 @@ local private = {
 
 utffilters.private = private
 
-for ch in gmatch(special,".") do
-    local cb
-    if type(ch) == "number" then
-        cb, ch = ch, utfchar(ch)
+for chr in gmatch(special,".") do
+    local cb, ch
+    if type(chr) == "number" then
+        ch = utfchar(chr)
+        cb = chr
     else
-        cb = utfbyte(ch)
+        ch = chr
+        cb = utfbyte(chr)
     end
     if cb < 256 then
         escapes[ch] = "\\" .. ch
@@ -101,21 +100,6 @@ end
 private.escape  = utf.remapper(escapes) -- maybe: ,"dynamic"
 private.replace = utf.remapper(low)     -- maybe: ,"dynamic"
 private.revert  = utf.remapper(high)    -- maybe: ,"dynamic"
-
---[[ldx--
-<p>We get a more efficient variant of this when we integrate
-replacements in collapser. This more or less renders the previous
-private code redundant. The following code is equivalent but the
-first snippet uses the relocated dollars.</p>
-
-<typing>
-[󰀤x󰀤] [$x$]
-</typing>
---ldx]]--
-
--- using the tree-lpeg-mapper would be nice but we also need to deal with end-of-string
--- cases: "\"\i" and don't want "\relax" to be seen as \r e lax" (for which we need to mess
--- with spaces
 
 local accentmapping = allocate {
     ['"'] = { [""] = "¨",
@@ -452,10 +436,8 @@ implement { -- a waste of scanner but consistent
     actions = texcharacters.defineaccents
 }
 
---[[ldx--
-<p>Instead of using a <l n='tex'/> file to define the named glyphs, we
-use the table. After all, we have this information available anyway.</p>
---ldx]]--
+-- Instead of using a TeX file to define the named glyphs, we use the table. After
+-- all, we have this information available anyway.
 
 function commands.makeactive(n,name) -- not used
     contextsprint(ctxcatcodes,format("\\catcode%s=13\\unexpanded\\def %s{\\%s}",n,utfchar(n),name))
@@ -573,88 +555,68 @@ if not csletters then
     local traditional = sfstate == "traditional"
 
     for u, chr in next, data do -- will move up
-        local fallback = chr.fallback
-        if fallback then
-            contextsprint("{\\catcode",u,"=13\\unexpanded\\gdef ",utfchar(u),"{\\checkedchar{",u,"}{",fallback,"}}}")
-            activated[#activated+1] = u
-        else
-            local contextname = chr.contextname
-            local category    = chr.category
-            local isletter    = is_letter[category]
-            if contextname then
-                if is_character[category] then
-                    if chr.unicodeslot < 128 then
-                        if isletter then
-                            local c = utfchar(u)
-                            texsetmacro(contextname,c)
-                            csletters[c] = u
-                        else
-                            texsetchar(contextname,u)
-                        end
-                    else
-                        local c = utfchar(u)
-                        texsetmacro(contextname,c)
-                        if isletter and u >= 32 and u <= 65536 then
-                            csletters[c] = u
-                        end
-                    end
-                    --
+        local contextname = chr.contextname
+        local category    = chr.category
+        local isletter    = is_letter[category]
+        if contextname then
+            if is_character[category] then
+                if chr.unicodeslot < 128 then
                     if isletter then
-                        local lc = chr.lccode
-                        local uc = chr.uccode
-                        if not lc then
-                            chr.lccode = u
-                            lc = u
-                        elseif type(lc) == "table" then
-                            lc = u
-                        end
-                        if not uc then
-                            chr.uccode = u
-                            uc = u
-                        elseif type(uc) == "table" then
-                            uc = u
-                        end
-                        texsetlccode(u,lc,uc)
-                        if traditional and category == "lu" then
-                            texsetsfcode(code,999)
-                        end
+                        local c = utfchar(u)
+                        csletters[c] = u
                     end
-                    --
-                elseif is_command[category] and not forbidden[u] then
-                 -- contextsprint("{\\catcode",u,"=13\\unexpanded\\gdef ",utfchar(u),"{\\",contextname,"}}")
-                 -- activated[#activated+1] = u
+                else
                     local c = utfchar(u)
-                    texsetmacro(contextname,c)
-                elseif is_mark[category] then
-                    texsetlccode(u,u,u) -- for hyphenation
+                    if isletter and u >= 32 and u <= 65536 then
+                        csletters[c] = u
+                    end
                 end
-         -- elseif isletter and u >= 32 and u <= 65536 then
-            elseif isletter then
-                csletters[utfchar(u)] = u
-                --
-                local lc, uc = chr.lccode, chr.uccode
-                if not lc then
-                    chr.lccode = u
-                    lc = u
-                elseif type(lc) == "table" then
-                    lc = u
+                if isletter then
+                    local lc = chr.lccode
+                    local uc = chr.uccode
+                    if not lc then
+                        chr.lccode = u
+                        lc = u
+                    elseif type(lc) == "table" then
+                        lc = u
+                    end
+                    if not uc then
+                        chr.uccode = u
+                        uc = u
+                    elseif type(uc) == "table" then
+                        uc = u
+                    end
+                    texsetlccode(u,lc,uc)
+                    if traditional and category == "lu" then
+                        texsetsfcode(code,999)
+                    end
                 end
-                if not uc then
-                    chr.uccode = u
-                    uc = u
-                elseif type(uc) == "table" then
-                    uc = u
-                end
-                texsetlccode(u,lc,uc)
-                if traditional and category == "lu" then
-                    texsetsfcode(code,999)
-                end
-                --
+            elseif is_command[category] and not forbidden[u] then
+                -- skip
             elseif is_mark[category] then
-                --
                 texsetlccode(u,u,u) -- for hyphenation
-                --
             end
+        elseif isletter then
+            csletters[utfchar(u)] = u
+            local lc, uc = chr.lccode, chr.uccode
+            if not lc then
+                chr.lccode = u
+                lc = u
+            elseif type(lc) == "table" then
+                lc = u
+            end
+            if not uc then
+                chr.uccode = u
+                uc = u
+            elseif type(uc) == "table" then
+                uc = u
+            end
+            texsetlccode(u,lc,uc)
+            if traditional and category == "lu" then
+                texsetsfcode(code,999)
+            end
+        elseif is_mark[category] then
+            texsetlccode(u,u,u) -- for hyphenation
         end
     end
 
@@ -688,6 +650,29 @@ if not csletters then
 
     if storage then
         storage.register("characters/csletters", csletters, "characters.csletters")
+    end
+
+    function characters.setcharacternames(ctt)
+        for u, chr in next, data do -- will move up
+            local contextname = chr.contextname
+            local category    = chr.category
+            local isletter    = is_letter[category]
+            if contextname then
+                if is_character[category] then
+                    if chr.unicodeslot < 128 then
+                        if isletter then
+                            texsetmacro(contextname,utfchar(u),"immutable")
+                        else
+                            texsetchar(contextname,u,"immutable")
+                        end
+                    else
+                        texsetmacro(contextname,utfchar(u),"immutable")
+                    end
+                elseif is_command[category] and not forbidden[u] then
+                    texsetmacro(contextname,utfchar(u),"immutable")
+                end
+            end
+        end
     end
 
 else
@@ -744,9 +729,7 @@ function characters.setactivecatcodes(cct)
     tex.catcodetable = saved
 end
 
---[[ldx--
-<p>Setting the lccodes is also done in a loop over the data table.</p>
---ldx]]--
+-- -- Setting the lccodes is also done in a loop over the data table.
 
 -- function characters.setcodes() -- we could loop over csletters
 --     if trace_defining then
@@ -826,9 +809,13 @@ end
 --     entities.gt  = utfchar(characters.activeoffset + utfbyte(">"))
 -- end
 
-implement { name = "setlettercatcodes", scope = "private", actions = characters.setlettercatcodes, arguments = "integer" }
-implement { name = "setactivecatcodes", scope = "private", actions = characters.setactivecatcodes, arguments = "integer" }
---------- { name = "setcharactercodes", scope = "private", actions = characters.setcodes }
+if characters.setcharacternames then -- only in ini mode
+
+    implement { name = "setlettercatcodes", scope = "private", actions = characters.setlettercatcodes, arguments = "integer" }
+    implement { name = "setactivecatcodes", scope = "private", actions = characters.setactivecatcodes, arguments = "integer" }
+    implement { name = "setcharacternames", scope = "private", actions = characters.setcharacternames, arguments = "integer" }
+
+end
 
 -- experiment (some can move to char-ini.lua)
 

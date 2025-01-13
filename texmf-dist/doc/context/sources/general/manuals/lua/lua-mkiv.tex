@@ -1,7 +1,7 @@
-% language=uk
+% language=us runpath=texruns:manuals/lua
 
 % author    : Hans Hagen
-% copyright : PRAGMA ADE & ConTeXt Development Team
+% copyright : ConTeXt Development Team
 % license   : Creative Commons Attribution ShareAlike 4.0 International
 % reference : pragma-ade.nl | contextgarden.net | texlive (related) distributions
 % origin    : the ConTeXt distribution
@@ -65,8 +65,8 @@
 
     fill Page withcolor \MPcolor{maincolor} ;
 
-    draw textext.urt("\TitlePageFont \getvariable{document}{title}")    xsized (0.8w) shifted (.1w,.2h) withcolor .80white ;
-    draw textext.top("\TitlePageFont \getvariable{document}{subtitle}") xsized (0.8w) shifted (.5w,.1h) withcolor .60white ;
+    draw textext.urt("\TitlePageFont \documentvariable{title}")    xsized (0.8w) shifted (.1w,.2h) withcolor .80white ;
+    draw textext.top("\TitlePageFont \documentvariable{subtitle}") xsized (0.8w) shifted (.5w,.1h) withcolor .60white ;
 
     StopPage ;
 
@@ -132,10 +132,10 @@ where it can find them.
 \startsubject[title={Colofon}]
 
 \starttabulate[|B|p|]
-\NC author    \NC \getvariable{document}{author}, \getvariable{document}{affiliation}, \getvariable{document}{location} \NC \NR
+\NC author    \NC \documentvariable{author}, \documentvariable{affiliation}, \documentvariable{location} \NC \NR
 \NC version   \NC \currentdate \NC \NR
-\NC website   \NC \getvariable{document}{website} \endash\ \getvariable{document}{support} \NC \NR
-\NC copyright \NC \symbol[cc][cc-by-sa-nc] \NC \NR
+\NC website   \NC \documentvariable{website} \endash\ \documentvariable{support} \NC \NR
+\NC copyright \NC \symbol[cc][cc-by-sa] \NC \NR
 \stoptabulate
 
 \stopsubject

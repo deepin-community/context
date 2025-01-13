@@ -27,8 +27,8 @@ local implement         = interfaces.implement
 local trace_jobfiles    = false  trackers.register("system.jobfiles", function(v) trace_jobfiles = v end)
 
 local report            = logs.reporter("system")
-local report_jobfiles   = logs.reporter("system","jobfiles")
-local report_functions  = logs.reporter("system","functions")
+local report_jobfiles   = logs.reporter("system", "jobfiles")
+local report_functions  = logs.reporter("system", "functions")
 
 local texsetcount       = tex.setcount
 local elements          = interfaces.elements
@@ -48,6 +48,8 @@ local is_qualified_path = file.is_qualified_path
 local cleanpath         = resolvers.cleanpath
 local toppath           = resolvers.toppath
 local resolveprefix     = resolvers.resolve
+
+local currentfile       = luatex.currentfile
 
 local hasscheme         = url.hasscheme
 
@@ -521,7 +523,7 @@ do
     logs.registerfinalactions(function()
         root.name = environment.jobname
         --
-        logs.startfilelogging(report,"used files")
+        logs.startfilelogging(report,"used job files")
         log_tree(report,root,"")
         logs.stopfilelogging()
         --
@@ -791,7 +793,8 @@ end
 
 local function autoname(name)
     if name == "*" then
-        name = nameonly(toppath() or name)
+     -- name = nameonly(toppath() or name)
+        name = nameonly(currentfile() or name)
     end
     return name
 end
@@ -968,7 +971,11 @@ function document.setcommandline() -- has to happen at the tex end in order to e
     -- to trick the files table which actually only has one entry in a tex job
 
     if arguments.timing then
-        context.usemodule("timing")
+        context.usemodule { "timing" }
+    end
+
+    if arguments.usage then
+       trackers.enable("system.usage")
     end
 
     if arguments.batchmode then

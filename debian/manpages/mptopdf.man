@@ -1,4 +1,4 @@
-.TH "MPTOPDF" "1" "January 2007" "mptopdf 1.3.2" "ConTeXt" 
+.TH "MPTOPDF" "1" "January 2007" "mptopdf 1.3.2" "ConTeXt"
 .de URL
 \\$2 \(laURL: \\$1 \(ra\\$3
 ..
@@ -14,26 +14,26 @@
 .fi
 ..
 
-.SH "NAME" 
+.SH "NAME"
 mptopdf \- convert MetaPost to PDF
 
-.SH "SYNOPSIS" 
+.SH "SYNOPSIS"
 \fBmptopdf\fP \fIFILE\fP [ ...  ]
 
-.SH "DESCRIPTION" 
- 
+.SH "DESCRIPTION"
+
 \fBmptopdf\fP can convert MetaPost-generated EPS files to PDF, or it
 can process a MetaPost source file directly (see
 .BR mpost (1))
 and convert the generated EPS files to PDF.
 
-.SH "OPTIONS" 
+.SH "OPTIONS"
 All switches are specified in full here but can be abbreviated to the
 shortest unique prefix.   Thus, \fB--metaf\fP works the same as
 \fB--metafun\fP.
 .IP \fB--help\fP
 Print a terse help message.
-.IP "\fB--metafun\fP" 
+.IP "\fB--metafun\fP"
 Use the metafun pre-compiled format to process the MetaPost source
 file.  You usually don't need this option, since metafun input is
 usually produced and processed as part of a
@@ -50,9 +50,9 @@ Typeseting labels using
 .BR latex (1)
 rather than plain
 .BR tex (1).
- 
-.SH "USAGE" 
- 
+
+.SH "USAGE"
+
 To convert \fImanfig.20\fP to \fImanfig-20.pdf\fI:
 .EX
 mptopdf manfig.20
@@ -63,7 +63,7 @@ You can convert more than one EPS file at once:
 mptopdf manfig.20 otherfig.17 finalfig.8
 .EE
 
-Or you can give 
+Or you can give
 .BR mptopdf (1)
 a pattern that it will expand:
 .EX
@@ -73,20 +73,20 @@ Note the single quotes to protect the * from the shell.  Of course,
 usually you can let the shell do the wildcard expansion and therefore
 leave off the quotes.
 
-To convert 
+To convert
 .I figs.mp
 to \fIfigs-1.pdf\fP, \fIfigs-2.pdf\fP, ...
-.EX 
+.EX
 mptopdf figs.mp
-.EE 
+.EE
 
 If the labels are typeset with
 .BR latex (1):
-.EX 
+.EX
 mptopdf --latex figs.mp
-.EE 
+.EE
 
-.SH "SEE ALSO" 
+.SH "SEE ALSO"
 .IP \(bu
 .BR tex (1),
 .BR latex (1),
@@ -95,7 +95,7 @@ mptopdf --latex figs.mp
 .IP \(bu
 .URL "http://www.contextgarden.net" "ConTeXt wiki" .
 
-.SH "AUTHOR" 
+.SH "AUTHOR"
 .BR mptopdf (1)
 is part of the ConTeXt package available from
 .URL "http://www.pragma-ade.com/dir/general/manuals/" "PRAGMA ADE" .

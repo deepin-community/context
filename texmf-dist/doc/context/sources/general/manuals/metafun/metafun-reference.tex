@@ -1,6 +1,4 @@
-% language=uk
-%
-% copyright=pragma-ade readme=readme.pdf licence=cc-by-nc-sa
+% language=us runpath=texruns:manuals/metafun
 
 \startcomponent metafun-reference
 
@@ -472,11 +470,12 @@ defineshade cshade withshademethod "circular" ;
 \ShowSampleII {mp} {dashed oddly}    {dashed oddly}
 \ShowSampleII {mp} {dashpattern}     {dashed dashpattern (on .1 off .2 on .3 off .4)}
 \ShowSampleII {mp} {undashed}        {dashed evenly undashed}
+\ShowSampleII {fm} {withdashes pair} {withdashes (.1,.2)}
 
 \ShowSampleJ {mm} {pencircle transform} {pencircle}
 \ShowSampleJ {mm} {pensquare transform} {pensquare}
 \ShowSampleJ {mm} {penrazor transform}  {penrazor}
-\ShowSampleK {mm} {penspeck transform}  {penspeck}
+\ShowSampleK {mm} {penspec transform}   {penspec}
 
 \ShowSampleL {mm} {draw}         {fullcircle}
 \ShowSampleL {mm} {fill}         {fullcircle}
@@ -610,7 +609,7 @@ defineshade cshade withshademethod "circular" ;
 
 \ShowSampleS {fm}
   {externalfigure string ...}
-  {draw externalfigure "mycow.pdf" scaled 3cm}
+  {draw externalfigure "mycow.pdf" ysized 3cm}
 
 \ShowSampleT {fm} {addbackground text}
   {addbackground withcolor .625 yellow}
@@ -637,11 +636,28 @@ defineshade cshade withshademethod "circular" ;
 
 \ShowSampleT {mm}
   {withmask string}
-  {draw externalfigure "m-1.png" scaled 2cm withmask "m-2.png"}
+  {draw externalfigure "m-1.png" ysized 2cm withmask "m-2.png"}
   {Scale := 1 ;
-   draw externalfigure "m-2.png" scaled 2cm shifted (-3cm,0) ;
-   draw externalfigure "m-1.png" scaled 2cm shifted (-6cm,0) ;
-   draw externalfigure "m-1.png" scaled 2cm withmask "m-2.png"}
+   draw externalfigure "m-2.png" ysized 2cm shifted (-3cm,0) ;
+   draw externalfigure "m-1.png" ysized 2cm shifted (-6cm,0) ;
+   draw externalfigure "m-1.png" ysized 2cm withmask "m-2.png"}
+
+\stopsection
+
+\startsection[title={Access}]
+
+\ShowSampleW
+    {mm} {leftof  n}
+    {for i inpath fullcircle : drawdot leftof  i ; endfor}
+    {for i inpath fullcircle xsized 3cm: drawdot leftof  i withpen pencircle scaled 2mm InRed    ; endfor}
+\ShowSampleW
+    {mm} {pointof n}
+    {for i inpath fullcircle : drawdot pointof i ; endfor}
+    {for i inpath fullcircle xsized 3cm: drawdot pointof i withpen pencircle scaled 2mm InYellow ; endfor}
+\ShowSampleW
+    {mm} {rightof n}
+    {for i inpath fullcircle : drawdot rightof i ; endfor}
+    {for i inpath fullcircle xsized 3cm: drawdot rightof i withpen pencircle scaled 2mm InRed    ; endfor}
 
 \stopsection
 

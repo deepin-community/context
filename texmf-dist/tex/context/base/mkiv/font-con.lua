@@ -6,6 +6,9 @@ if not modules then modules = { } end modules ['font-con'] = {
     license   = "see context related readme files"
 }
 
+-- Todo: Enable fixes from the lmt to here. Also in font-oto.lua wrt the changed
+-- assignments. (Around texlive 2024 in order not to disturb generic.)
+
 -- some names of table entries will be changed (no _)
 
 local next, tostring, tonumber, rawget = next, tostring, tonumber, rawget
@@ -22,11 +25,9 @@ local trace_scaling   = false  trackers.register("fonts.scaling",   function(v) 
 
 local report_defining = logs.reporter("fonts","defining")
 
--- watch out: no negative depths and negative eights permitted in regular fonts
-
---[[ldx--
-<p>Here we only implement a few helper functions.</p>
---ldx]]--
+-- Watch out: no negative depths and negative heights are permitted in regular
+-- fonts. Also, the code in LMTX is a bit different. Here we only implement a
+-- few helper functions.
 
 local fonts                  = fonts
 local constructors           = fonts.constructors or { }
@@ -59,11 +60,9 @@ constructors.designsizes    = designsizes
 local loadedfonts           = allocate()
 constructors.loadedfonts    = loadedfonts
 
---[[ldx--
-<p>We need to normalize the scale factor (in scaled points). This has to
-do with the fact that <l n='tex'/> uses a negative multiple of 1000 as
-a signal for a font scaled based on the design size.</p>
---ldx]]--
+-- We need to normalize the scale factor (in scaled points). This has to do with the
+-- fact that TeX uses a negative multiple of 1000 as a signal for a font scaled
+-- based on the design size.
 
 local factors = {
     pt = 65536.0,
@@ -118,22 +117,18 @@ function constructors.getmathparameter(tfmdata,name)
     end
 end
 
---[[ldx--
-<p>Beware, the boundingbox is passed as reference so we may not overwrite it
-in the process; numbers are of course copies. Here 65536 equals 1pt. (Due to
-excessive memory usage in CJK fonts, we no longer pass the boundingbox.)</p>
---ldx]]--
-
--- The scaler is only used for otf and afm and virtual fonts. If a virtual font has italic
--- correction make sure to set the hasitalics flag. Some more flags will be added in the
--- future.
-
---[[ldx--
-<p>The reason why the scaler was originally split, is that for a while we experimented
-with a helper function. However, in practice the <l n='api'/> calls are too slow to
-make this profitable and the <l n='lua'/> based variant was just faster. A days
-wasted day but an experience richer.</p>
---ldx]]--
+-- Beware, the boundingbox is passed as reference so we may not overwrite it in the
+-- process; numbers are of course copies. Here 65536 equals 1pt. (Due to excessive
+-- memory usage in CJK fonts, we no longer pass the boundingbox.)
+--
+-- The scaler is only used for OTF and AFM and virtual fonts. If a virtual font has
+-- italic correction make sure to set the hasitalics flag. Some more flags will be
+-- added in the future.
+--
+-- The reason why the scaler was originally split, is that for a while we
+-- experimented with a helper function. However, in practice the API calls are too
+-- slow to make this profitable and the Lua based variant was just faster. A days
+-- wasted day but an experience richer.
 
 function constructors.cleanuptable(tfmdata)
     -- This no longer makes sense because the addition of font.getcopy and its
@@ -191,6 +186,9 @@ function constructors.assignmathparameters(target,original) -- simple variant, n
         if not mathparameters.FractionDelimiterDisplayStyleSize then
             targetmathparameters.FractionDelimiterDisplayStyleSize = 2.40 * targetparameters.size
         end
+        if not targetmathparameters.SpaceBeforeScript then
+            targetmathparameters.SpaceBeforeScript = targetmathparameters.SpaceAfterScript
+        end
         target.mathparameters = targetmathparameters
     end
 end
@@ -210,59 +208,44 @@ end
 -- we default to false, so a macro package has to enable it explicitly. In
 -- LuaTeX the fullname is used to identify a font as being unique.
 
-constructors.sharefonts     = false
-constructors.nofsharedfonts = 0
-local sharednames           = { }
+local nofinstances = 0
+local instances    = setmetatableindex(function(t,k)
+    nofinstances = nofinstances + 1
+    t[k] = nofinstances
+    return nofinstances
+end)
 
 function constructors.trytosharefont(target,tfmdata)
-    if constructors.sharefonts then -- not robust !
-        local characters = target.characters
-        local n = 1
-        local t = { target.psname }
-        local u = sortedkeys(characters)
-        for i=1,#u do
-            local k = u[i]
-            n = n + 1 ; t[n] = k
-            n = n + 1 ; t[n] = characters[k].index or k
-        end
-        local h = md5.HEX(concat(t," "))
-        local s = sharednames[h]
-        if s then
-            if trace_defining then
-                report_defining("font %a uses backend resources of font %a",target.fullname,s)
-            end
-            target.fullname = s
-            constructors.nofsharedfonts = constructors.nofsharedfonts + 1
-            target.properties.sharedwith = s
+    local properties = target.properties
+    local instance   = properties.instance
+    if instance then
+        local fullname = target.fullname
+        local fontname = target.fontname
+        local psname   = target.psname
+        local format   = tfmdata.properties.format
+        if format == "opentype" then
+            target.streamprovider = 1
+        elseif format == "truetype" then
+            target.streamprovider = 2
         else
-            sharednames[h] = target.fullname
+            target.streamprovider = 0
+        end
+        if target.streamprovider > 0 then
+            if fullname then
+                fullname = fullname .. ":" .. instances[instance]
+                target.fullname = fullname
+            end
+            if fontname then
+                fontname = fontname .. ":" .. instances[instance]
+                target.fontname = fontname
+            end
+            if psname then
+                psname = psname   .. ":" .. instances[instance]
+                target.psname = psname
+            end
         end
     end
 end
-
--- function constructors.enhanceparameters(parameters)
---     local xheight = parameters.x_height
---     local quad    = parameters.quad
---     local space   = parameters.space
---     local stretch = parameters.space_stretch
---     local shrink  = parameters.space_shrink
---     local extra   = parameters.extra_space
---     local slant   = parameters.slant
---     -- synonyms
---     parameters.xheight       = xheight
---     parameters.spacestretch  = stretch
---     parameters.spaceshrink   = shrink
---     parameters.extraspace    = extra
---     parameters.em            = quad
---     parameters.ex            = xheight
---     parameters.slantperpoint = slant
---     parameters.spacing = {
---         width   = space,
---         stretch = stretch,
---         shrink  = shrink,
---         extra   = extra,
---     }
--- end
 
 local synonyms = {
     exheight      = "x_height",
@@ -400,20 +383,20 @@ function constructors.scale(tfmdata,specification)
     --
     local mathsize    = tonumber(specification.mathsize) or 0
     local textsize    = tonumber(specification.textsize) or scaledpoints
-    local forcedsize  = tonumber(parameters.mathsize   ) or 0 -- can be set by the feature "mathsize"
+ -- local forcedsize  = tonumber(parameters.mathsize   ) or 0 -- can be set by the feature "mathsize"
     local extrafactor = tonumber(specification.factor  ) or 1
-    if (mathsize == 2 or forcedsize == 2) and parameters.scriptpercentage then
-        scaledpoints = parameters.scriptpercentage * textsize / 100
-    elseif (mathsize == 3 or forcedsize == 3) and parameters.scriptscriptpercentage then
-        scaledpoints = parameters.scriptscriptpercentage * textsize / 100
-    elseif forcedsize > 1000 then -- safeguard
-        scaledpoints = forcedsize
-    else
-        -- in context x and xx also use mathsize
-    end
+ -- if context then
+ --     -- do nothing, as we moved this upstream
+ -- elseif (mathsize == 2 or forcedsize == 2) and parameters.scriptpercentage then
+ --     scaledpoints = parameters.scriptpercentage * textsize / 100
+ -- elseif (mathsize == 3 or forcedsize == 3) and parameters.scriptscriptpercentage then
+ --     scaledpoints = parameters.scriptscriptpercentage * textsize / 100
+ -- elseif forcedsize > 1000 then -- safeguard
+ --     scaledpoints = forcedsize
+ -- end
     targetparameters.mathsize    = mathsize    -- context specific
     targetparameters.textsize    = textsize    -- context specific
-    targetparameters.forcedsize  = forcedsize  -- context specific
+ -- targetparameters.forcedsize  = forcedsize  -- context specific
     targetparameters.extrafactor = extrafactor -- context specific
     --
     local addtounicode  = constructors.addtounicode
@@ -463,6 +446,7 @@ function constructors.scale(tfmdata,specification)
     target.format        = properties.format
     target.cache         = constructors.cacheintex and "yes" or "renew"
     --
+    local original = properties.original or tfmdata.original
     local fontname = properties.fontname or tfmdata.fontname
     local fullname = properties.fullname or tfmdata.fullname
     local filename = properties.filename or tfmdata.filename
@@ -474,6 +458,7 @@ function constructors.scale(tfmdata,specification)
     --
     local psname, psfixed = fixedpsname(psname,fontname or fullname or file.nameonly(filename))
     --
+    target.original = original
     target.fontname = fontname
     target.fullname = fullname
     target.filename = filename
@@ -541,10 +526,8 @@ function constructors.scale(tfmdata,specification)
     local stackmath        = not properties.nostackmath
     local haskerns         = properties.haskerns     or properties.mode == "base" -- we can have afm in node mode
     local hasligatures     = properties.hasligatures or properties.mode == "base" -- we can have afm in node mode
-    local realdimensions   = properties.realdimensions
     local writingmode      = properties.writingmode or "horizontal"
     local identity         = properties.identity or "horizontal"
-    --
     local vfonts = target.fonts
     if vfonts and #vfonts > 0 then
         target.fonts = fastcopy(vfonts) -- maybe we virtualize more afterwards
@@ -578,6 +561,15 @@ function constructors.scale(tfmdata,specification)
     targetparameters.quad          = targetquad
     targetparameters.extra_space   = targetextra_space
     --
+    local hshift = parameters.hshift
+    if hshift then
+        targetparameters.hshift = delta * hshift
+    end
+    local vshift = parameters.vshift
+    if vshift then
+        targetparameters.vshift = delta * vshift
+    end
+    --
     local ascender = parameters.ascender
     if ascender then
         targetparameters.ascender  = delta * ascender
@@ -601,13 +593,17 @@ function constructors.scale(tfmdata,specification)
     --
     if hasmath then
         constructors.assignmathparameters(target,tfmdata) -- does scaling and whatever is needed
-        properties.hasmath      = true
-        target.nomath           = false
-        target.MathConstants    = target.mathparameters
+        properties.hasmath       = true
+        target.nomath            = false
+        target.MathConstants     = target.mathparameters
+        --
+        local oldmath            = properties.oldmath
+        targetproperties.oldmath = oldmath
+        target.oldmath           = oldmath
     else
-        properties.hasmath      = false
-        target.nomath           = true
-        target.mathparameters   = nil -- nop
+        properties.hasmath       = false
+        target.nomath            = true
+        target.mathparameters    = nil -- nop
     end
     --
     -- Here we support some context specific trickery (this might move to a plugin). During the
@@ -654,6 +650,14 @@ function constructors.scale(tfmdata,specification)
         if changed then
             local c = changed[unicode]
             if c and c ~= unicode then
+                local cc = changed[c]
+                if cc then
+                    while cc do
+                        c = cc
+                        cc = changed[c]
+                    end
+                end
+                -- check not needed:
                 if c then
                     description = descriptions[c] or descriptions[unicode] or character
                     character   = characters[c] or character
@@ -674,27 +678,6 @@ function constructors.scale(tfmdata,specification)
         local height    = description.height
         local depth     = description.depth
         local isunicode = description.unicode
-        if realdimensions then
-            -- this is mostly for checking issues
-            if not height or height == 0 then
-                local bb = description.boundingbox
-                local ht =  bb[4]
-                if ht ~= 0 then
-                    height = ht
-                end
-                if not depth or depth == 0 then
-                    local dp = -bb[2]
-                    if dp ~= 0 then
-                        depth = dp
-                    end
-                end
-            elseif not depth or depth == 0 then
-                local dp = -description.boundingbox[2]
-                if dp ~= 0 then
-                    depth = dp
-                end
-            end
-        end
         if width  then width  = hdelta*width  else width  = scaledwidth  end
         if height then height = vdelta*height else height = scaledheight end
     --  if depth  then depth  = vdelta*depth  else depth  = scaleddepth  end
@@ -1091,9 +1074,7 @@ function constructors.finalize(tfmdata)
     return tfmdata
 end
 
---[[ldx--
-<p>A unique hash value is generated by:</p>
---ldx]]--
+-- A unique hash value is generated by:
 
 local hashmethods        = { }
 constructors.hashmethods = hashmethods
@@ -1152,13 +1133,11 @@ hashmethods.normal = function(list)
     end
 end
 
---[[ldx--
-<p>In principle we can share tfm tables when we are in need for a font, but then
-we need to define a font switch as an id/attr switch which is no fun, so in that
-case users can best use dynamic features ... so, we will not use that speedup. Okay,
-when we get rid of base mode we can optimize even further by sharing, but then we
-loose our testcases for <l n='luatex'/>.</p>
---ldx]]--
+-- In principle we can share tfm tables when we are in need for a font, but then we
+-- need to define a font switch as an id/attr switch which is no fun, so in that
+-- case users can best use dynamic features ... so, we will not use that speedup.
+-- Okay, when we get rid of base mode we can optimize even further by sharing, but
+-- then we loose our testcases for LuaTeX.
 
 function constructors.hashinstance(specification,force)
     local hash      = specification.hash
@@ -1514,10 +1493,7 @@ do
 
 end
 
---[[ldx--
-<p>We need to check for default features. For this we provide
-a helper function.</p>
---ldx]]--
+-- We need to check for default features. For this we provide a helper function.
 
 function constructors.checkedfeatures(what,features)
     local defaults = handlers[what].features.defaults

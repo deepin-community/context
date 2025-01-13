@@ -8,8 +8,7 @@ if not modules then modules = { } end modules ['util-sql-imp-ffi'] = {
 
 -- I looked at luajit-mysql to see how the ffi mapping was done but it didn't work
 -- out that well (at least not on windows) but I got the picture. As I have somewhat
--- different demands I simplified / redid the ffi bit and just took the swiglib
--- variant and adapted that.
+-- different demands I simplified.
 
 local tonumber = tonumber
 local concat = table.concat
@@ -170,7 +169,6 @@ local validspecification     = helpers.validspecification
 local querysplitter          = helpers.querysplitter
 local dataprepared           = helpers.preparetemplate
 local serialize              = sql.serialize
-local deserialize            = sql.deserialize
 
 local mysql_open_session     = mysql.mysql_init
 
@@ -565,6 +563,7 @@ local ffi_tostring    = ffi.string
 
 local converters      = utilities.sql.converters
 local deserialize     = utilities.sql.deserialize
+local fromjson        = utilities.sql.fromjson
 
 local tostring        = tostring
 local tonumber        = tonumber

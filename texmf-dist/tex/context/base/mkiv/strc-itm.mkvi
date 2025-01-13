@@ -676,6 +676,12 @@
      \strc_itemgroups_insert_item_counter_indeed
    \fi}
 
+\installcorenamespace{itemstopper}
+
+\setvalue{\??itemstopper\v!yes    }{\itemgroupparameter\c!stopper}
+\setvalue{\??itemstopper\v!display}{\ifconditional\c_strc_itemgroups_inline\else\itemgroupparameter\c!stopper\fi}
+\setvalue{\??itemstopper\v!inline }{\ifconditional\c_strc_itemgroups_inline\itemgroupparameter\c!stopper\fi}
+
 \def\strc_itemgroups_insert_item_counter_indeed % quite slow ... every time this setup .. but it
   {\begingroup                                  % can be optimized ... best move some to strc-num
    \setupcounter
@@ -690,7 +696,7 @@
       \c!prefixconnector=\itemgroupparameter\c!prefixconnector,
       \c!criterium=\itemgroupparameter\c!criterium,
       \c!numberorder=\ifconditional\c_strc_itemgroups_reverse\v!reverse\else\v!normal\fi,
-      \c!numberstopper=\expdoif{\itemgroupparameter\c!placestopper}\v!yes{\itemgroupparameter\c!stopper},
+      \c!numberstopper=\begincsname\??itemstopper\itemgroupparameter\c!placestopper\endcsname,
       \c!numberconversionset=\v_strc_itemgroups_counter,
       \c!numbersegments=\currentitemgroupsegments]%
    % there will be a fixedconversion key
@@ -1321,6 +1327,7 @@
 \letvalue{\??itemgroupstart\v!ran }\strc_itemgroups_start_edge
 \letvalue{\??itemgroupstart\v!its }\strc_itemgroups_start_items
 \letvalue{\??itemgroupstart\v!mar }\strc_itemgroups_start_margin
+\letvalue{\??itemgroupstart\v!txt }\strc_itemgroups_start_text
 
 \def\optimizelistitemsbreak
   {\ifcase\c_strc_itemgroups_column_depth \ifconditional\c_strc_itemgroups_optimize
@@ -1538,7 +1545,7 @@
   {\let\m_strc_itemgroups_text_distance\zeropoint}
 
 \setvalue{\??itemgroupdistance\v!space}%
-  {\def\m_strc_itemgroups_text_distance{\interwordspace\!!plus\interwordstretch\!!minus\interwordshrink}}
+  {\def\m_strc_itemgroups_text_distance{\interwordspace\s!plus\interwordstretch\s!minus\interwordshrink}}
 
 \setvalue\??itemgroupdistance % catches empty value
   {\let\m_strc_itemgroups_text_distance\zeropoint}
@@ -1557,9 +1564,9 @@
   {\assignvalue
      \m_strc_itemgroups_text_distance
      \m_strc_itemgroups_text_distance
-     {.5\interwordspace\!!plus.5\emwidth}%
-     {\interwordspace  \!!plus  \emwidth}%
-     {\emwidth         \!!plus  \interwordstretch\!!minus\interwordshrink}}
+     {.5\interwordspace\s!plus.5\emwidth}%
+     {\interwordspace  \s!plus  \emwidth}%
+     {\emwidth         \s!plus  \interwordstretch\s!minus\interwordshrink}}
 
 % \unexpanded\def\strc_itemgroups_default_command
 %   {\EveryPar{\ignorespaces}% needed ?
@@ -1577,6 +1584,11 @@
 
 \appendtoks
     \let\item            \strc_itemgroups_start_do_item
+    \let\sub             \strc_itemgroups_start_subitem
+    \let\sym             \strc_itemgroups_start_symbol
+    \let\ran             \strc_itemgroups_start_edge
+    \let\its             \strc_itemgroups_start_items
+    \let\mar             \strc_itemgroups_start_margin
     \let\noitem          \strc_itemgroups_start_no_item
     \let\itm             \strc_itemgroups_start_do_item
     \let\but             \strc_itemgroups_start_button
@@ -1587,27 +1599,29 @@
     \let\startitem       \startitemgroupitem
     \let\stopitem        \stopitemgroupitem
     \let\starthead       \startitemgrouphead
-    \let\stophead        \stopitemgroupitemhead
+    \let\stophead        \stopitemgrouphead
     \let\startspecialitem\startspecialitemgroupitem
     \let\stopspecialitem \stopspecialitemgroupitem
 \to \itemgroupcommands
 
-\ifx\currentinterface \v!english \else
+\ifx\currentinterface \s!english \else
 
-    \appendtoks
-        \expandafter\let\csname\v!item        \endcsname\strc_itemgroups_start_do_item
-        \expandafter\let\csname\v!sub         \endcsname\strc_itemgroups_start_subitem
-        \expandafter\let\csname\v!sym         \endcsname\strc_itemgroups_start_symbol
-        \expandafter\let\csname\v!ran         \endcsname\strc_itemgroups_start_edge
-        \expandafter\let\csname\v!head        \endcsname\strc_itemgroups_head
-        \expandafter\let\csname\v!its         \endcsname\strc_itemgroups_start_items
-        \expandafter\let\csname\v!mar         \endcsname\strc_itemgroups_start_margin
-        \expandafter\let\csname\v!txt         \endcsname\strc_itemgroups_start_text
-        \expandafter\let\csname\e!start\v!item\endcsname\startitemgroupitem
-        \expandafter\let\csname\e!stop \v!item\endcsname\stopitemgroupitem
-        \expandafter\let\csname\e!start\v!head\endcsname\startitemgrouphead
-        \expandafter\let\csname\e!stop \v!head\endcsname\stopitemgrouphead
-    \to \itemgroupcommands
+    \def\next#1#2{\ifcsname#1\endcsname\else\let\csname#1\endcsname#2\fi}
+
+    \etoksapp\itemgroupcommands{%
+        \next{\v!item        }\strc_itemgroups_start_do_item
+        \next{\v!sub         }\strc_itemgroups_start_subitem
+        \next{\v!sym         }\strc_itemgroups_start_symbol
+        \next{\v!ran         }\strc_itemgroups_start_edge
+        \next{\v!head        }\strc_itemgroups_head
+        \next{\v!its         }\strc_itemgroups_start_items
+        \next{\v!mar         }\strc_itemgroups_start_margin
+        \next{\v!txt         }\strc_itemgroups_start_text
+        \next{\e!start\v!item}\startitemgroupitem
+        \next{\e!stop \v!item}\stopitemgroupitem
+        \next{\e!start\v!head}\startitemgrouphead
+        \next{\e!stop \v!head}\stopitemgrouphead
+    }
 
 \fi
 

@@ -136,24 +136,33 @@
 
 \let\stopMPinclusions\relax
 
+% The next was broken since we added instances so it will go away!
+
 \unexpanded\def\MPinclusions
   {\dosingleempty\meta_inclusions}
 
 \def\meta_inclusions[#1]%
   {\edef\m_meta_option{#1}%
-   \dosinglegroupempty\meta_inclusions_indeed}
+   \dodoublegroupempty\meta_inclusions_indeed}
 
 \def\meta_inclusions_indeed#1#2%
   {\let\m_meta_saved_instance\currentMPinstance
-   \edef\currentMPinstance{#1}%
-   \ifx\currentMPinstance\empty
-     \let\currentMPinstance\defaultMPinstance
-   \fi
    \ifx\m_meta_option\!!plustoken \else
      \global\t_meta_inclusions\emptytoks
    \fi
-   \gtoksapp\t_meta_inclusions{#2}%
+   \ifsecondargument
+     \edef\currentMPinstance{#1}%
+     \ifx\currentMPinstance\empty
+       \let\currentMPinstance\defaultMPinstance
+     \fi
+     \gtoksapp\t_meta_inclusions{#2}%
+   \else
+     \let\currentMPinstance\defaultMPinstance
+     \gtoksapp\t_meta_inclusions{#1}%
+   \fi
    \let\currentMPinstance\m_meta_saved_instance}
+
+% so far
 
 \installcommandhandler \??mpinstance {MPinstance} \??mpinstance
 
@@ -874,11 +883,8 @@
   {\meta_prepare_instance_variable{#1}%
    \edef\overlaystamp{\overlaystamp:\MPvariable{#1}}}
 
-\unexpanded\def\getMPdata  {\clf_getMPdata}
-           \let\rawMPdata   \clf_getMPdata
-
-\unexpanded\def\getMPstored{\clf_getMPstored}
-           \let\rawMPstored \clf_getMPstored
+\unexpanded\def\getMPdata{\clf_getMPdata}
+           \let\rawMPdata \clf_getMPdata
 
 %D We need this trick because we need to make sure that the tex scanner sees
 %D newlines and does not quit. Also, we do need to flush the buffer under a normal
@@ -1110,7 +1116,7 @@
 % \newcount\c_overlay_linetransparency
 
 % \appendtoks
-%     \c_overlay_colormodel      \attribute\colormodelattribute
+%     \c_overlay_colormodel      \c_attr_colormodel
 %     \c_overlay_color           \colo_helpers_inherited_current_ca\overlaycolor
 %     \c_overlay_transparency    \colo_helpers_inherited_current_ta\overlaycolor
 %     \c_overlay_linecolor       \colo_helpers_inherited_current_ca\overlaylinecolor
@@ -1368,8 +1374,8 @@
 \appendtoks
     \clf_mpsetoutercolor
         \MPcolormethod\space
-        \attribute\colormodelattribute\space
-        \attribute\colorattribute\space
+        \c_attr_colormodel\space
+        \c_attr_color\space
         \dogetattribute{transparency}\relax
 \to \everyMPgraphic
 

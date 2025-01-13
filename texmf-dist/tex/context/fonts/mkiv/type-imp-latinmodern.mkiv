@@ -28,6 +28,16 @@
 
 \starttypescriptcollection[latinmodern]
 
+    \pushglobalsetups
+
+        \startsetups[\s!math:modern]
+            \fencemuskip\zeromuskip
+        \stopsetups
+
+        \startsetups[\s!math:latinmodern]\fastsetup{modern}\stopsetups
+
+    \popglobalsetups
+
     \doifunknownfontfeature {lm-math-bold} {\definefontfeature[lm-math-bold][boldened]}
 
     \starttypescript [\s!serif] [simple] [\s!name]
@@ -71,7 +81,7 @@
         \definefontsynonym [MonoVariable]       [LMTypewriterVarWd-Regular] [\s!features=\s!none]
     \stoptypescript
 
-    \starttypescript [\s!math] [modern,latin-modern-designsize,latin-modern] [\s!name]
+    \starttypescript [\s!math] [modern,latin-modern-designsize,latin-modern,modern-nt] [\s!name]
         \loadfontgoodies[lm]
         \definefontsynonym [\s!MathRoman]     [LMMathRoman-Regular]
         \definefontsynonym [\s!MathRomanBold] [LMMathRoman-Bold]
@@ -121,12 +131,12 @@
 
     \starttypescript [\s!serif] [modern,latin-modern]
         \loadfontgoodies[lm]
-        \definefontsynonym [LMRoman-Regular]        [\s!file:lmroman10-regular]      [\s!features=\s!default]
-        \definefontsynonym [LMRoman-Bold]           [\s!file:lmroman10-bold]         [\s!features=\s!default]
+        \definefontsynonym [LMRoman-Regular]        [\s!file:lmroman10-regular]      [\s!features=\s!default,\s!goodies=modern-text]
+        \definefontsynonym [LMRoman-Bold]           [\s!file:lmroman10-bold]         [\s!features=\s!default,\s!goodies=modern-text]
         \definefontsynonym [LMRoman-Demi]           [\s!file:lmromandemi10-regular]  [\s!features=\s!default]
-        \definefontsynonym [LMRoman-Italic]         [\s!file:lmroman10-italic]       [\s!features=\s!default]
+        \definefontsynonym [LMRoman-Italic]         [\s!file:lmroman10-italic]       [\s!features=\s!default,\s!goodies=modern-text]
         \definefontsynonym [LMRoman-Oblique]        [\s!file:lmromanslant10-regular] [\s!features=\s!default]
-        \definefontsynonym [LMRoman-BoldItalic]     [\s!file:lmroman10-bolditalic]   [\s!features=\s!default]
+        \definefontsynonym [LMRoman-BoldItalic]     [\s!file:lmroman10-bolditalic]   [\s!features=\s!default,\s!goodies=modern-text]
         \definefontsynonym [LMRoman-BoldOblique]    [\s!file:lmromanslant10-bold]    [\s!features=\s!default]
         \definefontsynonym [LMRoman-DemiOblique]    [\s!file:lmromandemi10-oblique]  [\s!features=\s!default]
         \definefontsynonym [LMRoman-CapsRegular]    [\s!file:lmroman10-CapsRegular]  [\s!features=\s!default]
@@ -173,16 +183,23 @@
         \definefontsynonym [LMTypewriterVarWd-DarkOblique]      [\s!file:lmmonoproplt10-boldoblique] [\s!features=\s!default]
     \stoptypescript
 
-%     \starttypescript [\s!math] [modern,latin-modern]
-%         \loadfontgoodies[lm]
-%         \definefontsynonym [LMMathRoman-Regular] [\v!file:latinmodern-math-regular.otf] [\s!features={\s!math\mathsizesuffix,mathextra},\s!goodies=lm]
-%         \definefontsynonym [LMMathRoman-Bold]    [\v!file:latinmodern-math-regular.otf] [\s!features={\s!math\mathsizesuffix,mathextra},\s!goodies=lm]
-%     \stoptypescript
+    \starttypescript [\s!math] [modern,modern-nt,latin-modern,modern-designsize,modern-base,%
+                                modernvariable,modern-variable,%
+                                modernvariablelight,modern-variable-light,%
+                                modern-mono,modern-base-mono]
+        \checkedmapfontsize[\typescripttwo][\s!script]      [.70]
+        \checkedmapfontsize[\typescripttwo][\s!scriptscript][.50]
+    \stoptypescript
 
     \starttypescript [\s!math] [modern,latin-modern]
         \loadfontgoodies[lm]
-        \definefontsynonym [LMMathRoman-Regular] [\v!file:latinmodern-math-regular.otf] [\s!features={\s!math\mathsizesuffix,lm-math,mathextra},\s!goodies=lm]
-        \definefontsynonym [LMMathRoman-Bold]    [\v!file:latinmodern-math-regular.otf] [\s!features={\s!math\mathsizesuffix,lm-math-bold,lm-math,mathextra},\s!goodies=lm]
+        \definefontsynonym [LMMathRoman-Regular] [\v!file:latinmodern-math.otf] [\s!features={\s!math\mathsizesuffix,lm:mathextra,lm-math,mathextra},\s!goodies=modern-math]
+        \definefontsynonym [LMMathRoman-Bold]    [\v!file:latinmodern-math.otf] [\s!features={\s!math\mathsizesuffix,lm:mathextra,lm-math-bold,lm-math,mathextra},\s!goodies=modern-math]
+    \stoptypescript
+    \starttypescript [\s!math] [modern-nt]
+        \loadfontgoodies[lm]
+        \definefontsynonym [LMMathRoman-Regular] [\v!file:latinmodern-math.otf] [\s!features={\s!math\mathsizesuffix,lm:mathextra,lm-math,mathextra}]
+        \definefontsynonym [LMMathRoman-Bold]    [\v!file:latinmodern-math.otf] [\s!features={\s!math\mathsizesuffix,lm:mathextra,lm-math-bold,lm-math,mathextra}]
     \stoptypescript
 
     \starttypescript [modern-designsize-virtual]
@@ -206,6 +223,14 @@
         \definetypeface [\typescriptone] [\s!ss] [\s!sans]  [modern] [\s!default]
         \definetypeface [\typescriptone] [\s!tt] [\s!mono]  [modern] [\s!default]
         \definetypeface [\typescriptone] [\s!mm] [\s!math]  [modern] [\s!default]
+        \quittypescriptscanning
+    \stoptypescript
+
+    \starttypescript [modern-nt]
+        \definetypeface [\typescriptone] [\s!rm] [\s!serif] [modern]    [\s!default]
+        \definetypeface [\typescriptone] [\s!ss] [\s!sans]  [modern]    [\s!default]
+        \definetypeface [\typescriptone] [\s!tt] [\s!mono]  [modern]    [\s!default]
+        \definetypeface [\typescriptone] [\s!mm] [\s!math]  [modern-nt] [\s!default]
         \quittypescriptscanning
     \stoptypescript
 
@@ -235,6 +260,8 @@
 
 %D It doesn't hurt to have these, at least for the moment (can go to type-imp-symbol)
 
-\definefontsynonym [ZapfDingbats] [\s!file:uzdr] [\s!features=dingbats]% [\s!goodies=dingbats]
+\definefontsynonym [ZapfDingbats] [\s!file:uzdr*dingbats]% works better with symbols
+
+% \definefontsynonym [ZapfDingbats] [\s!file:uzdr] [\s!features=dingbats]% [\s!goodies=dingbats]
 
 \endinput

@@ -129,7 +129,9 @@
     % main handler
 
     def math_stacker_draw_accent(expr p) =
-        draw p withpen pencircle scaled OverlayLineWidth xyscaled (2,3) rotated 45 ;
+%         draw p withpen pencircle scaled OverlayLineWidth xyscaled (2,3) rotated 45 ;
+%         draw p withpen pencircle xscaled (2OverlayLineWidth) yscaled (3OverlayLineWidth/4) rotated 45 ;
+        draw p withpen pencircle scaled OverlayLineWidth ;
     enddef ;
 
     def math_stacker_draw_arrow(expr p) =
@@ -137,35 +139,35 @@
     enddef ;
 \stopMPextensions
 
-\startuniqueMPgraphic{minifun::math:stacker:\number"FE3B4}{axis,ex,em}
+\startuniqueMPgraphic{minifun::math:stacker:\number"\ifcase\contextlmtxmode FE3B4\else23B4\fi}{axis,ex,em}
     math_stacker_draw_accent(math_stacker_bracket_shape(OverlayHeight,false)) ;
 \stopuniqueMPgraphic
 
-\startuniqueMPgraphic{minifun::math:stacker:\number"FE3B5}{axis,ex,em}
+\startuniqueMPgraphic{minifun::math:stacker:\number"\ifcase\contextlmtxmode FE3B5\else23B5\fi}{axis,ex,em}
     math_stacker_draw_accent(math_stacker_bracket_shape(OverlayDepth,true)) ;
 \stopuniqueMPgraphic
 
-\startuniqueMPgraphic{minifun::math:stacker:\number"FE3DC}{axis,ex,em}
+\startuniqueMPgraphic{minifun::math:stacker:\number"\ifcase\contextlmtxmode FE3DC\else23DC\fi}{axis,ex,em}
     math_stacker_draw_accent(math_stacker_parent_shape(OverlayHeight,false)) ;
 \stopuniqueMPgraphic
 
-\startuniqueMPgraphic{minifun::math:stacker:\number"FE3DD}{axis,ex,em}
+\startuniqueMPgraphic{minifun::math:stacker:\number"\ifcase\contextlmtxmode FE3DD\else23DD\fi}{axis,ex,em}
     math_stacker_draw_accent(math_stacker_parent_shape(OverlayDepth,true)) ;
 \stopuniqueMPgraphic
 
-\startuniqueMPgraphic{minifun::math:stacker:\number"FE3DE}{axis,ex,em}
+\startuniqueMPgraphic{minifun::math:stacker:\number"\ifcase\contextlmtxmode FE3DE\else23DE\fi}{axis,ex,em}
     math_stacker_draw_accent(math_stacker_brace_shape(OverlayHeight,false)) ;
 \stopuniqueMPgraphic
 
-\startuniqueMPgraphic{minifun::math:stacker:\number"FE3DF}{axis,ex,em}
+\startuniqueMPgraphic{minifun::math:stacker:\number"\ifcase\contextlmtxmode FE3DF\else23DF\fi}{axis,ex,em}
     math_stacker_draw_accent(math_stacker_brace_shape(OverlayDepth,true)) ;
 \stopuniqueMPgraphic
 
-\startuniqueMPgraphic{minifun::math:stacker:\number"FE33E}{axis,ex,em}
+\startuniqueMPgraphic{minifun::math:stacker:\number"\ifcase\contextlmtxmode FE33E\else203E\fi}{axis,ex,em}
     math_stacker_draw_accent(math_stacker_bar_shape(false)) ;
 \stopuniqueMPgraphic
 
-\startuniqueMPgraphic{minifun::math:stacker:\number"FE33F}{axis,ex,em}
+\startuniqueMPgraphic{minifun::math:stacker:\number"\ifcase\contextlmtxmode FE33F\else203F\fi}{axis,ex,em}
     math_stacker_draw_accent(math_stacker_bar_shape(true)) ;
 \stopuniqueMPgraphic
 
@@ -204,10 +206,15 @@
 \startuniqueMPgraphic{minifun::math:radical:default}{axis,ex,em}
     draw
         math_radical_simple(OverlayWidth,OverlayHeight,OverlayDepth,OverlayOffset)
-        withpen pencircle xscaled (2OverlayLineWidth) yscaled (3OverlayLineWidth/4) rotated 30
+     %  withpen pencircle xscaled (2OverlayLineWidth) yscaled (3OverlayLineWidth/4) rotated 30
+        withpen pencircle scaled OverlayLineWidth
       % dashed evenly
         withcolor OverlayLineColor ;
 \stopuniqueMPgraphic
+
+% already setup:
+%
+% definemathradical [sqrt]   [mp=minifun::math:radical:default]
 
 \continueifinputfile{meta-imp-mat.mkiv}
 
@@ -249,6 +256,11 @@ $
 $
     \underleftarrow  {a+b+c+d} \quad
     \underrightarrow {a+b+c+d}
+$
+\blank[2*big]
+\setupmathradical[sqrt][alternative=mp,color=darkgreen]
+$
+    \sqrt[2]{a+b+c+d} \quad
 $
 
 \stopTEXpage

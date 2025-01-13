@@ -17,19 +17,19 @@
 .SH NAME
 texfont \- font installation tool for ConTeXt
 
-.SH "SYNOPSIS" 
+.SH "SYNOPSIS"
 \fBtexfont\fP [ \fIOPTION\fP ...  ]
 
 .SH DESCRIPTION
 
-TeXFont is a 
+TeXFont is a
 .BR perl (1)
 script that helps to set up and install TeX fonts.
 It was designed for use with ConTeXt, but may also be helpful for
 users of other formats, like plain TeX or LaTeX. Its use is described
 in detail in the files \fImtexfont.pdf\fP and \fImfont.pdf\fP.
 
-.SH "OPTIONS" 
+.SH "OPTIONS"
 
 .HP
 \fB\-\-fontroot\fR=\fIpath\fR : texmf font root (automatically determined)
@@ -75,7 +75,7 @@ directory)
 .HP
 \fB\-\-help\fR : show some more info
 .HP
-.SH "SEE ALSO" 
+.SH "SEE ALSO"
 .IP \(bu
 \fBtexexec\fP(1), \fBfontinst\fP(1), \fBperl\fP(1), \fBtexshow\fP(1).
 .IP \(bu
@@ -89,9 +89,9 @@ The TeXExec manual, \fImtexexec.pdf\fP.
 .IP \(bu
 .URL "http://www.contextgarden.net" "ConTeXt wiki" .
 .IP \(bu
-Donald E. Knuth\'s \fIThe TeXbook\fP.
+Donald E. Knuth's \fIThe TeXbook\fP.
 
-.SH "AUTHOR" 
+.SH "AUTHOR"
 
 This manual page was written by Frank K\[:u]ster <frank@kuesterei.ch>,
 for the Debian GNU/Linux system, and  modified by Sanjoy Mahajan

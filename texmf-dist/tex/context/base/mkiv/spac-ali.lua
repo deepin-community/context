@@ -1,5 +1,6 @@
 if not modules then modules = { } end modules ['spac-ali'] = {
     version   = 1.001,
+    optimize  = true,
     comment   = "companion to spac-ali.mkiv",
     author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
     copyright = "PRAGMA ADE / ConTeXt Development Team",
@@ -67,7 +68,7 @@ local nofrealigned     = 0
 -- raggedright     0           0         fil
 -- raggedcenter    0 +         0 +        -
 
-local function handler(head,leftpage,realpageno) -- traverse_list
+local function handler(head,leftpage,realpageno) -- traverselist
     local current = head
     while current do
         local id = getid(current)
@@ -111,7 +112,7 @@ local function handler(head,leftpage,realpageno) -- traverse_list
                             local head = setlink(new_stretch(3),list) -- prepend
                             setlist(current,hpack_nodes(head,getwidth(current),"exactly",direction))
                             if trace_realign then
-                                report_realign("flushing right. align %a, page %a, realpage %a",align,pageno,realpageno)
+                                report_realign("flushing right, align %a, page %a, realpage %a",align,pageno,realpageno)
                             end
                         elseif trace_realign then
                             report_realign("invalid flushing, align %a, page %a, realpage %a",align,pageno,realpageno)

@@ -53,6 +53,9 @@ end
 math.setrandomseedi = setrandomseedi
 
 local function getrandomnumber(min,max)
+    if min > max then
+        min, max = max, min
+    end
     last = random(min,max)
     if trace_details then
         report_system("number %s",last)
@@ -80,7 +83,8 @@ end
 -- maybe stack
 
 local function pushrandomseed()
-    insert(stack,last)
+ -- insert(stack,last) -- doesn't work okay
+    insert(stack,randomseed(last) or last)
     if trace_random or trace_details then
         report_system("pushing seed %s",last)
     end
@@ -132,6 +136,8 @@ utilities.randomizer = {
     reuseseed   = reuserandomseed,
     popseed     = poprandomseed,
     get         = getrandom,
+    -- the original, only for testing
+ -- mathrandom  = random,
 }
 
 -- todo: also open up in utilities.randomizer.*
@@ -139,10 +145,9 @@ utilities.randomizer = {
 implement { name = "getrandomnumber",   actions = { getrandomnumber, context }, arguments = { "integer", "integer" } }
 implement { name = "getrandomdimen",    actions = { getrandomnumber, context }, arguments = { "dimen", "dimen" } }
 implement { name = "getrandomfloat",    actions = { getrandomnumber, context }, arguments = { "number", "number" } }
---------- { name = "getmprandomnumber", actions = { getmprandomnumber, context } }
-implement { name = "setrandomseed",     actions = { setrandomseed },            arguments = { "integer" } }
-implement { name = "getrandomseed",     actions = { getrandomseed, context } }
-implement { name = "pushrandomseed",    actions = { pushrandomseed  } }
-implement { name = "poprandomseed",     actions = { poprandomseed } }
-implement { name = "reuserandomseed",   actions = { reuserandomseed } }
+implement { name = "getrandomseed",     actions = { getrandomseed,   context } }
+implement { name = "setrandomseed",     actions = setrandomseed, arguments = "integer" }
+implement { name = "pushrandomseed",    actions = pushrandomseed, public = true, }
+implement { name = "poprandomseed",     actions = poprandomseed, public = true, }
+implement { name = "reuserandomseed",   actions = reuserandomseed, public = true, }
 

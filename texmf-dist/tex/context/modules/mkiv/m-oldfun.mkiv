@@ -11,6 +11,8 @@
 %C therefore copyrighted by \PRAGMA. See mreadme.pdf for
 %C details.
 
+\ifcase\contextlmtxmode\else\endinput\fi
+
 \unprotect
 
 %D Beware, these macros wil be replaced and at some point this
@@ -648,7 +650,7 @@
    \dontcomplain
    \setuptolerance[\v!verytolerant]% == \tolerance4500
    \hsize#1%
-   \def\\{\softbreak}%
+   \enforced\def\\{\softbreak}%
    \!!heighta#4%
    \!!heightb#2%
    \doloop
@@ -690,8 +692,8 @@
    \advance\scratchdimen#2\relax
    \NormalizeFontWidth
      #1%
-     {\def\+{\global\settrue\NFSpread\gobbleuntil\relax}%
-      \def\\{\gobbleuntil\relax}% newline
+     {\enforced\def\+{\global\settrue\NFSpread\gobbleuntil\relax}%
+      \enforced\def\\{\gobbleuntil\relax}% newline
       \setupspacing
       #6\relax}%
      {\scratchdimen}%

@@ -22,7 +22,6 @@ local nuts               = nodes.nuts
 
 local setfont            = nuts.setfont
 
------ traverse_char      = nuts.traverse_char
 local nextchar           = nuts.traversers.char
 
 local settings_to_hash   = utilities.parsers.settings_to_hash
@@ -478,5 +477,5 @@ implement {
 implement {
     name      = "doifelsecharinfont",
     actions   = { collections.found, commands.doifelse },
-    arguments = { "integer" }
+    arguments = "integer"
 }

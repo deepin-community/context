@@ -1,4 +1,4 @@
-if not modules then modules = { } end modules ['syst-aux'] = {
+    if not modules then modules = { } end modules ['syst-aux'] = {
     version   = 1.001,
     comment   = "companion to syst-aux.mkiv",
     author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
@@ -11,20 +11,19 @@ if not modules then modules = { } end modules ['syst-aux'] = {
 -- utfmatch(str,"(.?)(.*)$")
 -- utf.sub(str,1,1)
 
-local tonumber, next = tonumber, next
+local tonumber, next, type = tonumber, next, type
 local utfsub = utf.sub
 local P, S, R, C, Cc, Cs, Carg, lpegmatch = lpeg.P, lpeg.S, lpeg.R, lpeg.C, lpeg.Cc, lpeg.Cs, lpeg.Carg, lpeg.match
-local next = next
-local find  = string.find
+local find, formatters = string.find, string.formatters
 
 local context           = context
 local implement         = interfaces.implement
-local formatters        = string.formatters
+local setmacro          = interfaces.setmacro
 local setcatcode        = tex.setcatcode
+local texget            = tex.get
 local utf8character     = lpeg.patterns.utf8character
 local settings_to_array = utilities.parsers.settings_to_array
 local settings_to_set   = utilities.parsers.settings_to_set
-local setmacro          = interfaces.setmacro
 
 local pattern           = C(utf8character^-1) * C(P(1)^0)
 
@@ -131,115 +130,14 @@ local sentinel  = spaces * (nohash^1 / "\\%0")
 local sargument = (single * digit)^1
 local dargument = (double * digit)^1
 
--- first variant:
---
--- local texpreamble = nil
--- local usespaces   = nil
---
--- local pattern = Cs( -- ^-1
---     ( P("spaces") / function() usespaces = true return "" end )^0
---   * spaces
---   * ( P("nospaces") / function() usespaces = false return "" end )^0
---   * spaces
---   * ( P("global") / "\\global" )^0
---   * spaces
---   * ( P("unexpanded") / "\\unexpanded" )^0
---   * spaces
---   * Cc("\\expandafter\\")
---   * spaces
---   * ( P("expanded") / "e" )^0
---   * spaces
---   * ( P((1-S(" #"))^1) / "def\\csname %0\\endcsname" )
---   * spaces
---   * (
---    --   (double * digit)^1 * sentinel^-1 * double^-1
---    -- + (single * digit)^1 * sentinel^-1 * single^-1
---         ( P("[") * dargument * P("]") + dargument)^1 * sentinel^-1 * double^-1
---       + ( P("[") * sargument * P("]") + sargument)^1 * sentinel^-1 * single^-1
---       + sentinel^-1 * (double+single)^-1
---     )
--- )
---
--- local ctx_dostarttexdefinition = context.dostarttexdefinition
---
--- local function texdefinition_one(str)
---     usespaces   = nil
---     texpreamble = lpegmatch(pattern,str)
---     if usespaces == true then
---         setcatcode(32,10) -- space
---         setcatcode(13, 5) -- endofline
---     elseif usespaces == false then
---         setcatcode(32, 9) -- ignore
---         setcatcode(13, 9) -- ignore
---     else
---         -- this is default
---      -- setcatcode(32,10) -- space
---      -- setcatcode(13, 9) -- ignore
---     end
---     ctx_dostarttexdefinition()
--- end
---
--- local function texdefinition_two()
---     context(texpreamble)
--- end
-
--- second variant:
---
--- -- default:
--- --
--- -- setcatcode(32,10) -- space
--- -- setcatcode(13, 9) -- ignore
---
--- local function catcodes_s()
---     setcatcode(32,10) -- space
---     setcatcode(13, 5) -- endofline
---     return ""
--- end
---
--- local function catcodes_n()
---     setcatcode(32, 9) -- ignore
---     setcatcode(13, 9) -- ignore
---     return ""
--- end
---
--- local pattern = Cs( -- ^-1
---              ( P("spaces")     * space / catcodes_s )^0
---   * spaces * ( P("nospaces")   * space / catcodes_n )^0
---   * spaces * ( P("global")     * space / "\\global" )^0
---   * spaces * ( P("unexpanded") * space / "\\unexpanded" )^0
---   * spaces *                          Cc("\\expandafter\\")
---   * spaces * ( P("expanded")           / "e" )^0
---   * spaces * ( P((1-S(" #["))^1)       / "def\\csname %0\\endcsname" )
---   * spaces * (
---    --   (double * digit)^1 * sentinel^-1 * double^-1
---    -- + (single * digit)^1 * sentinel^-1 * single^-1
---         ( P("[") * dargument * P("]") + dargument)^1 * sentinel^-1 * double^-1
---       + ( P("[") * sargument * P("]") + sargument)^1 * sentinel^-1 * single^-1
---       + sentinel^-1 * (double+single)^-1
---     )
--- )
---
--- local texpreamble = nil
---
--- local ctx_dostarttexdefinition = context.dostarttexdefinition
---
--- local function texdefinition_one(str)
---     texpreamble = lpegmatch(pattern,str)
---     ctx_dostarttexdefinition()
--- end
---
--- local function texdefinition_two()
---     context(texpreamble)
--- end
-
 -- third variant:
 
-local global      = nil
-local unexpanded  = nil
-local expanded    = nil
-local optional    = nil
-local csname      = nil
-local rest        = nil
+local global    = nil
+local protected = nil
+local expanded  = nil
+local optional  = nil
+local csname    = nil
+local rest      = nil
 
 local function catcodes_s()
     setcatcode(32,10) -- space
@@ -264,12 +162,23 @@ local option = (
   ) * (P("empty") + P("argument"))
 
 local pattern = (
-             ( P("spaces")     * space / catcodes_s )^0
-  * spaces * ( P("nospaces")   * space / catcodes_n )^0
-  * spaces * ( P("global")     * space * Cc(true) + Cc(false) )
-  * spaces * ( P("unexpanded") * space * Cc(true) + Cc(false) )
-  * spaces * ( P("expanded")   * space * Cc(true) + Cc(false) )
-  * spaces * ( C(option)       * space + Cc(false) )
+    (
+        spaces * (
+            ( P("spaces")     * space / catcodes_s )
+          + ( P("nospaces")   * space / catcodes_n )
+          + ( P("global")     * space / function()  global    = true end )
+          + ( P("protected")  * space / function()  protected = true end)
+          + ( P("permanent")  * space )
+          + ( P("expanded")   * space / function()  expanded  = true end)
+          + ( P("tolerant")   * space )
+          + ( P("instance")   * space )
+          + ( P("frozen")     * space )
+          + ( P("mutable")    * space )
+          + ( P("immutable")  * space )
+          + ( P("unexpanded") * space / function()  protected = true end)
+          + ( C(option)       * space / function(s) optional  = s    end)
+        )
+    )^0
   * spaces * ( C((1-S(" #["))^1) )
   * spaces *   Cs(
         ( P("[") * dargument * P("]") + dargument)^1 * sentinel^-1 * double^-1
@@ -281,40 +190,29 @@ local pattern = (
 local ctx_dostarttexdefinition = context.dostarttexdefinition
 
 local function texdefinition_one(str)
-    global, unexpanded, expanded, optional, csname, rest = lpegmatch(pattern,str)
+    global    = false
+    protected = false
+    expanded  = false
+    optional  = false
+    csname, rest = lpegmatch(pattern,str)
     ctx_dostarttexdefinition()
 end
 
 local function texdefinition_two()
     if optional then
         context (
-            [[\unexpanded\expandafter]] ..
-            (global and [[\xdef]] or [[\edef]]) ..
-            [[\csname ]] ..
-            csname ..
-            [[\endcsname{\expandafter\noexpand\expandafter\do]] ..
-            optional ..
-            [[\csname _do_]] ..
-            csname ..
-         -- [[_\endcsname}\unexpanded\expandafter]] ..
-            [[_\endcsname}\expandafter]] ..
-            (global and [[\gdef]] or  [[\edef]]) ..
-            [[\csname _do_]] ..
-            csname ..
-            [[_\endcsname ]] ..
+            (protected and [[\protected]] or "") ..
+            [[\expandafter]] .. (global and [[\xdef]] or [[\edef]]) ..
+            [[\csname ]] .. csname .. [[\endcsname{\expandafter\noexpand\expandafter\do]] .. optional ..
+            [[\csname _do_]] .. csname .. [[_\endcsname}\expandafter]] .. (global and [[\gdef]] or  [[\edef]]) ..
+            [[\csname _do_]] .. csname .. [[_\endcsname ]] ..
             rest
         )
     else
         context (
-            [[\unexpanded\expandafter]] ..
-            ( global and (
-                expanded and [[\xdef]] or [[\gdef]]
-              ) or (
-                expanded and [[\edef]] or [[\def]]
-            ) ) ..
-            [[\csname ]] ..
-            csname ..
-            [[\endcsname ]] ..
+            (protected and [[\protected]] or "") ..
+            [[\expandafter]] .. (global and (expanded and [[\xdef]] or [[\gdef]]) or (expanded and [[\edef]] or [[\def]])) ..
+            [[\csname ]] .. csname .. [[\endcsname ]] ..
             rest
         )
     end
@@ -401,6 +299,20 @@ implement {
     actions = function()
         statistics.stoptiming("whatever")
         context(statistics.elapsedtime("whatever"))
+    end
+}
+
+implement {
+    name      = "elapsedsteptime",
+    arguments = "integer",
+    actions   = function(n)
+        statistics.stoptiming("whatever")
+        local t = statistics.elapsed("whatever")/(n > 0 and n or 1)
+        if t > 0 then
+            context("%0.9f",t)
+        else
+            context(0)
+        end
     end
 }
 
@@ -771,15 +683,58 @@ implement {
 
 local bp = number.dimenfactors.bp
 
-interfaces.implement {
+implement {
     name      = "tobigpoints",
     actions   = function(d) context("%.5F",bp * d) end,
     arguments = "dimension",
 }
 
-interfaces.implement {
+implement {
     name      = "towholebigpoints",
     actions   = function(d) context("%r",bp * d) end,
     arguments = "dimension",
 }
 
+-- for now here:
+
+local function getshape(s)
+    local t = texget(s)
+    local n = t and #t or 0
+    context(n)
+    if n > 0 then
+        for i=1,n do
+            local ti = t[i]
+            if type(ti) == "table" then
+                context(" %isp %isp",ti[1],ti[2])
+            else
+                context(" %i",ti)
+            end
+        end
+    end
+end
+
+implement {
+    name    = "getparshape",
+    public  = true,
+    actions = function() getshape("parshape") end,
+}
+implement {
+    name    = "getclubpenalties",
+    public  = true,
+    actions = function() getshape("clubpenalties") end,
+}
+implement {
+    name    = "getinterlinepenalties",
+    public  = true,
+    actions = function() getshape("interlinepenalties") end,
+    }
+implement {
+    name    = "getdisplaywidowpenalties",
+    public  = true,
+    actions = function() getshape("displaywidowpenalties") end,
+}
+implement {
+    name    = "getwidowpenalties",
+    public  = true,
+    actions = function() getshape("widowpenalties") end,
+}

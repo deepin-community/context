@@ -1,0 +1,457 @@
+% language=us runpath=texruns:manuals/lowlevel
+
+\environment lowlevel-style
+
+\startdocument
+  [title=grouping,
+   color=middlecyan]
+
+\startsectionlevel[title=Introduction]
+
+This is a rather short explanation. I decided to write it after presenting the
+other topics at the 2019 \CONTEXT\ meeting where there was a question about
+grouping.
+
+% \stopsectionlevel
+
+\startsectionlevel[title=\PASCAL]
+
+In a language like \PASCAL, the language that \TEX\ has been written in, or
+\MODULA, its successor, there is no concept of grouping like in \TEX. But we can
+find keywords that suggests this:
+
+\starttyping
+for i := 1 to 10 do begin ... end
+\stoptyping
+
+This language probably inspired some of the syntax of \TEX\ and \METAPOST. For
+instance an assignment in \METAPOST\ uses \type {:=} too. However, the \type
+{begin} and \type {end} don't really group but define a block of statements. You
+can have local variables in a procedure or function but the block is just a way
+to pack a sequence of statements.
+
+\stopsectionlevel
+
+\startsectionlevel[title=\TEX]
+
+In \TEX\ macros (or source code) the following can occur:
+
+\starttyping[option=TEX]
+\begingroup
+    ...
+\endgroup
+\stoptyping
+
+as well as:
+
+\starttyping[option=TEX]
+\bgroup
+    ...
+\egroup
+\stoptyping
+
+Here we really group in the sense that assignments to variables inside a group
+are forgotten afterwards. All assignments are local to the group unless they are
+explicitly done global:
+
+\starttyping[option=TEX]
+\scratchcounter=1
+\def\foo{foo}
+\begingroup
+    \scratchcounter=2
+    \global\globalscratchcounter=2
+    \gdef\foo{FOO}
+\endgroup
+\stoptyping
+
+Here \type {\scratchcounter} is still one after the group is left but its global
+counterpart is now two. The \type {\foo} macro is also changed globally.
+
+Although you can use both sets of commands to group, you cannot mix them, so this
+will trigger an error:
+
+\starttyping[option=TEX]
+\bgroup
+\endgroup
+\stoptyping
+
+The bottomline is: if you want a value to persist after the group, you need to
+explicitly change its value globally. This makes a lot of sense in the perspective
+of \TEX.
+
+\stopsectionlevel
+
+\startsectionlevel[title=\METAPOST]
+
+The \METAPOST\ language also has a concept of grouping but in this case it's more like a
+programming language.
+
+\starttyping[option=MP]
+begingroup ;
+    n := 123 ;
+endgroup ;
+\stoptyping
+
+In this case the value of \type {n} is 123 after the group is left, unless you do
+this (for numerics there is actually no need to declare them):
+
+\starttyping[option=MP]
+begingroup ;
+    save n ; numeric n ; n := 123 ;
+endgroup ;
+\stoptyping
+
+Given the use of \METAPOST\ (read: \METAFONT) this makes a lot of sense: often
+you use macros to simplify code and you do want variables to change. Grouping in
+this language serves other purposes, like hiding what is between these commands
+and let the last expression become the result. In a \type {vardef} grouping is
+implicit.
+
+So, in \METAPOST\ all assignments are global, unless a variable is explicitly
+saved inside a group.
+
+\stopsectionlevel
+
+\startsectionlevel[title=\LUA]
+
+In \LUA\ all assignments are global unless a variable is defines local:
+
+\starttyping[option=LUA]
+local x = 1
+local y = 1
+for i = 1, 10 do
+    local x = 2
+    y = 2
+end
+\stoptyping
+
+Here the value of \type {x} after the loop is still one but \type {y} is now two.
+As in \LUATEX\ we mix \TEX, \METAPOST\ and \LUA\ you can mix up these concepts.
+Another mixup is using \type {:=}, \type {endfor}, \type {fi} in \LUA\ after done
+some \METAPOST\ coding or using \type {end} instead of \type {endfor} in
+\METAPOST\ which can make the library wait for more without triggering an error.
+Proper syntax highlighting in an editor clearly helps.
+
+\stopsectionlevel
+
+\startsectionlevel[title=\CCODE]
+
+The \LUA\ language is a mix between \PASCAL\ (which is one reason why I like it)
+and \CCODE.
+
+\starttyping
+int x = 1 ;
+int y = 1 ;
+for (i=1; i<=10;i++) {
+    int x = 2 ;
+    y = 2 ;
+}
+\stoptyping
+
+The semicolon is also used in \PASCAL\ but there it is a separator and not a
+statement end, while in \METAPOST\ it does end a statement (expression).
+
+\stopsectionlevel
+
+\stopsectionlevel
+
+\startsectionlevel[title=Kinds of grouping]
+
+Explicit grouping is accomplished by the two grouping primitives:
+
+\starttyping[option=TEX]
+\begingroup
+    \sl render slanted here
+\endgroup
+\stoptyping
+
+However, often you will find this being used:
+
+\starttyping[option=TEX]
+{\sl render slanted here}
+\stoptyping
+
+This is not only more compact but also avoids the \type {\endgroup} gobbling
+following spaces when used inline. The next code is equivalent but also suffers
+from the gobbling:
+
+\starttyping[option=TEX]
+\bgroup
+    \sl render slanted here
+\egroup
+\stoptyping
+
+The \type {\bgroup} and \type {\egroup} commands are not primitives but aliases
+(made by \type {\let}) to the left and right curly brace. These two characters
+have so called category codes that signal that they can be used for grouping. The
+{\em can be} here suggest that there are other purposes and indeed there are, for
+instance in:
+
+\starttyping[option=TEX]
+\toks 0 = {abs}
+\hbox {def}
+\stoptyping
+
+In the case of a token list assignment the curly braces fence the assignment, so scanning
+stops when a matching right brace is found. The following are all valid:
+
+\starttyping[option=TEX]
+\toks 0 = {a{b}s}
+\toks 0 = \bgroup a{b}s}
+\toks 0 = {a{\bgroup b}s}
+\toks 0 = {a{\egroup b}s}
+\toks 0 = \bgroup a{\bgroup b}s}
+\toks 0 = \bgroup a{\egroup b}s}
+\stoptyping
+
+They have in common that the final fence has to be a right brace. That the first
+one can be a an alias is due to the fact that the scanner searches for a brace
+equivalent when it looks for the value. Because the equal is optional, there is
+some lookahead involved which involves expansion and possibly push back while
+once scanning for the content starts just tokens are collected, with a fast
+check for nested and final braces.
+
+In the case of the box, all these specifications are valid:
+
+\starttyping[option=TEX]
+\hbox {def}
+\hbox \bgroup def\egroup
+\hbox \bgroup def}
+\hbox \bgroup d{e\egroup f}
+\hbox {def\egroup
+\stoptyping
+
+This is because now the braces and equivalent act as grouping symbols so as long
+as they match we're fine. There is a pitfall here: you cannot mix and match
+different grouping, so the next issues an error:
+
+\starttyping[option=TEX]
+\bgroup xxx\endgroup   % error
+\begingroup xxx\egroup % error
+\stoptyping
+
+This can make it somewhat hard to write generic grouping macros without trickery
+that is not always obvious to the user. Fortunately it can be hidden in macros
+like the helper \typ {\groupedcommand}. In \LUAMETATEX\ we have a clean way out
+of this dilemma:
+
+\starttyping[option=TEX]
+\beginsimplegroup xxx\endsimplegroup
+\beginsimplegroup xxx\endgroup
+\beginsimplegroup xxx\egroup
+\stoptyping
+
+When you start a group with \typ {\beginsimplegroup} you can end it in the three
+ways shows above. This means that the user (or calling macro) doesn't take into
+account what kind of grouping was used to start with.
+
+When we are in math mode things are different. First of all, grouping with \typ
+{\begingroup} and \typ {\endgroup} in some cases works as expected, but because
+the math input is converted in a list that gets processed later some settings can
+become persistent, like changes in style or family. You can bet better use \typ
+{\beginmathgroup} and \typ {\endmathgroup} as they restore some properties. We
+also just mention the \type {\frozen} prefix that can be used to freeze
+assignments to some math specific parameters inside a group.
+
+\stopsectionlevel
+
+\startsectionlevel[title=Hooks]
+
+In addition to the original \type {\aftergroup} primitive we have some more
+hooks. They can best be demonstrated with an example:
+
+\startbuffer
+\begingroup \bf
+    %
+    \aftergroup   A \aftergroup   1
+    \atendofgroup B \atendofgroup 1
+    %
+    \aftergrouped   {A2}
+    \atendofgrouped {B2}
+    %
+    test
+\endgroup
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+These collectors are accumulative. Watch how the bold is applied to what we
+inject before the group ends.
+
+\getbuffer
+
+\stopsectionlevel
+
+\startsectionlevel[title=Local versus global]
+
+When \TEX\ enters a group and an assignment is made the current value is stored
+on the save stack, and at the end of the group the original value is restored. In
+\LUAMETATEX\ this mechanism is made a bit more efficient by avoiding redundant
+stack entries. This is also why the next feature can give unexpected results when
+not used wisely.
+
+Now consider the following example:
+
+\startbuffer
+\newdimension\MyDimension
+
+\starttabulate[||||]
+    \NC         \MyDimension10pt \the\MyDimension
+    \NC \advance\MyDimension10pt \the\MyDimension
+    \NC \advance\MyDimension10pt \the\MyDimension \NC \NR
+    \NC         \MyDimension10pt \the\MyDimension
+    \NC \advance\MyDimension10pt \the\MyDimension
+    \NC \advance\MyDimension10pt \the\MyDimension \NC \NR
+\stoptabulate
+\stopbuffer
+
+\typebuffer[option=TEX]  \getbuffer
+
+The reason why we get the same values is that cells are a group and therefore the
+value gets restored as we move on. We can use the \type {\global} prefix to get
+around this
+
+\startbuffer
+\starttabulate[||||]
+    \NC \global        \MyDimension10pt \the\MyDimension
+    \NC \global\advance\MyDimension10pt \the\MyDimension
+    \NC \global\advance\MyDimension10pt \the\MyDimension \NC \NR
+    \NC \global        \MyDimension10pt \the\MyDimension
+    \NC \global\advance\MyDimension10pt \the\MyDimension
+    \NC \global\advance\MyDimension10pt \the\MyDimension \NC \NR
+\stoptabulate
+\stopbuffer
+
+\typebuffer[option=TEX]  \getbuffer
+
+Instead of using a global assignment and increment we can also use the following
+
+\startbuffer
+\constrained\MyDimension\zeropoint
+\starttabulate[||||]
+    \NC \retained        \MyDimension10pt \the\MyDimension
+    \NC \retained\advance\MyDimension10pt \the\MyDimension
+    \NC \retained\advance\MyDimension10pt \the\MyDimension \NC \NR
+    \NC \retained        \MyDimension10pt \the\MyDimension
+    \NC \retained\advance\MyDimension10pt \the\MyDimension
+    \NC \retained\advance\MyDimension10pt \the\MyDimension \NC \NR
+\stoptabulate
+\stopbuffer
+
+\typebuffer[option=TEX]  \getbuffer
+
+So what is the difference with the global approach? Say we have these two buffers:
+
+\startbuffer
+\startbuffer[one]
+    \global\MyDimension\zeropoint
+    \framed {
+        \framed {\global\advance\MyDimension10pt \the\MyDimension}
+        \framed {\global\advance\MyDimension10pt \the\MyDimension}
+    }
+    \framed {
+        \framed {\global\advance\MyDimension10pt \the\MyDimension}
+        \framed {\global\advance\MyDimension10pt \the\MyDimension}
+    }
+\stopbuffer
+
+\startbuffer[two]
+    \global\MyDimension\zeropoint
+    \framed {
+        \framed {\global\advance\MyDimension10pt \the\MyDimension}
+        \framed {\global\advance\MyDimension10pt \the\MyDimension}
+        \getbuffer[one]
+    }
+    \framed {
+        \framed {\global\advance\MyDimension10pt \the\MyDimension}
+        \framed {\global\advance\MyDimension10pt \the\MyDimension}
+        \getbuffer[one]
+    }
+\stopbuffer
+\stopbuffer
+
+\typebuffer[option=TEX] \getbuffer
+
+Typesetting the second buffer gives us:
+
+\startlinecorrection
+\getbuffer[two]
+\stoplinecorrection
+
+When we want to have these entities independent and not use different variables,
+the global settings bleeding from one into the other entity is messy. Therefore
+we can use this:
+
+\startbuffer
+\startbuffer[one]
+    \constrained\MyDimension\zeropoint
+    \framed {
+        \framed {\retained        \MyDimension10pt \the\MyDimension}
+        \framed {\retained\advance\MyDimension10pt \the\MyDimension}
+    }
+    \framed {
+        \framed {\retained        \MyDimension10pt \the\MyDimension}
+        \framed {\retained\advance\MyDimension10pt \the\MyDimension}
+    }
+\stopbuffer
+
+\startbuffer[two]
+    \constrained\MyDimension\zeropoint
+    \framed {
+        \framed {\retained\advance\MyDimension10pt \the\MyDimension}
+        \framed {\retained\advance\MyDimension10pt \the\MyDimension}
+        \getbuffer[one]
+    }
+    \framed {
+        \framed {\retained\advance\MyDimension10pt \the\MyDimension}
+        \framed {\retained\advance\MyDimension10pt \the\MyDimension}
+        \getbuffer[one]
+    }
+\stopbuffer
+\stopbuffer
+
+\typebuffer[option=TEX] \getbuffer
+
+Now we get this:
+
+\startlinecorrection
+\getbuffer[two]
+\stoplinecorrection
+
+The \type {\constrained} prefix makes sure that we have a stack entry, without
+being clever with respect to the current value. Then the \type {\retained} prefix
+can do its work reliably and avoid pushing the old value on the stack. Without
+the constrain it gets a bit unpredictable because then it all depends on where
+further up the chain the value was put on the stack. Of course one can argue that
+we should not have the \quotation {save stack redundant entries optimization} but
+that's not going to be removed.
+
+\stopsectionlevel
+
+\startsectionlevel[title=Files]
+
+Although it doesn't really fit in this chapter, here are some hooks into processing
+files:
+
+\starttyping[option=TEX]
+Hello World!\atendoffiled         {\writestatus{FILE}{ATEOF B #1}}\par
+Hello World!\atendoffiled         {\writestatus{FILE}{ATEOF A #1}}\par
+Hello World!\atendoffiled reverse {\writestatus{FILE}{ATEOF C #1}}\par
+Hello World!\begingroup\sl \atendoffiled {\endgroup}\par
+\stoptyping
+
+Inside a file you can register tokens that will be expanded when the file ends.
+You can also do that beforehand using a variant of the \type {\input} primitive:
+
+\starttyping[option=TEX]
+\eofinput {\writestatus{FILE}{DONE}} {thatfile.tex}
+\stoptyping
+
+This feature is mostly there for consistency with the hooks into groups and
+paragraphs but also because \type {\everyeof} is kind of useless given that one
+never knows beforehand if a file loads another file. The hooks mentioned above
+are bound to the current file.
+
+\stopsectionlevel
+
+\stopdocument

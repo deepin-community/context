@@ -17,7 +17,7 @@
 .SH NAME
 makempy \- convert PDF or PostScript text to MetaPost graphics
 
-.SH "SYNOPSIS" 
+.SH "SYNOPSIS"
 \fBmakempy\fP \fIfilenam\fP
 
 .SH DESCRIPTION
@@ -33,9 +33,9 @@ script does its work without user intervention. When it deduces that
 there are no changes, it does not do anything; otherwise it reports
 its steps and any errors.
 .SH "OPTIONS"
-.IP "\fB--help\fP" 
+.IP "\fB--help\fP"
 print basic usage information
-.IP "\fB--silent\fP" 
+.IP "\fB--silent\fP"
 don't report status messages
 .IP "\fB--force\fP"
 always process the file (no checksum test)
@@ -54,7 +54,7 @@ identify GHOSTSCRIPT.  The names of the other programs that
 are used can be set with PDFTOPS and PSTOEDIT.
 .HP
 
-.SH "SEE ALSO" 
+.SH "SEE ALSO"
 
 .IP \(bu
 \fBmpost\fP(1), \fBpstoedit\fP(1), \fBtexexec\fP(1).
@@ -65,7 +65,7 @@ available from
 .IP \(bu
 .URL "http://www.contextgarden.net" "ConTeXt wiki" .
 
-.SH "AUTHOR" 
+.SH "AUTHOR"
 
 This manual page was written by Frank K\[:u]ster <frank@kuesterei.ch>,
 for the Debian GNU/Linux system.  It may be used and modified by

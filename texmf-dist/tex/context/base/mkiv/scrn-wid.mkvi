@@ -202,7 +202,7 @@
      height            \dimexpr\currentattachmentheight\relax
      depth             \dimexpr\currentattachmentdepth \relax
      color             {\attachmentparameter\c!color}%
-     colormodel        \attribute\colormodelattribute
+     colormodel        \c_attr_colormodel
      colorvalue        \numexpr\thecolorattribute{\attachmentparameter\c!color}\relax % or are these chardefs
      transparencyvalue \numexpr\thetransparencyattribute{\attachmentparameter\c!color}\relax % or are these chardefs
      symbol            {\currentattachmentsymbol}%
@@ -501,7 +501,7 @@
      depth             \dimexpr\currentcommentdepth\relax
      nx                {\commentparameter\c!nx}%
      ny                {\commentparameter\c!ny}%
-     colormodel        \attribute\colormodelattribute
+     colormodel        \c_attr_colormodel
      colorvalue        \numexpr\thecolorattribute{\commentparameter\c!color}\relax
      transparencyvalue \numexpr\thetransparencyattribute{\commentparameter\c!color}\relax
      option            {\commentparameter\c!option}% % todo
@@ -605,7 +605,7 @@
   {\iflocation
      \clf_insertsoundclip
        tag    {#tag}%
-       repeat {\directexternalsoundtrackparameter\c!option}%
+       repeat {\directexternalsoundtracksparameter\c!option}%
      \relax
    \fi}
 
@@ -665,6 +665,7 @@
     \letrenderingwindowparameter\c!closepageaction\empty
     \setrenderingwindowparameter\c!width          {\d_scrn_rendering_width }%
     \setrenderingwindowparameter\c!height         {\d_scrn_rendering_height}%
+    \letrenderingwindowparameter\c!align          \v!flushleft
 \to \everypresetrenderingwindow
 
 \unexpanded\def\placerenderingwindow

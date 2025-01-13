@@ -323,7 +323,7 @@ implement {
 
 implement {
     name      = "flow_set_text",
-    arguments = { "string", "string" },
+    arguments = "2 strings",
     actions   = function(align,str)
         temp.texts[#temp.texts+1] = {
             align = align,
@@ -358,7 +358,7 @@ implement {
 
 implement {
     name      = "flow_set_label",
-    arguments = { "string", "string" },
+    arguments = "2 strings",
     actions   = function(location,text)
         temp.labels[#temp.labels+1] = {
             location = location,
@@ -369,7 +369,7 @@ implement {
 
 implement {
     name      = "flow_set_comment",
-    arguments = { "string", "string" },
+    arguments = "2 strings",
     actions   = function(location,text)
         local connections = temp.connections
         if connections then
@@ -389,7 +389,7 @@ implement {
 
 implement {
     name      = "flow_set_exit",
-    arguments = { "string", "string" },
+    arguments = "2 strings",
     actions   = function(location,text)
         temp.exits[#temp.exits+1] = {
             location = location,
@@ -582,7 +582,7 @@ implement {
 
 implement {
     name      = "flow_set_connection",
-    arguments = { "string", "string", "string" },
+    arguments = "3 strings",
     actions   = function(location,displacement,name)
         local dx, dy = lpegmatch(splitter,displacement)
         dx = tonumber(dx)
@@ -718,8 +718,8 @@ local function process_connections(g,chart,xoffset,yoffset)
     end
 end
 
-local f_texttemplate_t = formatters["\\setvariables[flowcell:text][x=%s,y=%s,n=%i,align={%s},figure={%s},overlay={%s},destination={%s}]"]
-local f_texttemplate_l = formatters["\\doFLOWlabel{%i}{%i}{%i}"]
+local f_texttemplate_t = formatters["\\setvariables[flowcell:text][x=%s,y=%s,n=%i,align={%s},figure={%s},overlay={%s},destination={%s},realx=%s,realy=%s]"]
+local f_texttemplate_l = formatters["\\doFLOWlabel{%i}{%i}{%i}{%i}{%i}"]
 
 local splitter   = lpeg.splitat(":")
 local charttexts = { } -- permits " etc in mp
@@ -751,6 +751,8 @@ local function process_texts(g,chart,xoffset,yoffset)
             local destination = cell.destination or ""
             local texts       = cell.texts
             local noftexts    = #texts
+            local realx       = cell.realx or x
+            local realy       = cell.realy or y
             if noftexts > 0 then
                 for i=1,noftexts do
                     local text  = texts[i]
@@ -758,7 +760,7 @@ local function process_texts(g,chart,xoffset,yoffset)
                     local align = text.align or ""
                     local align = validlabellocations[align] or align
                     charttexts[#charttexts+1] = data
-                    ctx_tographic(g,'flow_chart_draw_text(%s,%s,textext("%s")) ;',x,y,f_texttemplate_t(x,y,#charttexts,align,figure,overlay,destination))
+                    ctx_tographic(g,'flow_chart_draw_text(%s,%s,textext("%s")) ;',x,y,f_texttemplate_t(x,y,#charttexts,align,figure,overlay,destination,realx,realy))
                     if i == 1 then
                         figure      = ""
                         overlay     = ""
@@ -766,7 +768,7 @@ local function process_texts(g,chart,xoffset,yoffset)
                     end
                 end
             elseif figure ~= "" or overlay ~= "" or destination ~= "" then
-                ctx_tographic(g,'flow_chart_draw_text(%s,%s,textext("%s")) ;',x,y,f_texttemplate_t(x,y,0,"",figure,overlay,destination))
+                ctx_tographic(g,'flow_chart_draw_text(%s,%s,textext("%s")) ;',x,y,f_texttemplate_t(x,y,0,"",figure,overlay,destination,realx,realy))
             end
             local labels = cell.labels
             for i=1,#labels do
@@ -776,7 +778,7 @@ local function process_texts(g,chart,xoffset,yoffset)
                 local location = validlabellocations[location] or location
                 if text and text ~= "" then
                     charttexts[#charttexts+1] = text
-                    ctx_tographic(g,'flow_chart_draw_label(%s,%s,"%s",textext("%s")) ;',x,y,location,f_texttemplate_l(x,y,#charttexts))
+                    ctx_tographic(g,'flow_chart_draw_label(%s,%s,"%s",textext("%s")) ;',x,y,location,f_texttemplate_l(x,y,#charttexts,realx,realy))
                 end
             end
             local exits = cell.exits
@@ -792,7 +794,7 @@ local function process_texts(g,chart,xoffset,yoffset)
                        location == "t" and y == chart.to_y   - 1 or
                        location == "b" and y == chart.from_y + 1 then
                         charttexts[#charttexts+1] = text
-                        ctx_tographic(g,'flow_chart_draw_exit(%s,%s,"%s",textext("%s")) ;',x,y,location,f_texttemplate_l(x,y,#charttexts))
+                        ctx_tographic(g,'flow_chart_draw_exit(%s,%s,"%s",textext("%s")) ;',x,y,location,f_texttemplate_l(x,y,#charttexts,realx,realy))
                     end
                 end
             end
@@ -821,7 +823,7 @@ local function process_texts(g,chart,xoffset,yoffset)
                     end
                     if text and text ~= "" then
                         charttexts[#charttexts+1] = text
-                        ctx_tographic(g,'flow_chart_draw_comment(%s,%s,%s,"%s",%s,textext("%s")) ;',x,y,i,location,length,f_texttemplate_l(x,y,#charttexts))
+                        ctx_tographic(g,'flow_chart_draw_comment(%s,%s,%s,"%s",%s,textext("%s")) ;',x,y,i,location,length,f_texttemplate_l(x,y,#charttexts,realx,realy))
                     end
                 end
             end
@@ -1014,7 +1016,7 @@ local function makechart_indeed(chart)
     --
 end
 
--- We need to wrap because of tex.runtoks!
+-- We need to wrap because of tex.runlocal!
 
 local function makechart(chart)
     context.hbox()

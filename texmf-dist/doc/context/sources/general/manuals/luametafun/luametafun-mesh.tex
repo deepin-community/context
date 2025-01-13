@@ -1,7 +1,15 @@
-% language=us
+% language=us runpath=texruns:manuals/luametafun
 
 \environment luametafun-style
 \environment luametafun-mesh-examples
+
+% runtime
+
+\doiffileelse{luatex-mesh-examples.pdf} {
+    % okay
+} {
+    \ctxlua{os.execute("context luatex-mesh-examples.tex")}
+}
 
 \startcomponent luametafun-mesh
 

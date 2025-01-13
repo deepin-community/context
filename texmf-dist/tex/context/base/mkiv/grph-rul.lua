@@ -87,6 +87,8 @@ do
 
     local replacer = utilities.templates.replacer
 
+    -- todo: RuleColor -> just string ?
+
     local predefined = {
         ["fake:word"] = replacer [[
 FakeWord(%width%,%height%,%depth%,%line%,%color%);
@@ -133,7 +135,9 @@ def RuleColor = %color% enddef ;
             initialized = true
             simplemetapost("rulefun",formatters["randomseed := %s;"](getrandom("rulefun",0,4095)))
         end
-        local pdf = caching and cache[code] or simplemetapost("rulefun",code) -- w, h, d
+        -- we enable extensions but we could also consider to delegate colors
+        -- to the node finalizer
+        local pdf = caching and cache[code] or simplemetapost("rulefun",code,true)
         if trace_mp then
             report_mp("code: %s",code)
             report_mp("pdf : %s",pdf)

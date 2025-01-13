@@ -6,11 +6,9 @@ if not modules then modules = { } end modules ['luat-ini'] = {
     license   = "see context related readme files"
 }
 
---[[ldx--
-<p>We cannot load anything yet. However what we will do us reserve a few tables.
-These can be used for runtime user data or third party modules and will not be
-cluttered by macro package code.</p>
---ldx]]--
+-- We cannot load anything yet. However what we will do us reserve a few tables.
+-- These can be used for runtime user data or third party modules and will not be
+-- cluttered by macro package code.
 
 userdata      = userdata      or { } -- for users (e.g. functions etc)
 thirddata     = thirddata     or { } -- only for third party modules
@@ -25,21 +23,15 @@ if not global then
     global  = _G
 end
 
-LUATEXVERSION       = status.luatex_version/100
-                    + tonumber(status.luatex_revision)/10000
-
-LUATEXENGINE        = status.luatex_engine and string.lower(status.luatex_engine)
-                   or (string.find(status.banner,"LuajitTeX",1,true) and "luajittex" or "luatex")
-
+LUATEXVERSION       = status.luatex_version/100 + tonumber(status.luatex_revision)/10000
+LUATEXENGINE        = status.luatex_engine and string.lower(status.luatex_engine) or "luametatex"
 LUATEXFUNCTIONALITY = status.development_id or 6346
-
 LUATEXFORMATID      = status.format_id or 0
+JITSUPPORTED        = false
+INITEXMODE          = status.run_state == 0 -- initializing updating production
+CONTEXTLMTXMODE     = 0
 
-JITSUPPORTED        = LUATEXENGINE == "luajittex" or jit
-
-INITEXMODE          = status.ini_version
-
-CONTEXTLMTXMODE     = CONTEXTLMTXMODE or (LUATEXENGINE == "luametatex" and 1) or 0
+status.ini_version = INITEXMODE -- for a while
 
 function os.setlocale()
     -- no need for a message

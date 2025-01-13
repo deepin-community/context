@@ -610,7 +610,7 @@ return {
         ["fonts:14"] = {
             cs = "bodyfont %a is defined (can better be done global)",
             de = "Fliesstext %a wurde definiert (besser waere globale Definition)",
-            en = "bodyfont %a is defined (can better be done global)",
+            en = "bodyfont %a is defined (can better be done global (maybe use \\usebodyfont)",
             fr = "policecorps %a est défini (une définition globale pourrait être plus adéquat)",
             it = "corpo del testo %a definito (sarebbe meglio globale)",
             nl = "korps %a is gedefinieerd (kan beter globaal plaatsvinden)",
@@ -1158,6 +1158,9 @@ return {
             nl = "eind van sectieblok %a",
             no = "slutten av blokk %a (seksjon)",
             ro = "sfarsit de bloc sectiune %a",
+        },
+        ["structures:3"] = {
+            en = "title to bookmark: %s",
         },
         ["symbols:1"] = {
             cs = "nacita se soubor symbolu %a",

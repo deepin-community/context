@@ -235,7 +235,7 @@
        fontsize             {\fontbody}%
        fontsymbol           {\fieldbodyparameter\c!symbol}%
        color                {\fieldbodyparameter\c!color}%
-       colorvalue           \attribute\colorattribute
+       colorvalue           \c_attr_color
    \ifx\currentfieldbackgroundcolor\empty \else
        backgroundcolor      {\currentfieldbackgroundcolor}%
        backgroundcolorvalue \numexpr\currentfieldbackgroundcolorvalue\relax
@@ -275,7 +275,7 @@
 
 %D A few testing macros:
 
-\def\doifelsefieldbody    #tag{\clf_doifelsefield{#tag}}
+\def\doifelsefieldbody    #tag{\clf_doifelsefieldset{#tag}}
 \def\doifelsefieldcategory#tag{\clf_doifelsefieldcategory{#tag}}
 
 \let\doiffieldbodyelse    \doifelsefieldbody
@@ -389,6 +389,8 @@
 \installparameterhandler     \??fieldlabel   {fieldlabelframed}
 \installparameterhandler     \??fieldcontent {fieldcontentframed}
 \installparameterhandler     \??fieldtotal   {fieldtotalframed}
+
+\installparametersethandler  \??fieldcontent {fieldcontentframed}
 
 \installsetuphandler         \??fieldlabel   {fieldlabelframed}
 \installsetuphandler         \??fieldcontent {fieldcontentframed}
@@ -1057,12 +1059,11 @@
 
 \unexpanded\def\scrn_rollbutton_symbol_indeed#getparameter#inheritedframed#setparameter#usestyleandcolor#what#text%
   {\definecolor[rollover][rollover:#what]%
-   \doifelse{#what}{n}% ?
-     {\doifelse{#getparameter\c!alternative}\v!hidden\phantom\hbox}\hbox
-        {#setparameter\c!framecolor     {rollover}%
-         #setparameter\c!backgroundcolor{rollover}%
-         #setparameter\c!color          {rollover}%
-         #inheritedframed{#usestyleandcolor\c!style\c!color{#text}}}}
+   \doifelse{#getparameter\c!alternative}\v!hidden\phantom\hbox
+     {#setparameter\c!framecolor     {rollover}%
+      #setparameter\c!backgroundcolor{rollover}%
+      #setparameter\c!color          {rollover}%
+      #inheritedframed{#usestyleandcolor\c!style\c!color{#text}}}}
 
 %D We plug into the menu system
 

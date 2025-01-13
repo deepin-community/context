@@ -85,7 +85,6 @@ def loggingall = % puts tracing info into the log
     tracingchoices   := 1 ;
     tracinglostchars := 1 ;
     tracingstats     := 1 ;
-    tracingoutput    := 1 ;
     tracingmacros    := 1 ;
     tracingrestores  := 1 ;
 enddef ;
@@ -105,7 +104,6 @@ def tracingnone = % turns off every form of tracing
     tracingchoices   := 0 ;
     tracinglostchars := 0 ;
     tracingstats     := 0 ;
-    tracingoutput    := 0 ;
     tracingmacros    := 0 ;
     tracingrestores  := 0 ;
 enddef ;
@@ -194,26 +192,32 @@ yellow     := (1,1,0) ;
 
 background := white ; % obsolete
 
-let graypart  = greypart  ;
+let graypart  = greypart ;
 let greycolor = numeric ;
 let graycolor = numeric ;
 
 % color part (will be overloaded)
 
+newinternal nocolormodel   ; nocolormodel   := 1 ;
+newinternal greycolormodel ; greycolormodel := 3 ;
+newinternal graycolormodel ; graycolormodel := 3 ;
+newinternal rgbcolormodel  ; rgbcolormodel  := 5 ;
+newinternal cmykcolormodel ; cmykcolormodel := 7 ;
+
 def colorpart primary t =
-    if colormodel t = 7:
+    if colormodel t = cmykcolormodel:
         (cyanpart t, magentapart t, yellowpart t, blackpart t)
-    elseif colormodel t = 5 :
+    elseif colormodel t = rgbcolormodel :
         (redpart t, greenpart t, bluepart t)
-    elseif colormodel t = 3 :
+    elseif colormodel t = graycolormodel :
         (greypart t)
-    elseif colormodel t = 1 :
+    elseif colormodel t = nocolormodel :
         false
-    elseif defaultcolormodel = 7 :
+    elseif defaultcolormodel = cmykcolormodel :
         (0,0,0,1)
-    elseif defaultcolormodel = 5 :
+    elseif defaultcolormodel = rgbcolormodel :
         black
-    elseif defaultcolormodel = 3 :
+    elseif defaultcolormodel = graycolormodel :
         0
     else :
         false
@@ -237,11 +241,13 @@ EOF   = char  0 ; % end-of-file for readfrom and write..to
 
 % pen constants
 
-pen pensquare, penrazor, penspeck ;
+pen pensquare, penrazor, penspec ;
 
 pensquare = makepen(unitsquare shifted -(.5,.5)) ;
 penrazor  = makepen((-.5,0) -- (.5,0) -- cycle) ;
-penspeck  = pensquare scaled eps ;
+penspec   = pensquare scaled eps ;
+
+def penspeck = penspec enddef ;
 
 % nullary operators
 
@@ -922,14 +928,21 @@ string extra_beginfig, extra_endfig ;
 extra_beginfig := "" ;
 extra_endfig   := "" ;
 
-def beginfig(expr c) =
+boolean makingfigure ; makingfigure := false ;
+numeric stacking ; stacking := 0 ;
+
+def beginfig(expr c) = % redefined in mp-grph !
     begingroup
+    save makingfigure ; boolean makingfigure ;
+    save stacking ; numeric stacking;
     charcode := c ;
     clearxy ;
     clearit ;
     clearpen ;
     pickup defaultpen ;
     drawoptions() ;
+    stacking := 0 ;
+    makingfigure := true;
     scantokens extra_beginfig ;
 enddef ;
 

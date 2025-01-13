@@ -6,50 +6,38 @@ if not modules then modules = { } end modules ['node-ini'] = {
     license   = "see context related readme files"
 }
 
---[[ldx--
-<p>Most of the code that had accumulated here is now separated in modules.</p>
---ldx]]--
-
--- I need to clean up this module as it's a bit of a mess now. The latest luatex
--- has most tables but we have a few more in luametatex. Also, some are different
--- between these engines. We started out with hardcoded tables, that then ended
--- up as comments and are now gone (as they differ per engine anyway).
+-- Most of the code that had accumulated here is now separated in modules.
 
 local next, type, tostring = next, type, tostring
 local gsub = string.gsub
 local concat, remove = table.concat, table.remove
 local sortedhash, sortedkeys, swapped = table.sortedhash, table.sortedkeys, table.swapped
 
---[[ldx--
-<p>Access to nodes is what gives <l n='luatex'/> its power. Here we implement a
-few helper functions. These functions are rather optimized.</p>
---ldx]]--
+-- Access to nodes is what gives LuaTeX its power. Here we implement a few helper
+-- functions. These functions are rather optimized.
+--
+-- When manipulating node lists in ConTeXt, we will remove nodes and insert new
+-- ones. While node access was implemented, we did quite some experiments in order
+-- to find out if manipulating nodes in Lua was feasible from the perspective of
+-- performance.
+--
+-- First of all, we noticed that the bottleneck is more with excessive callbacks
+-- (some gets called very often) and the conversion from and to TeX's
+-- datastructures. However, at the Lua end, we found that inserting and deleting
+-- nodes in a table could become a bottleneck.
+--
+-- This resulted in two special situations in passing nodes back to TeX: a table
+-- entry with value 'false' is ignored, and when instead of a table 'true' is
+-- returned, the original table is used.
+--
+-- Insertion is handled (at least in ConTeXt as follows. When we need to insert a
+-- node at a certain position, we change the node at that position by a dummy node,
+-- tagged 'inline' which itself has_attribute the original node and one or more new
+-- nodes. Before we pass back the list we collapse the list. Of course collapsing
+-- could be built into the TeX engine, but this is a not so natural extension.
 
---[[ldx--
-<p>When manipulating node lists in <l n='context'/>, we will remove nodes and
-insert new ones. While node access was implemented, we did quite some experiments
-in order to find out if manipulating nodes in <l n='lua'/> was feasible from the
-perspective of performance.</p>
-
-<p>First of all, we noticed that the bottleneck is more with excessive callbacks
-(some gets called very often) and the conversion from and to <l n='tex'/>'s
-datastructures. However, at the <l n='lua'/> end, we found that inserting and
-deleting nodes in a table could become a bottleneck.</p>
-
-<p>This resulted in two special situations in passing nodes back to <l n='tex'/>:
-a table entry with value <type>false</type> is ignored, and when instead of a
-table <type>true</type> is returned, the original table is used.</p>
-
-<p>Insertion is handled (at least in <l n='context'/> as follows. When we need to
-insert a node at a certain position, we change the node at that position by a
-dummy node, tagged <type>inline</type> which itself has_attribute the original
-node and one or more new nodes. Before we pass back the list we collapse the
-list. Of course collapsing could be built into the <l n='tex'/> engine, but this
-is a not so natural extension.</p>
-
-<p>When we collapse (something that we only do when really needed), we also
-ignore the empty nodes. [This is obsolete!]</p>
---ldx]]--
+-- When we collapse (something that we only do when really needed), we also ignore
+-- the empty nodes. [This is obsolete!]
 
 -- local gf = node.direct.getfield
 -- local n = table.setmetatableindex("number")
@@ -78,19 +66,18 @@ local dircodes      = mark(getsubtypes("dir"))
 local glyphcodes    = mark(getsubtypes("glyph"))
 local disccodes     = mark(getsubtypes("disc"))
 local gluecodes     = mark(getsubtypes("glue"))
-local leadercodes   = mark(getsubtypes("leader"))
 local fillcodes     = mark(getsubtypes("fill"))
 local boundarycodes = mark(getsubtypes("boundary"))
 local penaltycodes  = mark(getsubtypes("penalty"))
 local kerncodes     = mark(getsubtypes("kern"))
-local margincodes   = CONTEXTLMTXMODE == 0 and mark(getsubtypes("marginkern")) or { }
+local margincodes   = mark(getsubtypes("marginkern"))
 local mathcodes     = mark(getsubtypes("math"))
 local noadcodes     = mark(getsubtypes("noad"))
 local radicalcodes  = mark(getsubtypes("radical"))
 local accentcodes   = mark(getsubtypes("accent"))
 local fencecodes    = mark(getsubtypes("fence"))
 ----- fractioncodes = mark(getsubtypes("fraction"))
-local localparcodes = allocate { [0] = "new_graf", "local_box", "hmode_par", "penalty", "math" } -- only in luametatex now
+local parcodes      = allocate { [0] = "vmode_par", "local_box", "hmode_par", "penalty", "math" }
 
 local function simplified(t)
     local r = { }
@@ -104,13 +91,13 @@ local nodecodes = simplified(node.types())
 local whatcodes = simplified(node.whatsits and node.whatsits() or { })
 
 local usercodes = allocate {
-    [ 97] = "attribute",  -- a
-    [100] = "number",     -- d
-    [102] = "float",      -- f
-    [108] = "lua",        -- l
-    [110] = "node",       -- n
-    [115] = "string",     -- s
-    [116] = "token"       -- t
+    [ 97] = "attribute", -- a
+    [100] = "number",    -- d
+    [102] = "float",     -- f
+    [108] = "lua",       -- l
+    [110] = "node",      -- n
+    [115] = "string",    -- s
+    [116] = "token"      -- t
 }
 
 local noadoptions = allocate {
@@ -125,23 +112,9 @@ local noadoptions = allocate {
     right    = 0x14 + 0x08,
 }
 
--- local directionvalues  = mark(getvalues("dir"))
--- local gluevalues       = mark(getvalues("glue"))
--- local literalvalues    = mark(getvalues("literal"))
-
 local dirvalues = allocate {
-    [0] = "TLT",
-    [1] = "TRT",
-    [2] = "LTL",
-    [3] = "RTT",
-}
-
-local gluevalues = allocate {
-    [0] = "normal",
-    [1] = "fi",
-    [2] = "fil",
-    [3] = "fill",
-    [4] = "filll",
+    [0] = "lefttoright",
+    [1] = "righttoleft",
 }
 
 local literalvalues = allocate {
@@ -153,6 +126,8 @@ local literalvalues = allocate {
     [5] = "font",
     [6] = "special",
 }
+
+local gluevalues = mark(getvalues("glue"))
 
 gluecodes        = allocate(swapped(gluecodes,gluecodes))
 dircodes         = allocate(swapped(dircodes,dircodes))
@@ -171,36 +146,50 @@ margincodes      = allocate(swapped(margincodes,margincodes))
 disccodes        = allocate(swapped(disccodes,disccodes))
 accentcodes      = allocate(swapped(accentcodes,accentcodes))
 fencecodes       = allocate(swapped(fencecodes,fencecodes))
-localparcodes    = allocate(swapped(localparcodes,localparcodes))
+parcodes         = allocate(swapped(parcodes,parcodes))
 rulecodes        = allocate(swapped(rulecodes,rulecodes))
-leadercodes      = allocate(swapped(leadercodes,leadercodes))
 usercodes        = allocate(swapped(usercodes,usercodes))
 noadoptions      = allocate(swapped(noadoptions,noadoptions))
 dirvalues        = allocate(swapped(dirvalues,dirvalues))
 gluevalues       = allocate(swapped(gluevalues,gluevalues))
 literalvalues    = allocate(swapped(literalvalues,literalvalues))
 
-if not gluecodes.indentskip then
-    gluecodes.indentskip     = gluecodes.userskip
-    gluecodes.lefthangskip   = gluecodes.userskip
-    gluecodes.righthangskip  = gluecodes.userskip
-    gluecodes.correctionskip = gluecodes.userskip
-    gluecodes.intermathskip  = gluecodes.userskip
+if not nodecodes.delimiter then
+    -- as in luametatex / lmtx
+    local d = nodecodes.delim
+    nodecodes.delimiter = d
+    nodecodes[d]        = "delimiter"
+    nodecodes.delim     = nil
 end
 
-if CONTEXTLMTXMODE > 0 then
-    whatcodes.literal     = 0x1  whatcodes[0x1] = "literal"
-    whatcodes.latelua     = 0x2  whatcodes[0x2] = "latelua"
-    whatcodes.userdefined = 0x3  whatcodes[0x3] = "userdefined"
-    whatcodes.savepos     = 0x4  whatcodes[0x4] = "savepos"
-    whatcodes.save        = 0x5  whatcodes[0x5] = "save"
-    whatcodes.restore     = 0x6  whatcodes[0x6] = "restore"
-    whatcodes.setmatrix   = 0x7  whatcodes[0x7] = "setmatrix"
-    whatcodes.open        = 0x8  whatcodes[0x8] = "open"
-    whatcodes.close       = 0x9  whatcodes[0x9] = "close"
-    whatcodes.write       = 0xA  whatcodes[0xA] = "write"
-elseif not whatcodes.literal then
+if not nodecodes.par then
+    -- as in luametatex / lmtx
+    local p = nodecodes.localpar
+    nodecodes.par = p
+    nodecodes[p]  = "par"
+end
+
+if not nodecodes.insert then
+    -- as in luametatex / lmtx
+    local i = nodecodes.ins
+    nodecodes.insert = i
+    nodecodes[i]     = "insert"
+    nodecodes.ins    = nil
+end
+
+if not gluecodes.indentskip then
+    gluecodes.indentskip       = gluecodes.userskip
+    gluecodes.lefthangskip     = gluecodes.userskip
+    gluecodes.righthangskip    = gluecodes.userskip
+    gluecodes.correctionskip   = gluecodes.userskip
+    gluecodes.intermathskip    = gluecodes.userskip
+    gluecodes.parfillleftskip  = gluecodes.parfillskip
+    gluecodes.parfillrightskip = gluecodes.parfillskip
+end
+
+if not whatcodes.literal then
     whatcodes.literal     = whatcodes.pdfliteral
+    whatcodes.lateliteral = whatcodes.pdflateliteral
     whatcodes.save        = whatcodes.pdfsave
     whatcodes.restore     = whatcodes.pdfrestore
     whatcodes.setmatrix   = whatcodes.pdfsetmatrix
@@ -223,17 +212,13 @@ nodes.disccodes            = disccodes
 nodes.accentcodes          = accentcodes
 nodes.radicalcodes         = radicalcodes
 nodes.fencecodes           = fencecodes
-nodes.localparcodes        = localparcodes
+nodes.parcodes             = parcodes
 nodes.rulecodes            = rulecodes
-nodes.leadercodes          = leadercodes
 nodes.usercodes            = usercodes
 nodes.noadoptions          = noadoptions
 nodes.dirvalues            = dirvalues
 nodes.gluevalues           = gluevalues
 nodes.literalvalues        = literalvalues
-
-dirvalues.lefttoright = 0
-dirvalues.righttoleft = 1
 
 nodes.subtypes = allocate {
     [nodecodes.accent]     = accentcodes,
@@ -245,7 +230,7 @@ nodes.subtypes = allocate {
     [nodecodes.glyph]      = glyphcodes,
     [nodecodes.hlist]      = listcodes,
     [nodecodes.kern]       = kerncodes,
-    [nodecodes.localpar]   = localparcodes,
+    [nodecodes.par]        = parcodes,
  -- [nodecodes.marginkern] = margincodes,
     [nodecodes.math]       = mathcodes,
     [nodecodes.noad]       = noadcodes,
@@ -255,11 +240,8 @@ nodes.subtypes = allocate {
  -- [nodecodes.user]       = usercodes,
     [nodecodes.vlist]      = listcodes,
     [nodecodes.whatsit]    = whatcodes,
+    [nodecodes.marginkern] = margincodes
 }
-
-if CONTEXTLMTXMODE == 0 then
-    nodes.subtypes[nodecodes.marginkern] = margincodes
-end
 
 table.setmetatableindex(nodes.subtypes,function(t,k)
     local v = { }
@@ -267,18 +249,18 @@ table.setmetatableindex(nodes.subtypes,function(t,k)
     return v
 end)
 
-nodes.skipcodes            = gluecodes     -- more friendly
-nodes.directioncodes       = dircodes      -- more friendly
-nodes.whatsitcodes         = whatcodes     -- more official
+-- a few more friendly aliases:
+
+nodes.skipcodes            = gluecodes
+nodes.directioncodes       = dircodes
+nodes.whatsitcodes         = whatcodes
 nodes.marginkerncodes      = margincodes
 nodes.discretionarycodes   = disccodes
-nodes.directionvalues      = dirvalues     -- more friendly
-nodes.skipvalues           = gluevalues    -- more friendly
-nodes.literalvalues        = literalvalues -- more friendly
+nodes.directionvalues      = dirvalues
+nodes.skipvalues           = gluevalues
+nodes.literalvalues        = literalvalues
 
 glyphcodes.glyph           = glyphcodes.character
-
-localparcodes.vmode_par    = localparcodes.new_graf
 
 listcodes.row              = listcodes.alignment
 listcodes.column           = listcodes.alignment
@@ -307,7 +289,6 @@ nodes.codes = allocate { -- mostly for listing
     accent      = accentcodes,
     fence       = fencecodes,
     rule        = rulecodes,
-    leader      = leadercodes,
     user        = usercodes,
     noadoptions = noadoptions,
 }
@@ -350,19 +331,4 @@ trackers.register("system.showcodes", nodes.showcodes)
 
 if node.fix_node_lists then
     node.fix_node_lists(false)
-end
-
--- We use the real node code numbers.
-
-if CONTEXTLMTXMODE > 0 then
-
-    local texchardef = tex.chardef
-
-    if texchardef then
-        for i=0,nodecodes.glyph do
-            texchardef(nodecodes[i] .. "nodecode",i)
-        end
-        tex.set("internalcodesmode",1)
-    end
-
 end

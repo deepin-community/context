@@ -300,6 +300,14 @@
      \normalstartbaselinecorrection
    \fi}
 
+%D Different in LMTX, maybe here we can use this in \MKIV:
+%D
+%D \let\checkprevdepth\forcestrutdepth % mlv only
+%D
+%D as we have sync issues that makes it not work otherwise.
+
+\let\checkprevdepth\baselinecorrection
+
 % This is new (and experimental) and might replace some of the above. beware it doesn't always work
 % out well, e.g. when used grouped and such (e.g. before display math doesn't work out well).
 

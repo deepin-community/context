@@ -521,6 +521,8 @@
      \edef\currentlayouttarget{#1}%
    \fi}
 
+\newdimen\d_page_minimum_paper_size \d_page_minimum_paper_size\luaexpr{math.pi}\onebasepoint
+
 \unexpanded\def\page_paper_set_current_indeed[#1][#2]%
   {\edef\m_page_asked_paper{#1}% can be the restores
    \edef\m_page_asked_print{#2}%
@@ -539,18 +541,18 @@
    \processcommacommand[\m_page_asked_paper]\page_paper_handle_page_option
    \global\paperwidth \layouttargetparameter\c!width \relax
    \global\paperheight\layouttargetparameter\c!height\relax
-   \ifdim\paperwidth<\onepoint
-     \global\paperwidth\onepoint
+   \ifdim\paperwidth<\d_page_minimum_paper_size
+     \global\paperwidth\d_page_minimum_paper_size
    \fi
-   \ifdim\paperheight<\onepoint
-     \global\paperheight\onepoint
+   \ifdim\paperheight<\d_page_minimum_paper_size
+     \global\paperheight\d_page_minimum_paper_size
    \fi
    \ifconditional\c_page_target_paper_landscape
      \doglobal\swapdimens\paperwidth\paperheight
    \fi
    \ifinpagebody % local freeze
-     \normalexpanded{\setlayouttargetparemeter\c!height{\the\paperheight}}%
-     \normalexpanded{\setlayouttargetparemeter\c!width {\the\paperwidth }}%
+     \normalexpanded{\setlayouttargetparameter\c!height{\the\paperheight}}%
+     \normalexpanded{\setlayouttargetparameter\c!width {\the\paperwidth }}%
    \fi
    %
    \page_paper_set_offsets
@@ -1363,7 +1365,6 @@
 \fetchruntimecommand \showsetups  \f!page_run
 \fetchruntimecommand \showmargins \f!page_run
 \fetchruntimecommand \showgrid    \f!page_run
-\fetchruntimecommand \showusage   \f!page_run
 
 \glet\page_grids_add_to_box\gobbleoneargument
 \glet\page_grids_add_to_one\gobbleoneargument

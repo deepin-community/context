@@ -38,7 +38,7 @@ if not modules then modules = { } end modules ['typo-lin'] = {
 -- But, maybe there are good reasons for having just that anchor (mostly for educational purposes
 -- I guess.)
 --
--- At this stage the localpar node is no longer of any use so we remove it (each line has the
+-- At this stage the par node is no longer of any use so we remove it (each line has the
 -- direction attached). We might at some point also strip the disc nodes as they no longer serve
 -- a purpose but that can better be a helper. Anchoring left has advantage of keeping page
 -- stream.
@@ -65,7 +65,7 @@ local hlist_code        = nodecodes.hlist
 local glue_code         = nodecodes.glue
 local kern_code         = nodecodes.kern
 local linelist_code     = listcodes.line
------ localpar_code     = nodecodes.localpar
+----- par_code          = nodecodes.par
 local leftskip_code     = gluecodes.leftskip
 local rightskip_code    = gluecodes.rightskip
 local parfillskip_code  = gluecodes.parfillskip
@@ -74,8 +74,8 @@ local tonut             = nodes.tonut
 local tonode            = nodes.tonode
 
 local nexthlist         = nuts.traversers.hlist
-local insert_before     = nuts.insert_before
-local insert_after      = nuts.insert_after
+local insertbefore      = nuts.insertbefore
+local insertafter       = nuts.insertafter
 local find_tail         = nuts.tail
 local rehpack           = nuts.rehpack
 ----- remove_node       = nuts.remove
@@ -99,7 +99,7 @@ local setwidth          = nuts.setwidth
 local setprop           = nuts.setprop
 local getprop           = nuts.rawprop -- getprop
 
-local effectiveglue     = nuts.effective_glue
+local effectiveglue     = nuts.effectiveglue
 
 local nodepool          = nuts.pool
 local new_kern          = nodepool.kern
@@ -123,10 +123,10 @@ local getreserved       = jobpositions.getreserved
 local paragraphs        = { }
 typesetters.paragraphs  = paragraphs
 
-local addskips          = false
+local addskips          = false -- todo: use engine normalizer
 local noflines          = 0
 
--- This is the third version, a mix between immediate (prestice lines) and delayed
+-- This is the third version, a mix between immediate (prestine lines) and delayed
 -- as we don't want anchors that are not used.
 
 -- I will make a better variant once lmtx is stable i.e. less clutter.
@@ -147,9 +147,9 @@ local function finalize(prop,key) -- delayed calculations
     end
     local kern1 = new_kern(delta)
     local kern2 = new_kern(-delta)
-    head = insert_before(head,head,kern1)
-    head = insert_before(head,head,pack)
-    head = insert_before(head,head,kern2)
+    head = insertbefore(head,head,kern1)
+    head = insertbefore(head,head,pack)
+    head = insertbefore(head,head,kern2)
     setlist(line,head)
     local where = {
         pack = pack,
@@ -185,7 +185,7 @@ local function normalize(line,islocal) -- assumes prestine lines, nothing pre/ap
         id      = getid(current)
     end
     -- no:
- -- if id == localpar_code then
+ -- if id == par_code then
  --     head = remove_node(head,head,true)
  -- end
     local tail    = find_tail(head)
@@ -207,11 +207,11 @@ local function normalize(line,islocal) -- assumes prestine lines, nothing pre/ap
     if addskips then
         if rightskip and not leftskip then
             leftskip = new_leftskip(lskip)
-            head     = insert_before(head,head,leftskip)
+            head     = insertbefore(head,head,leftskip)
         end
         if leftskip and not rightskip then
             rightskip = new_rightskip(0)
-            head, tail = insert_after(head,tail,rightskip)
+            head, tail = insertafter(head,tail,rightskip)
         end
     end
     if head ~= oldhead then
@@ -235,6 +235,8 @@ end
 function paragraphs.checkline(n)
     return getprop(n,"line") or normalize(n,true)
 end
+
+-- do we still need this:
 
 function paragraphs.normalize(head,islocal)
     if texgetcount("pagebodymode") > 0 then
@@ -265,7 +267,7 @@ function paragraphs.normalize(head,islocal)
                         current = getnext(current)
                     end
                     if current then
-                        head, current = insert_before(head,current,new_glue(l_width,l_stretch,l_shrink))
+                        head, current = insertbefore(head,current,new_glue(l_width,l_stretch,l_shrink))
                         if head == current then
                             setlist(last,head)
                         end
@@ -301,10 +303,10 @@ local function addtoline(n,list,option)
         if trace_anchors and not line.traced then
             line.traced = true
             local rule = new_rule(2*65536,2*65536,1*65536)
-            local list = insert_before(rule,rule,new_kern(-1*65536))
+            local list = insertbefore(rule,rule,new_kern(-1*65536))
             addtoline(n,list)
             local rule = new_rule(2*65536,6*65536,-3*65536)
-            local list = insert_before(rule,rule,new_kern(-1*65536))
+            local list = insertbefore(rule,rule,new_kern(-1*65536))
             addtoline(n,list,"internal")
         else
             line.traced = true
@@ -327,14 +329,14 @@ local function addtoline(n,list,option)
         -- optimize now .. we can also decide to put each blob in a hlist
         local kern = new_kern(delta)
         if tail then
-            head, tail = insert_after(head,tail,kern)
+            head, tail = insertafter(head,tail,kern)
         else
             head, tail = kern, kern
             setlist(where.pack,head)
         end
-        head, tail = insert_after(head,tail,blob)
+        head, tail = insertafter(head,tail,blob)
         local kern = new_kern(-delta)
-        head, tail = insert_after(head,tail,kern)
+        head, tail = insertafter(head,tail,kern)
         --
         where.head = head
         where.tail = tail
@@ -364,7 +366,7 @@ local function addanchortoline(n,anchor)
         end
         if where.tail then
             local head = where.head
-            insert_before(head,head,anchor)
+            insertbefore(head,head,anchor)
         else
             where.tail = anchor
         end
@@ -482,7 +484,7 @@ function paragraphs.calculatedelta(n,width,delta,atleft,islocal,followshape,area
                 addanchortoline(line,setanchor(number))
                 line.hanchor = true
             end
-            local blob = getposition(s_anchor,number)
+            local blob = getposition("md:h",number)
             if blob then
                 local reference = getreserved(area,blob.c)
                 if reference then

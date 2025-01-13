@@ -6,14 +6,21 @@ if not modules then modules = { } end modules ['page-ini'] = {
     license   = "see context related readme files"
 }
 
+-- Some day I need to make this more efficient.
+
 local tonumber, rawget, rawset, type, next = tonumber, rawget, rawset, type, next
 local match = string.match
-local sort, tohash, insert, remove = table.sort, table.tohash, table.insert, table.remove
+local sort, tohash, insert, remove, sortedkeys = table.sort, table.tohash, table.insert, table.remove, table.sortedkeys
 local settings_to_array, settings_to_hash = utilities.parsers.settings_to_array, utilities.parsers.settings_to_hash
 
 local texgetcount  = tex.getcount
 
+local tonut        = nodes.tonut
+local nextlist     = nodes.nuts.traversers.list
+local texlists     = tex.lists
+
 local context      = context
+local ctx_doif     = commands.doif
 local ctx_doifelse = commands.doifelse
 
 local implement    = interfaces.implement
@@ -23,16 +30,22 @@ local last         = 0
 local pages        = structures.pages
 local autolist     = { }
 local report       = logs.reporter("pages","mark")
+local active       = false
 
 local trace        = false  trackers.register("pages.mark",function(v) trace = v end)
 
-function pages.mark(name,list)
+function pages.mark(name,list,settings)
+    active = true
+    --
     local realpage = texgetcount("realpageno")
+    if type(settings) == "string" then
+        settings = settings_to_hash(settings)
+    end
     if not list or list == "" then
         if trace then
             report("marking current page %i as %a",realpage,name)
         end
-        data[realpage][name] = true
+        data[realpage][name] = settings or true
         return
     end
     if type(list) == "string" then
@@ -51,7 +64,7 @@ function pages.mark(name,list)
                             report("marking page %i upto %i as %a",f,t,name)
                         end
                         for page=f,t do
-                            data[page][name] = true
+                            data[page][name] = settings or true
                         end
                     end
                     page = false
@@ -74,7 +87,7 @@ function pages.mark(name,list)
                         if trace then
                             report("marking page %i as %a",page,name)
                         end
-                        data[page][name] = true
+                        data[page][name] = settings or true
                     end
                 end
             end
@@ -83,17 +96,51 @@ function pages.mark(name,list)
         if trace then
             report("marking current page %i as %a",realpage,name)
         end
-        data[realpage][name] = true
+        data[realpage][name] = settings or true
+    end
+end
+
+local tobemarked = { }
+
+function pages.markedlist(realpage)
+    if active and realpage then
+        local m = rawget(tobemarked,realpage) or rawget(data,realpage)
+        return m and next(m) and sortedkeys(m)
     end
 end
 
 local function marked(name)
-    local realpage = texgetcount("realpageno")
-    for i=last,realpage-1 do
-        rawset(data,i,nil)
+    if active then
+        local realpage = texgetcount("realpageno")
+        if last ~= 0 then
+            for i=last,realpage-1 do
+    --     print(last)
+                local di = data[i]
+                if di then
+                    tobemarked[i] = di
+                    rawset(data,i,nil)
+                end
+            end
+            last = 0 -- needs checking
+        end
+        local pagedata = rawget(data,realpage)
+        return pagedata and pagedata[name] and true or false
+    else
+        return false
     end
-    local pagedata = rawget(data,realpage)
-    return pagedata and pagedata[name] and true or false
+end
+
+local function markedparameter(name,key)
+    if active then
+        local pagedata = rawget(data,texgetcount("realpageno"))
+        if pagedata then
+            pagedata = pagedata[name]
+            if pagedata then
+                pagedata = pagedata[key]
+            end
+        end
+        return pagedata
+    end
 end
 
 local function toranges(marked)
@@ -111,12 +158,14 @@ local function toranges(marked)
             last = page
         end
         list[#list+1] = { first, last }
+        --
+        active = true
     end
     return list
 end
 
 local function allmarked(list)
-    if list then
+    if active and list then
         local collected = pages.collected
         if collected then
             if type(list) == "string" then
@@ -162,26 +211,77 @@ pages.allmarked = allmarked
 -- An alternative is to use an attribute and identify the state by parsing the node
 -- list but that's a bit overkill for a hardly used feature like this.
 
-luatex.registerpageactions(function()
-    local nofauto = #autolist
-    if nofauto > 0 then
-        local realpage = texgetcount("realpageno")
-        for i=1,nofauto do
-            local names = autolist[i]
-            for j=1,#names do
-                local name = names[j]
-                data[realpage][name] = true
-                if trace then
-                    report("automatically marking page %i as %a",realpage,name)
+-- Page actions are bound to a real page. When we set one, we need to bind to the
+-- current page unless we just flushed. So we also need to check the current page.
+
+-- \page ... \start : sync realpage
+-- \page     \start : sync realpage
+-- \page     \stop  : reset synced because no content yet
+-- \page ... \stop  : keep sync
+
+local function autopageaction()
+    if active then
+        local nofauto = #autolist
+        if nofauto > 0 then
+            local realpage = texgetcount("realpageno")
+            for i=1,nofauto do
+                local entry    = autolist[i]
+                local names    = entry[1]
+                local settings = entry[2]
+                for j=1,#names do
+                    local name = names[j]
+                    local list = data[realpage]
+                    if not list[name] then
+                        if trace then
+                            report("automatically marking page %i as %a",realpage,name)
+                        end
+                        list[name] = settings or true
+                    end
                 end
             end
         end
     end
-end)
+end
+
+local function startmarked(name,settings)
+    active = true
+    --
+    insert(autolist, { settings_to_array(name), settings_to_hash(settings) })
+    autopageaction(true)
+end
+
+local function stopmarked()
+    local nofauto = #autolist
+    if nofauto > 0 then
+        if not texlists.pagehead then
+            local realpage = texgetcount("realpageno")
+            for i=1,nofauto do
+                local entry = autolist[i]
+                local names = entry[1]
+                for j=1,#names do
+                    local name = names[j]
+                    local list = data[realpage]
+                    if list[name] then
+                        if trace then
+                            report("automatically unmarking page %i as %a",realpage,name)
+                        end
+                        list[name] = nil
+                    end
+                end
+            end
+        end
+        remove(autolist)
+    end
+end
+
+implement {
+    name      = "checkmarkedpages",
+    actions   = autopageaction,
+}
 
 implement {
     name      = "markpage",
-    arguments = "2 strings",
+    arguments = "3 strings",
     actions   = pages.mark
 }
 
@@ -189,6 +289,23 @@ implement {
     name      = "doifelsemarkedpage",
     arguments = "string",
     actions   = { marked, ctx_doifelse }
+}
+
+implement {
+    name      = "doifmarkedpage",
+    arguments = "string",
+    actions   = { marked, ctx_doif }
+}
+
+implement {
+    name      = "markedpageparameter",
+    arguments = "strings",
+    actions   = function(name,key)
+        local value = markedparameter(name,key)
+        if value then
+            context(value)
+        end
+    end
 }
 
 implement {
@@ -204,20 +321,13 @@ implement {
 
 implement {
     name      = "startmarkpages",
-    arguments = "string",
-    actions   = function(name)
-        insert(autolist,settings_to_array(name))
-    end
+    arguments = "2 strings",
+    actions   = startmarked,
 }
 
 implement {
-    name      = "stopmarkpages",
-    arguments = "string",
-    actions   = function(name)
-        if #autolist > 0 then
-            remove(autolist)
-        end
-    end
+    name    = "stopmarkpages",
+    actions = stopmarked,
 }
 
 local tonut    = nodes.tonut

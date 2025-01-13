@@ -23,7 +23,6 @@ local preparetemplate    = helpers.preparetemplate
 local splitdata          = helpers.splitdata
 local replacetemplate    = utilities.templates.replace
 local serialize          = sql.serialize
-local deserialize        = sql.deserialize
 local getserver          = sql.getserver
 
 local osclock            = os.gettimeofday
@@ -109,6 +108,7 @@ local function splitdata(data) -- todo: hash on first line ... maybe move to cli
             end
         end
         p = Cf(Ct("") * p,rawset) * newline^1
+     -- p = Ct("") * (p % rawset) * newline^1 -- future
         if getserver() == "mssql" then
             p = skipfirst * skipdashes * Ct(p^0)
         else
@@ -264,6 +264,7 @@ end
 local wraptemplate = [[
 local converters    = utilities.sql.converters
 local deserialize   = utilities.sql.deserialize
+local fromjson      = utilities.sql.fromjson
 
 local tostring      = tostring
 local tonumber      = tonumber

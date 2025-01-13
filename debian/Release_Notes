@@ -55,7 +55,7 @@ Instead of going into details we just mention a couple of changes that were most
     extensions and clean-up of notes (more to follow)
     stripped down TaBle, removal of non-context features and replacement by more context friendly variants
     upgraded typescripts (to new font releases)
-    automatic (base/node) mode detection of OpenType fonts 
+    automatic (base/node) mode detection of OpenType fonts
 
 For sure we forgot things.
 
@@ -70,7 +70,7 @@ New MkIV features:
     texmfcnf.lua (see the example contextcnf.lua) now completely replaces texmf.cnf (and has an internal structure)
     mtxrun has taken over the role of luatools (which is now a stub for mtxrun --script base and will eventually go away)
     TEXMFCACHE can now consist of multiple paths (one writable followed by any number of read-only paths)
-    Support for the biolinum, stix, and xits fonts added, as well updated typescripts for iwona. 
+    Support for the biolinum, stix, and xits fonts added, as well updated typescripts for iwona.
 
 Context 2010.05.24
 
@@ -92,7 +92,7 @@ Context 2010.05.08
     New modules: barcodes (mkiv only) and punk
     Support for shockwave flash has been updated (mkiv only). The backend code has been rewritten and currently only pdf is supported.
     The split between mkii and mkiv is getting more complete. Only a few mkii bug fixes have taken place.
-    Typescripts are now split completely and no definitions are shared; loading of a mkio/mkiv file takes precedence over a tex file. 
+    Typescripts are now split completely and no definitions are shared; loading of a mkio/mkiv file takes precedence over a tex file.
 
 
 Context 2009.11.26
@@ -102,11 +102,11 @@ Context 2009.11.26
        name: and file:, called spec:. This uses heuristics to find a font
        based on the requested properties, for example: times-normal-italic
      * Mark IV now supports line notes and proper \formulanumbers
-     * and a bunch of bugfixes, of course 
+     * and a bunch of bugfixes, of course
 
 Context 2009.10.27
 
-This release fixes a fairly large number of bugs and oversights in mkiv, 
+This release fixes a fairly large number of bugs and oversights in mkiv,
 and few in mkii.
 
 Context 2009.08.19
@@ -118,7 +118,7 @@ is too old. Hans and I apologise for that, but it was just not feasible to
 include a newer luatex. Once TeXLive is released, we will write down a
 recipe to upgrade its luatex binary.
 
-This is the first actually documented release for 2009 after a very long 
+This is the first actually documented release for 2009 after a very long
 time of no release (and no release notes). The reason for that is that
 ConTeXt is now split quite rigurously into source files for mkii and source
 files for mkiv. Also, many of the core functions in context mkiv have been
@@ -140,18 +140,18 @@ New features:
     * The old, dvipdfm style font mapfiles have been removed because newer
       versions of (x)dvipdfmx support the pdftex-style map format
     * mkiv now has support for 'special' features like knockout vs overprint
-      and spot colors via attributes 
+      and spot colors via attributes
 
 Bugs fixed:
 
     * lots of smaller bugs fixed, especially in the MPlib handling in mkiv,
-      but many more small ones 
+      but many more small ones
 
 Context 2008.08.05
 
 New feature:
 
-    * mtx-fonts now supports displaying feature information for OTF fonts 
+    * mtx-fonts now supports displaying feature information for OTF fonts
 
 Bugs fixed:
 
@@ -159,7 +159,7 @@ Bugs fixed:
       release
     * Hyphenation patterns for bokmal and nynorsk were broken in
       Context 2008.08.04
-    * \Word now works ok in MKIV 
+    * \Word now works ok in MKIV
 
 Context 2008.08.04
 
@@ -177,12 +177,12 @@ New features:
     * Typescripts for Herman Zapf's fonts in OTF format are now provided
     * the mtxrun script 'context' is extended to be more like 'texexec'
     * the mtxrun script 'convert' now supports a requested quality switch
-    * the mtxrun script 'server' is extended to support 'cgi' lua 
+    * the mtxrun script 'server' is extended to support 'cgi' lua
 
 Bugs fixed:
 
     * Fix nasty font warnings in XeTeX
-    * Lots of small bugs. Please follow the link to the details page. 
+    * Lots of small bugs. Please follow the link to the details page.
 
 Context 2008.05.21
 
@@ -190,27 +190,27 @@ Context 2008.05.21
       (still experimental, details are discussed on the dev-context mailing
       list)
     * Some of the internals of MathML support in MKIV have been reworked
-    * A few small bugfixes 
+    * A few small bugfixes
 
 
 Context 2008.05.13
 
     * small bugfixes for 2008.05.09
-    * some corrections to the german interface messages 
+    * some corrections to the german interface messages
 
 Context 2008.05.09
 
     * A set of bugfixes relating to metapost labels in mkiv
     * A rewritten MathML parser for mkiv
     * Some math operator extensions for mkiv
-    * Other bugfixes 
+    * Other bugfixes
 
 Context 2008.04.18
 
 Small update to 2008.04.16:
 
     * a few more bugfixes
-    * a bit of internal cleanup 
+    * a bit of internal cleanup
 
 Context 2008.04.16
 
@@ -221,7 +221,7 @@ Small update to 2008.04.15:
     * the new MkIV font name resolver had an error
     * a few more dummies for mplib in MkIV
     * a fix for paragraph-shaped text in mplib (MkIV)
-    * a fix for disappearing colors in mplib (MkIV) 
+    * a fix for disappearing colors in mplib (MkIV)
 
 Context 2008.04.15
 
@@ -230,7 +230,7 @@ This release fixes a small set of bugs in MkIV:
     * some mplib conversion errors (part of those need a new, to-be-released
       luatex) and a few dummy macros
     * figures in subpaths were not found
-    * see the separate page for more details 
+    * see the separate page for more details
 
 And a few small extras for MkIV:
 
@@ -238,7 +238,7 @@ And a few small extras for MkIV:
     * Environment variable MTX_FONTS_AUTOLOAD='yes' can be used to force
       automatic font database reloading on 'font not found' errors
     * A parser that reads fontconfig's fonts.conf added (if it can be found)
-    * Better xml statistics reporting 
+    * Better xml statistics reporting
 
 As well as some internal changes:
 
@@ -246,14 +246,14 @@ As well as some internal changes:
       if you have styles that redefine core macros, they could be broken
       by this
     * the experimental reserved object numbers patch from 2008.04.10 is
-      reverted, didn't work out. 
+      reverted, didn't work out.
 
 Context 2008.04.10
 
 One big news item:
 
     * MkIV now uses the embedded MPlib in the latest luatex release.
-      No more external MP calls, resulting in a massive speedup 
+      No more external MP calls, resulting in a massive speedup
 
 Also a bunch of bugfixes from the mailing list, and some small speedups
 
@@ -271,14 +271,14 @@ This is a feature release. Main news:
 
     * Image inclusion in mkiv now uses lua
     * Better support for zips and zipped xml files
-    * And lots of bugfixes 
+    * And lots of bugfixes
 
 Context 2008.01.28
 
     * some small extensions to opentype support
     * fix a glitch in luatools that broke format generation in the
       'official' luatex beta
-    * brings locating of processed files in mkiv in line with mkii 
+    * brings locating of processed files in mkiv in line with mkii
 
 Context 2008.01.26
 
@@ -286,29 +286,29 @@ Context 2008.01.26
       (mkiv)
     * many macros that used \to for delimited arguments reimplemented
       without the need for \to
-    * new command \setupmathematics, for global math setup 
+    * new command \setupmathematics, for global math setup
 
 Context 2008.01.16
 
     * New feature compose=yes will add missing composed chars as virtual
-      glyphs 
+      glyphs
 
  \definefontfeature[superdefault][default][compose=yes]
 
     * Some math bugfixes in mkiv
-    * A few corrections to font synonyms 
+    * A few corrections to font synonyms
 
 Context 2008.01.11
 
 This release fixes:
 
-    * handling of truetype disguised as opentype and vice versa 
+    * handling of truetype disguised as opentype and vice versa
 
 This release adds:
 
     * a prelude to math definitions for mkiv
     * a cache=no option for \setupfloats, i.e. direct flushing
-    * support for new lm naming scheme + fallback 
+    * support for new lm naming scheme + fallback
 
 Context 2007.12.17
 

@@ -58,8 +58,8 @@ buffers.scite = scite
 
 local f_def_color = formatters["\\definecolor[slxc%s][h=%02X%02X%02X]%%"]
 local f_fore_none = formatters["\\unexpanded\\def\\slx%s#1{{\\slxc%s#1}\\slxbreak}%%"]
-local f_fore_bold = formatters["\\unexpanded\\def\\slx%s#1{{\\slxc%s\\bf#1}\\slxbreak}%%"]
-local f_none_bold = formatters["\\unexpanded\\def\\slx%s#1{{\\bf#1}\\slxbreak}%%"]
+local f_fore_bold = formatters["\\unexpanded\\def\\slx%s#1{{\\slxc%s\\slxbold#1}\\slxbreak}%%"]
+local f_none_bold = formatters["\\unexpanded\\def\\slx%s#1{{\\slxbold#1}\\slxbreak}%%"]
 local f_none_none = formatters["\\unexpanded\\def\\slx%s#1{{#1}\\slxbreak}%%"]
 local f_texstyled = formatters["\\slx%s{%s}\\slxbreak"]
 local f_hanging   = formatters["\\slxb{%r}%s\\slxe"] -- we need to round: lua 5.3
@@ -102,9 +102,9 @@ local function exportcolors()
         local function black(f)
             return (f[1] == f[2]) and (f[2] == f[3]) and (f[3] == 0)
         end
---         local result, r = { f_mapping }, 1
-local result, r = { }, 0
-        for k, v in table.sortedhash(lexer.context.styles) do
+     -- local result, r = { f_mapping }, 1
+        local result, r = { }, 0
+        for k, v in table.sortedhash(lexers.styles) do
             local fore = v.fore
             if fore and not black(fore) then
                 r = r + 1
@@ -113,7 +113,7 @@ local result, r = { }, 0
         end
         r = r + 1
         result[r] = "%"
-        for k, v in table.sortedhash(lexer.context.styles) do
+        for k, v in table.sortedhash(lexers.styles) do
             local bold = v.bold
             local fore = v.fore
             r = r + 1
@@ -145,10 +145,10 @@ local function exportwhites()
 end
 
 local function exportstyled(lexer,text)
-    local result = lexer.lex(lexer,text,0)
+    local result = lexers.lex(lexer,text,0)
     local start = 1
     local whites = exportwhites()
-    local buffer = { }
+    local buffer, b = { }, 0
     for i=1,#result,2 do
         local style = result[i]
         local position = result[i+1]
@@ -157,9 +157,9 @@ local function exportstyled(lexer,text)
         if txt == "" then
             -- skip
         elseif whites[style] then
-            buffer[#buffer+1] = txt
+            b = b + 1 ; buffer[b] = txt
         else
-            buffer[#buffer+1] = f_texstyled(style,txt)
+            b = b + 1 ; buffer[b] = f_texstyled(style,txt)
         end
         start = position
     end
@@ -311,13 +311,16 @@ moduledata.scite = scite
 
 \stopluacode
 
-\definetyping[TEX] [option=cld]
-\definetyping[LUA] [option=lua]
+%definetyping[TEX] [option=cld]
+\setuptyping [TEX] [option=cld]
+%definetyping[LUA] [option=lua]
+\setuptyping [LUA] [option=lua]
 \definetyping[BTX] [option=bibtex]
 \definetyping[MPS] [option=mps]
-\definetyping[MP]  [option=mp]
+%definetyping[MP]  [option=mp]
+\setuptyping [MP]  [option=mp]
 \definetyping[PDF] [option=pdf]
-\definetyping[CPP] [option=web]
+\definetyping[CPP] [option=cpp]    % Which is kind of like the web one.
 \definetyping[WEB] [option=web]
 \definetyping[TXT] [option=txt]
 \definetyping[BNF] [option=bnf]    % I might use this in the metafun manual.
@@ -336,7 +339,7 @@ moduledata.scite = scite
 \unexpanded\def\buff_scite_slxb#1%
   {% we can have a side float
    \advance\hangindent\numexpr#1+2\relax\scitespaceskip
-   \begstrut\hskip#1\scitespaceskip
+   \begstrut\hskip#1\scitespaceskip\relax
    \ifcase\hangafter
      \hangafter\plusone\relax
    \fi}
@@ -366,6 +369,8 @@ moduledata.scite = scite
 \let\slxe    \space
 \let\slxbreak\relax
 
+\def\slxbold {\bf} % maybe contraststyle in verbatim
+
 \let\slxL    \letterleftbrace
 \let\slxR    \letterrightbrace
 \let\slxM    \letterdollar
@@ -378,7 +383,7 @@ moduledata.scite = scite
 \let\slxT    \lettertilde
 \let\slxS    \fixedspace
 
-\let\slxS    \buff_scite_slxs
+%let\slxS    \buff_scite_slxs
 \let\slxF    \buff_scite_slxf
 
 \def\module_scite_inherit_typing
@@ -397,6 +402,14 @@ moduledata.scite = scite
   {\scitebuffer[\ifx\currentscitelexer\empty tex\else\currentscitelexer\fi][@scite@]%
    \endgroup}
 
+\definelines
+  [scitelines]
+
+\setuplines
+  [scitelines]
+  [\c!before=,
+   \c!after=]
+
 \unexpanded\def\scitefile
   {\dosingleargument\module_scite_file}
 
@@ -410,9 +423,9 @@ moduledata.scite = scite
    \dontcomplain
    \raggedright
    \startcontextcode
-   \startlines
+   \startscitelines
    \getbuffer[lex]
-   \stoplines
+   \stopscitelines
    \stopcontextcode
    \endgroup}
 
@@ -432,9 +445,9 @@ moduledata.scite = scite
    \module_scite_inherit_typing
    \dontcomplain
    \raggedright
-   \startlines
+   \startscitelines
    \getbuffer[lex]
-   \stoplines
+   \stopscitelines
    \endgroup}
 
 \unexpanded\def\sciteinlinebuffer
@@ -443,6 +456,7 @@ moduledata.scite = scite
 \unexpanded\def\module_scite_buffer_inline[#1][#2]%
   {\dontleavehmode
    \begingroup
+   \lettypingparameter\c!margin\zeropoint
    \setcatcodetable\ctxcatcodes % needed in xml
    \ifsecondargument
      \clf_scitelexbuffer{#2}{#1}%
@@ -454,6 +468,7 @@ moduledata.scite = scite
    \module_scite_inherit_typing
    \dontcomplain
    \getbuffer[lex]%
+   \removeunwantedspaces
    \endgroup}
 
 \unexpanded\def\startInlineScite#1%
@@ -476,14 +491,14 @@ moduledata.scite = scite
    \tt
    \installscitecommandsdisplay
    \dontcomplain
-\buff_verbatim_initialize_typing_one
-\buff_verbatim_set_line_margin
+   \buff_verbatim_initialize_typing_one
+   \buff_verbatim_set_line_margin
    \raggedright
-   \startlines
+   \startscitelines
    \clf_getbuffer{lex}}
 
 \unexpanded\def\stopDisplayScite
-  {\stoplines
+  {\stopscitelines
    \endgroup}
 
 \unexpanded\def\slxbreak

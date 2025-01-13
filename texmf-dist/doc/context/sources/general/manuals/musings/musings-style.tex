@@ -1,6 +1,8 @@
+% language=us runpath=texruns:manuals/musings
+
 \startenvironment musings-style
 
-\usemodule[abr-04]
+\usemodule[abbreviations-logos]
 
 \setupbodyfont
   [pagella]
@@ -43,12 +45,15 @@
         \hss
         % title
         #2
-        \doifmode {*sectionnumber} {
-            % distance
-            \hskip10mm
-            % number
-            \struttedbox{\offset[x=-1mm,y=2.5mm]{\scale[height=2cm]{#1}}}
-        }
+      % \ifnum\getsomestructurenumber{\currentstructurelevel}{last}>\plusone
+        \ifnum\somenamedheadnumber{chapter}{last}>\plusone
+            \doifmode {*sectionnumber} {
+                % distance
+                \hskip10mm
+                % number
+                \struttedbox{\offset[x=-1mm,y=2.5mm]{\scale[height=2cm]{#1}}}
+            }
+        \fi
     }
 \stoptexdefinition
 

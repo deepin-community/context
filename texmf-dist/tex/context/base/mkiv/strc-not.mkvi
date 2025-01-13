@@ -24,42 +24,50 @@
 \ifdefined\dotagsetnotesymbol \else \let\dotagsetnotesymbol\relax \fi
 \ifdefined\dotagsetnotation   \else \let\dotagsetnotation  \relax \fi
 
-\unexpanded\def\unvboxed {\ifvmode\unvbox \else\box \fi} % will change or used more often
-\unexpanded\def\unvcopied{\ifvmode\unvcopy\else\copy\fi} % will change or used more often
+%D \LMTX\ testcase:
+%D
+%D \starttyping
+%D \hbox {\hbox{\footnote{HH1}\footnote{HH2}}} \par
+%D \hbox {\hbox{x\footnote{XHH1}x\footnote{XHH2}}} \par
+%D \vbox {\setbox0\hbox{\footnote{VH1}\footnote{VH2}}\box0} \par
+%D \vbox         {\hbox{\footnote{VH1}xxx\footnote{VH2}}} \par
+%D \vbox         {\hbox{\footnote{VH1}\footnote{VH2}}
+%D                \hbox{\footnote{VH1}\footnote{VH2}}} \par
+%D \vbox {\hbox{x\footnote{XVH1}x\footnote{XVH2}}} \par
+%D \vbox {\vbox{\footnote{VV1}\footnote{VV2}}} \par % two lines
+%D \vbox {\vbox{x\footnote{XVV1}x\footnote{XVV2}}} \par
+%D \stoptyping
 
-%D Notes have two handlers: notations and notes. Although notations can
-%D be defined independently it makes not much sense. In principle we can
-%D treat notes as lists but they are currently done as a variant on
-%D enumerations. I will provide a list variant as well. One complication is
-%D that for page related notes inserts are used and therefore notes are
-%D typeset immediately and descriptions are better suited for that. For
-%D instance endnotes can as well be typeset using lists.
+%D Notes have two handlers: notations and notes. Although notations can be defined
+%D independently it makes not much sense. In principle we can treat notes as lists
+%D but they are currently done as a variant on enumerations. I will provide a list
+%D variant as well. One complication is that for page related notes inserts are used
+%D and therefore notes are typeset immediately and descriptions are better suited
+%D for that. For instance endnotes can as well be typeset using lists.
 
 % textcommand/textstyle/textcolor : set by note commandhandler and used for inline number
 
 %D \macros
 %D   {setupnote,setupnotation}
 %D
-%D We can influence footnote typesetting with the setup
-%D command:
+%D We can influence footnote typesetting with the setup command:
 %D
 %D \showsetup{setupnotation}
 %D \showsetup{setupnote}
 %D
-%D The definition command indicate that we can frame the footnote
-%D area. The footnotes themselves are treated as descriptions.
+%D The definition command indicate that we can frame the footnote area. The
+%D footnotes themselves are treated as descriptions.
 %D
 %D \showsetup{definenote}
 %D
-%D It's sort of a custom to precede footnotes by a horizontal
-%D rule and although fancy rules like
+%D It's sort of a custom to precede footnotes by a horizontal rule and although
+%D fancy rules like
 %D
 %D \starttyping
 %D \hbox to 10em{\hskip-3em\dotfill}
 %D \stoptyping
 %D
-%D Are quite ligitimate, we default to a simple one 20\% of the
-%D text width.
+%D Are quite ligitimate, we default to a simple one 20\% of the text width.
 
 %    \c!headstyle=\noteparameter\c!style,
 %    \c!headcolor=\noteparameter\c!color,
@@ -211,11 +219,10 @@
      \fi
    \fi}
 
-%D Notations (we simply needed a word that relates to notes and is
-%D and sounds like description and enumeration) are a special case
-%D in the sense that they are stored, rendered elsewhere and referered
-%D to from where they are specified. For that reason they have a different
-%D set op main commands.
+%D Notations (we simply needed a word that relates to notes and is and sounds like
+%D description and enumeration) are a special case in the sense that they are
+%D stored, rendered elsewhere and referered to from where they are specified. For
+%D that reason they have a different set op main commands.
 
 % \notation[ref]{title}
 % \notation[reference=,title=]
@@ -305,10 +312,10 @@
 \unexpanded\def\strc_notations_stop
   {}
 
-%D A complication is that we need to set up rather specific properties
-%D of e.g. footnotes. It is for this reason that we introduce an extra
-%D level of indirectness. This way notations don't bark on undefined
-%D macros when used in combination.
+%D A complication is that we need to set up rather specific properties of e.g.
+%D footnotes. It is for this reason that we introduce an extra level of
+%D indirectness. This way notations don't bark on undefined macros when used in
+%D combination.
 
 \unexpanded\setvalue{\??constructionnotehandler\v!notation}%
   {\csname\??constructionnotehandler\currentconstructionhandler:\constructionparameter\c!type\endcsname}
@@ -338,8 +345,7 @@
 
 \let\setupnotes\setupnote
 
-% These only concern the inline symbol/number and wrapping of the
-% whole list.
+% These only concern the inline symbol/number and wrapping of the whole list.
 
 \setupnotes % not all make sense here
   [\c!location=\v!page,
@@ -437,7 +443,7 @@
   {\iftrialtypesetting \else
      \begingroup
      \currentconstructionsynchronize
-     \attribute\destinationattribute\currentconstructionattribute\relax % todo, whole text
+     \c_attr_destination\currentconstructionattribute\relax % todo, whole text
      \signalcharacter
      \endgroup
    \fi#following}
@@ -486,20 +492,19 @@
      \kern\notesignal\relax % \relax is needed to honor spaces
    \fi}
 
-%D Interaction in notes is somewhat complex due to the way notes get
-%D flushed. In principle it is more or less the same as lists but where
-%D in lists we pack whole entries, in notes this doesn't happen. Okay,
-%D in retrospect we could have made descriptions lists but that will be
-%D a backward compatibility mess. At some point a completely new mechanism
-%D might show up, but not now. Also, as notes are inserts there is some
-%D extra mess to be kept in mind and it's easier to maintain two mechanisms
-%D than to combine too much.
+%D Interaction in notes is somewhat complex due to the way notes get flushed. In
+%D principle it is more or less the same as lists but where in lists we pack whole
+%D entries, in notes this doesn't happen. Okay, in retrospect we could have made
+%D descriptions lists but that will be a backward compatibility mess. At some point
+%D a completely new mechanism might show up, but not now. Also, as notes are inserts
+%D there is some extra mess to be kept in mind and it's easier to maintain two
+%D mechanisms than to combine too much.
 %D
-%D Interaction is also complicated because we want to provide several variants.
-%D For simple reference there is no need for anything special, as page references
-%D will do and we store them in the list anyway. But if we want a destination with
-%D dimensions we will use an additional destination because we can have only
-%D one with the same name and we always have the number as one.
+%D Interaction is also complicated because we want to provide several variants. For
+%D simple reference there is no need for anything special, as page references will
+%D do and we store them in the list anyway. But if we want a destination with
+%D dimensions we will use an additional destination because we can have only one
+%D with the same name and we always have the number as one.
 
 % interaction:
 %
@@ -579,25 +584,6 @@
    \let\strc_notes_set_destination_attribute_text\donothing
    \let\strc_notes_set_style_color_display\strc_notes_set_style_color_display_nop}
 
-% \def\strc_references_prepare_display_references_yes_number
-%   {\let\strc_notes_set_reference_attribute_text\donothing
-%    \strc_references_get_simple_reference{symb:\currentnote:\currentnotenumber}% reference
-%    \edef\strc_notes_set_reference_attribute_number{\attribute\referenceattribute\currentreferenceattribute}%
-%    \let\strc_notes_set_style_color_display\strc_notes_set_style_color_display_yes}
-
-% \def\strc_references_prepare_display_references_yes_text
-%   {\strc_references_get_simple_reference{symb:\currentnote:\currentnotenumber}% reference
-%    \edef\strc_notes_set_reference_attribute_text{\attribute\referenceattribute\currentreferenceattribute}%
-%    \let\strc_notes_set_reference_attribute_number\donothing
-%    \let\strc_notes_set_style_color_display\strc_notes_set_style_color_display_yes}
-
-% \def\strc_references_prepare_display_references_yes_all
-%   {\strc_references_get_simple_reference{symb:\currentnote:\currentnotenumber}% reference
-%    \edef\strc_notes_set_reference_attribute_text{\attribute\referenceattribute\currentreferenceattribute}%
-%    \strc_references_get_simple_reference{symb:\currentnote:\currentnotenumber}% reference
-%    \edef\strc_notes_set_reference_attribute_number{\attribute\referenceattribute\currentreferenceattribute}%
-%    \let\strc_notes_set_style_color_display\strc_notes_set_style_color_display_yes}
-
 \def\strc_references_prepare_display_references_yes_number
   {\edef\currentnoteinternal{\clf_noteinternal{\currentnote}\currentnotenumber}%
    \ifcase\currentnoteinternal\relax
@@ -605,7 +591,7 @@
    \else
      \let\strc_notes_set_reference_attribute_text\donothing
      \strc_references_get_simple_reference{*\currentnoteinternal}% reference
-     \edef\strc_notes_set_reference_attribute_number{\attribute\referenceattribute\currentreferenceattribute}%
+     \edef\strc_notes_set_reference_attribute_number{\c_attr_reference\currentreferenceattribute}%
      \let\strc_notes_set_style_color_display\strc_notes_set_style_color_display_yes
    \fi}
 
@@ -615,7 +601,7 @@
      \strc_references_prepare_display_references_nop
    \else
      \strc_references_get_simple_reference{*\currentnoteinternal}% reference
-     \edef\strc_notes_set_reference_attribute_text{\attribute\referenceattribute\currentreferenceattribute}%
+     \edef\strc_notes_set_reference_attribute_text{\c_attr_reference\currentreferenceattribute}%
      \let\strc_notes_set_reference_attribute_number\donothing
      \let\strc_notes_set_style_color_display\strc_notes_set_style_color_display_yes
    \fi}
@@ -626,9 +612,9 @@
      \strc_references_prepare_display_references_nop
    \else
      \strc_references_get_simple_reference{*\currentnoteinternal}% reference
-     \edef\strc_notes_set_reference_attribute_text{\attribute\referenceattribute\currentreferenceattribute}%
+     \edef\strc_notes_set_reference_attribute_text{\c_attr_reference\currentreferenceattribute}%
      \strc_references_get_simple_reference{*\currentnoteinternal}% reference
-     \edef\strc_notes_set_reference_attribute_number{\attribute\referenceattribute\currentreferenceattribute}%
+     \edef\strc_notes_set_reference_attribute_number{\c_attr_reference\currentreferenceattribute}%
      \let\strc_notes_set_style_color_display\strc_notes_set_style_color_display_yes
    \fi}
 
@@ -802,26 +788,23 @@
 %D Footnotes are can be characterized by three components:
 %D
 %D \startitemize[packed]
-%D \item a small number \footnote {a footnote number} or
-%D      symbol {\setupfootnotes [conversion=set 2]\footnote
-%D      {a footnote}}
+%D \item a small number \footnote {a footnote number} or symbol {\setupfootnotes
+%D   [conversion=set 2]\footnote {a footnote}}
 %D \item and a similar mark at the bottom of the page
 %D \item followed by some additional text
 %D \stopitemize
 %D
-%D Because footnotes are declared at the location of their
-%D reference they can be seen as a special kind of
-%D floating bodies. Their placement is postponed but has to be
-%D taken into account in the pagebreak calculations. This kind
-%D of calculations are forced by using \type{\insert}s and dealing
-%D with all cases is not trivial.
+%D Because footnotes are declared at the location of their reference they can be
+%D seen as a special kind of floating bodies. Their placement is postponed but has
+%D to be taken into account in the pagebreak calculations. This kind of calculations
+%D are forced by using \type{\insert}s and dealing with all cases is not trivial.
 
 %D \macros
 %D   {notesenabled}
 %D
-%D We need a couple of states because at some moments we don't want
-%D to mess around with inserts at all. Take for instance a table
-%D of contents. And so we can temporary disable footnotes by saying
+%D We need a couple of states because at some moments we don't want to mess around
+%D with inserts at all. Take for instance a table of contents. And so we can
+%D temporary disable footnotes by saying
 %D
 %D \starttyping
 %D \notesenabledfalse
@@ -837,8 +820,8 @@
 \appendtoks \notesenabledfalse \to \everysimplifycommands % quick hack
 \appendtoks \notesenabledfalse \to \everypreroll          % quick hack
 
-%D Often we need to process the whole set of notes and to make that
-%D fast, we use a token register:
+%D Often we need to process the whole set of notes and to make that fast, we use a
+%D token register:
 
 % we have several synchronizers:
 %
@@ -942,27 +925,6 @@
 \letvalue{\??notepenalty\v!strict    }\notepenaltystrict
 \letvalue{\??notepenalty\v!verystrict}\notepenaltyverystrict
 \letvalue{\??notepenalty             }\notepenaltytolerant
-
-% \def\strc_notes_set_width
-%   {\edef\p_width{\noteparameter\c!width}%
-%    \ifx\p_width\empty
-%      \setnoteparameter\c!width{\hsize}%
-%    \fi}
-
-\setupnotes
-  [\c!width=\v!auto]
-
-\def\strc_notes_set_width
-  {\edef\p_width{\noteparameter\c!width}%
-   \ifx\p_width\v!auto
-     \setnoteparameter\c!width{\ifdim\hsize<\makeupwidth\hsize\else\makeupwidth\fi}%
-   \else\ifx\p_width\empty
-     \setnoteparameter\c!width{\hsize}%
-   \fi\fi}
-
-\appendtoks
-    \strc_notes_set_width
-\to \everysynchronizenote
 
 %D The following switch can be used to disable limiting the height of the footnote
 %D area, something that is needed in multi column balancing. Use this switch with
@@ -1112,12 +1074,21 @@
      \c_strc_notes_columns\plusone
    \fi}
 
+% \def\strc_notes_set_location_page
+%   {\setfalse\c_strc_notes_delayed
+%    \strc_notes_set_distance
+%    \strc_notes_set_columns
+%    \page_inserts_set_location\currentnoteinsertion\v!page % \setupinsertion[\currentnote][\c!location=\v!page]%
+%    \global\count\currentnoteinsertionnumber\numexpr\plusthousand/\c_strc_notes_columns\relax
+%    \global\dimen\currentnoteinsertionnumber\ifnotelimit\dimexpr\noteparameter\c!height*\c_strc_notes_columns\relax\else\maxdimen\fi
+%    \global\skip \currentnoteinsertionnumber\s_strc_notes_distance\relax}
+
 \def\strc_notes_set_location_page
   {\setfalse\c_strc_notes_delayed
    \strc_notes_set_distance
    \strc_notes_set_columns
    \page_inserts_set_location\currentnoteinsertion\v!page % \setupinsertion[\currentnote][\c!location=\v!page]%
-   \global\count\currentnoteinsertionnumber\numexpr\plusthousand/\c_strc_notes_columns\relax
+   \global\count\currentnoteinsertionnumber\numexpr(\plusthousand/\c_strc_notes_columns)*\nofmulticolumns\relax
    \global\dimen\currentnoteinsertionnumber\ifnotelimit\dimexpr\noteparameter\c!height*\c_strc_notes_columns\relax\else\maxdimen\fi
    \global\skip \currentnoteinsertionnumber\s_strc_notes_distance}
 
@@ -1195,12 +1166,9 @@
 % \dorecurse{10}{test \mynote{one one one one one one} \input zapf \mynote{one one one one one one} }
 % \stoptext
 
-%D The noterule can be a graphic and therefore calling this
-%D setup macro at every skipswitch is tricky (many many MP
-%D runs). Let's just reserve a few points, that probably match
-%D those of the stretch component.
-
-%D A bit messy:
+%D The noterule can be a graphic and therefore calling this setup macro at every
+%D skipswitch is tricky (many many MP runs). Let's just reserve a few points, that
+%D probably match those of the stretch component. A bit messy:
 
 \unexpanded\def\placenoterule
   {\begingroup
@@ -1220,14 +1188,8 @@
      \kern\strutdepth
    \fi}
 
-\ifdefined\setnotehsize \else
-
-  \unexpanded\def\setnotehsize{\hsize\noteparameter\c!width\relax} % can be overloaded
-
-\fi
-
-%D The formatting depends on the width of the table, so we
-%D have to set \type {n} to zero.
+%D The formatting depends on the width of the table, so we have to set \type {n} to
+%D zero.
 %D
 %D \starttyping
 %D \startbuffer
@@ -1245,21 +1207,19 @@
 %D \macros
 %D   {footnote}
 %D
-%D A footnote can have a reference as optional argument and
-%D therefore its formal specification looks like:
+%D A footnote can have a reference as optional argument and therefore its formal
+%D specification looks like:
 %D
 %D \showsetup{footnote}
 %D
-%D This command has one optional command: the reference. By
-%D saying \type{[-]} the number is omitted. The footnote
-%D command is not that sensitive to spacing, so it's quite
-%D legal to say:
+%D This command has one optional command: the reference. By saying \type{[-]} the
+%D number is omitted. The footnote command is not that sensitive to spacing, so it's
+%D quite legal to say:
 %D
 %D \startbuffer
-%D Users of \CONTEXT\ must keep both feet \footnote{Given they
-%D have two.} on the ground and not get confused \footnote{Or
-%D even crazy.} by all those obscure \footnote{But fortunately
-%D readable.} parameters.
+%D Users of \CONTEXT\ must keep both feet \footnote {Given they have two.} on the
+%D ground and not get confused \footnote {Or even crazy.} by all those obscure
+%D \footnote {But fortunately readable.} parameters.
 %D \stopbuffer
 %D
 %D \typebuffer
@@ -1274,15 +1234,11 @@
 %D \stopnarrower
 %D \egroup
 %D
-%D Typesetting footnotes is, at least for the moment, disabled
-%D when reshaping boxes.
-%D
-%D The additional macro \type {\footnotetext} and the
-%D associated \type {\note} macro were implemented at
-%D request of users on the mailing list and a suggestion by
-%D taco to split of the symbol placement. I decided to
-%D merge this functionality with the existing \type {\note}
-%D functionality.
+%D Typesetting footnotes is, at least for the moment, disabled when reshaping boxes.
+%D The additional macro \type {\footnotetext} and the associated \type {\note} macro
+%D were implemented at request of users on the mailing list and a suggestion by taco
+%D to split of the symbol placement. I decided to merge this functionality with the
+%D existing \type {\note} functionality.
 
 \newconditional\c_strc_notes_symbol \settrue\c_strc_notes_symbol % not used
 \newconditional\c_strc_notes_skip
@@ -1357,6 +1313,13 @@
 \newtoks\everyinsidenoteinsert
 \newtoks\everyafternoteinsert
 
+\unexpanded\def\doifelseinnote
+  {\ifconditional\processingnote
+     \expandafter\firstoftwoarguments
+   \else
+     \expandafter\secondoftwoarguments
+   \fi}
+
 \appendtoks
    \let\flushnotes\relax
    \let\postponenotes\relax
@@ -1410,17 +1373,35 @@
 %     \setfalse\inhibitmargindata
 % \to \everyinsidenoteinsert
 
+\setupnotes
+  [\c!width=\v!auto]
+
+\unexpanded\def\setnotehsize
+  {\ifinsidemulticolumns
+     \setnoteparameter\c!width{\makeupwidth}%
+   \else
+     \edef\p_width{\noteparameter\c!width}%
+     \ifx\p_width\v!auto
+     % \ifinsidecolumns
+         \setnoteparameter\c!width{\ifdim\hsize<\makeupwidth\hsize\else\makeupwidth\fi}%
+     % \else
+     %   \setnoteparameter\c!width{\makeupwidth}%
+     % \fi
+     \else\ifx\p_width\empty
+       \setnoteparameter\c!width{\hsize}%
+     \fi\fi
+  \fi
+  \hsize\noteparameter\c!width\relax}
+
 \appendtoks
     % only needed when columns (could be three \set...)
+    \setnotehsize
     \setsimplecolumnshsize[\c!distance=\noteparameter\c!columndistance,\c!n=\noteparameter\c!n,\c!width=\noteparameter\c!width]%
 \to \everyinsidenoteinsert
 
-% not: \appendtoks \setnotehsize \to \everyinsidenoteinsert (spoils columns)
-
-%D Normally footnotes are saved as inserts that are called upon
-%D as soon as the pagebody is constructed. The footnote
-%D insertion routine looks just like the \PLAIN\ \TEX\ one,
-%D except that we check for the end note state.
+%D Normally footnotes are saved as inserts that are called upon as soon as the
+%D pagebody is constructed. The footnote insertion routine looks just like the
+%D \PLAIN\ \TEX\ one, except that we check for the end note state.
 
 % testcase for split bottom alignment see (a) below
 %
@@ -1506,9 +1487,12 @@
    \obeydepth} % (a) added , since split footnotes will not align properly
 
 \def\strc_notes_flush_inserts_columns
-  {\startsimplecolumns[\c!distance=\noteparameter\c!columndistance,\c!n=\noteparameter\c!n,\c!width=\noteparameter\c!width]%
+  {\begingroup
+   \setnotehsize % probably still not ok for columns
+   \startsimplecolumns[\c!distance=\noteparameter\c!columndistance,\c!n=\noteparameter\c!n,\c!width=\noteparameter\c!width]%
      \strc_notes_flush_global
-   \stopsimplecolumns}
+   \stopsimplecolumns
+   \endgroup}
 
 % idea: tag with attr and then just flush them again
 
@@ -1520,13 +1504,17 @@
         {\starthboxestohbox
            \iftrialtypesetting\unvcopy\else\unvbox\fi\currentnoteinsertionnumber
          \stophboxestohbox}}
-     {\iftrialtypesetting\unvcopied\else\unvboxed\fi\currentnoteinsertionnumber}%
+     {\iftrialtypesetting
+        \ifvmode\unvcopy\else\copy\fi
+      \else
+        \ifvmode\unvbox \else\box \fi
+      \fi
+      \currentnoteinsertionnumber}%
    \endgroup}
 
-%D Supporting end notes is surprisingly easy. Even better, we
-%D can combine this feature with solving the common \TEX\
-%D problem of disappearing inserts when they're called for in
-%D deeply nested boxes. The general case looks like:
+%D Supporting end notes is surprisingly easy. Even better, we can combine this
+%D feature with solving the common \TEX\ problem of disappearing inserts when
+%D they're called for in deeply nested boxes. The general case looks like:
 %D
 %D \starttyping
 %D \postponenotes
@@ -1534,9 +1522,8 @@
 %D \flushnotes
 %D \stoptyping
 %D
-%D This alternative can be used in headings, captions, tables
-%D etc. The latter one sometimes calls for notes local to
-%D the table, which can be realized by saying
+%D This alternative can be used in headings, captions, tables etc. The latter one
+%D sometimes calls for notes local to the table, which can be realized by saying
 %D
 %D \starttyping
 %D \setlocalfootnotes
@@ -1544,25 +1531,27 @@
 %D \placelocalfootnotes
 %D \stoptyping
 %D
-%D Postponing is accomplished by simply redefining the (local)
-%D insert operation. A not too robust method uses the
-%D \type{\insert} primitive when possible. This method fails in
-%D situations where it's not entirely clear in what mode \TEX\
-%D is. Therefore the auto method can is to be overruled when
-%D needed.
+%D Postponing is accomplished by simply redefining the (local) insert operation. A
+%D not too robust method uses the \type{\insert} primitive when possible. This
+%D method fails in situations where it's not entirely clear in what mode \TEX\ is.
+%D Therefore the auto method can is to be overruled when needed.
 
 \newconditional\postponingnotes
 
 % we need a proper state: normal, postponing, flushing
 
 \unexpanded\def\postponenotes
-  {\ifconditional\postponingnotes\else
-     \global\settrue\postponingnotes
-     \glet\flushnotes\doflushnotes
-     \clf_postponenotes
+  {\ifcase\insertionmigrationmode
+     \ifconditional\postponingnotes\else
+       \global\settrue\postponingnotes
+       \glet\flushnotes\doflushnotes
+       \clf_postponenotes
+     \fi
    \fi}
 
 \let\flushnotes\relax
+
+% also \ifcase\insertionmigrationmode here, needs testing:
 
 \unexpanded\def\startpostponingnotes % experimental, page-mix
   {\ifconditional\postponingnotes\else
@@ -1595,8 +1584,8 @@
 %D \macros
 %D   {startlocalfootnotes,placelocalfootnotes}
 %D
-%D The next two macros can be used in for instance tables, as
-%D we'll demonstrate later on.
+%D The next two macros can be used in for instance tables, as we'll demonstrate
+%D later on.
 %D
 %D \showsetup{startlocalfootnotes}
 %D \showsetup{placelocalfootnotes}
@@ -1678,19 +1667,17 @@
 %D
 %D \typebuffer
 %D
-%D Because this table placement macro expect box content, and
-%D thanks to the grouping of the local footnotes, we don't need
-%D additional braces.
+%D Because this table placement macro expect box content, and thanks to the grouping
+%D of the local footnotes, we don't need additional braces.
 %D
 %D \getbuffer
 
 %D \macros
 %D   {placefootnotes}
 %D
-%D We still have no decent command for placing footnotes
-%D somewhere else than at the bottom of the page (for which no
-%D user action is needed). Footnotes (endnotes) can be
-%D placed by using
+%D We still have no decent command for placing footnotes somewhere else than at the
+%D bottom of the page (for which no user action is needed). Footnotes (endnotes) can
+%D be placed by using
 %D
 %D \showsetup{placefootnotes}
 
@@ -1866,22 +1853,20 @@
     \def\calculatetotalclevernoteheight{\totalnoteheight\zeropoint\strc_notes_process\docalculatetotalclevernoteheight}
     \def\calculatetotalpagenoteheight  {\totalnoteheight\zeropoint\strc_notes_process\docalculatetotalpagenoteheight}
 
-%D Now how can this mechanism be hooked into \CONTEXT\ without
-%D explictly postponing footnotes? The solution turned out to
-%D be rather simple:
+%D Now how can this mechanism be hooked into \CONTEXT\ without explictly postponing
+%D footnotes? The solution turned out to be rather simple:
 %D
 %D \starttyping
 %D \everypar  {...\flushnotes...}
 %D \neverypar {...\postponenotes}
 %D \stoptyping
 %D
-%D We can use \type{\neverypar} because in most commands
-%D sensitive to footnote gobbling we disable \type{\everypar}
-%D in favor for \type{\neverypar}. In fact, this footnote
-%D implementation is the first to use this scheme.
+%D We can use \type {\neverypar} because in most commands sensitive to footnote
+%D gobbling we disable \type {\everypar} in favor for \type {\neverypar}. In fact,
+%D this footnote implementation is the first to use this scheme.
 
-%D This is a nasty and new secondary footnote flusher. It
-%D can be hooked into \type {\everypar} like:
+%D This is a nasty and new secondary footnote flusher. It can be hooked into \type
+%D {\everypar} like:
 %D
 %D \starttyping
 %D \appendtoks \synchronizenotes \to \everypar
@@ -1895,10 +1880,9 @@
 
 \let\synchronizenotes\relax
 
-%D When typesetting footnotes, we have to return to the
-%D footnote specific bodyfont size, which is in most cases derived
-%D from the global document bodyfont size. In the previous macros
-%D we already used a footnote specific font setting macro.
+%D When typesetting footnotes, we have to return to the footnote specific bodyfont
+%D size, which is in most cases derived from the global document bodyfont size. In
+%D the previous macros we already used a footnote specific font setting macro.
 
 \def\strc_notes_set_bodyfont
   {\let\strc_notes_set_bodyfont\relax
@@ -1906,9 +1890,23 @@
    \usebodyfontparameter\noteparameter
    \usealignparameter\noteparameter}
 
-%D The footnote mechanism defaults to a traditional one
-%D column way of showing them. By default we precede them by
-%D a small line.
+%D The footnote mechanism defaults to a traditional one column way of showing them.
+%D By default we precede them by a small line.
+
+% end notes in the margin:
+%
+% \setuptexttexts
+%   [margin]
+%   [] [{\directsetup{notabene}}]
+%
+% \startsetups notabene
+%     \vbox to \textheight \bgroup
+%         \setupalign[tolerant]
+%         \topskipcorrection
+%         \placenotes[endnote][before=,after=]
+%         \vfilll
+%     \egroup
+% \stopsetups
 
 \definenote [\v!footnote]
 \definenote [\v!endnote ] [\c!location=\v!none] % else no break
@@ -1954,8 +1952,7 @@
 %D \macros
 %D   {note}
 %D
-%D Refering to a note is accomplished by the rather short
-%D command:
+%D Refering to a note is accomplished by the rather short command:
 %D
 %D \showsetup{note}
 %D
@@ -2031,5 +2028,10 @@
 %     a\footnote{\input tufte\par\input ward\relax}
 % \stoptext
 
-\protect \endinput
+%D Bonus:
 
+\appendtoks
+   \setsystemmode\currentnote
+\to \everysynchronizenote
+
+\protect \endinput

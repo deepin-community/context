@@ -19,20 +19,38 @@ texconfig.shell_escape = 't'
 luatex       = luatex or { }
 local luatex = luatex
 
-texconfig.error_line      =     79 -- frozen / large values can crash
-texconfig.expand_depth    =  10000
-texconfig.half_error_line =     50 -- frozen
-texconfig.hash_extra      = 100000
-texconfig.max_in_open     =   1000 -- frozen
-texconfig.max_print_line  = 100000 -- frozen
-texconfig.max_strings     = 500000
-texconfig.nest_size       =   1000
-texconfig.param_size      =  25000
-texconfig.save_size       = 100000
-texconfig.stack_size      =  10000
-texconfig.function_size   =  32768
-texconfig.properties_size =  10000
-texconfig.fix_mem_init    = 750000
+texconfig.error_line      =      250
+texconfig.expand_depth    =    10000
+texconfig.half_error_line =      125
+texconfig.max_print_line  =   100000
+texconfig.max_strings     =   500000
+texconfig.hash_extra      =   250000
+texconfig.function_size   =    32768
+texconfig.properties_size =    10000
+texconfig.max_in_open     =     1000
+texconfig.nest_size       =     1000
+texconfig.param_size      =    25000
+texconfig.save_size       =   100000
+texconfig.stack_size      =    10000
+texconfig.buf_size        = 10000000
+texconfig.fix_mem_init    =  1000000
+
+local variablenames = {
+    error_line      = false,
+    half_error_line = false,
+    max_print_line  = false,
+    max_in_open     = false,
+    expand_depth    = true,
+    hash_extra      = true,
+    nest_size       = true,
+    max_strings     = true,
+    param_size      = true,
+    save_size       = true,
+    stack_size      = true,
+    function_size   = true,
+    properties_size = true,
+    fix_mem_init    = true,
+}
 
 local stub = [[
 
@@ -68,27 +86,17 @@ function texconfig.init()
         },
         basictex = {
             -- always
-            "callback", "font", "lang", "lua", "node", "status", "tex", "texconfig", "texio", "token",
-             -- not in luametatex
-            "img", "pdf",
+            "callback", "font", "lua", "node", "status", "tex", "texconfig", "texio", "token",
+            "img", "pdf", "lang",
         },
         extralua = {
-            -- not in luametatex
             "unicode", "utf", "gzip",  "zip", "zlib",
-            -- in luametatex
-            "xzip", "xmath", "xcomplex", "basexx",
-            -- maybe some day in luametatex
             "lz4", "lzo",
-            -- always (mime can go)
             "lfs","socket", "mime", "md5", "sha2", "fio", "sio",
         },
         extratex = {
-            -- not in luametatex
             "kpse",
-            -- always
             "pdfe", "mplib",
-            -- in luametatex
-            "pdfdecode", "pngdecode",
         },
         obsolete = {
             "epdf",
@@ -160,7 +168,7 @@ function texconfig.init()
          -- local b = callbytecode(i)
             local e, b = pcall(callbytecode,i)
             if not e then
-                print(string.format("\nfatal error : unable to load bytecode register %%i, maybe wipe the cache first\n",i))
+                print(string.format("fatal error : unable to load bytecode register %%i, maybe wipe the cache first\n",i))
                 os.exit()
             end
             if b then
@@ -189,7 +197,7 @@ function texconfig.init()
 
 end
 
-CONTEXTLMTXMODE = %s
+CONTEXTLMTXMODE = 0
 
 -- we provide a qualified path
 
@@ -200,22 +208,6 @@ end)
 
 -- done, from now on input and callbacks are internal
 ]]
-
-local variablenames = {
-    error_line      = false,
-    half_error_line = false,
-    max_print_line  = false,
-    max_in_open     = false,
-    expand_depth    = true,
-    hash_extra      = true,
-    nest_size       = true,
-    max_strings     = true,
-    param_size      = true,
-    save_size       = true,
-    stack_size      = true,
-    function_size   = true,
-    properties_size = true,
-}
 
 local function makestub()
     name = name or (environment.jobname .. ".lui")
@@ -252,9 +244,9 @@ local function makestub()
         end
     end
     t[#t+1] = ""
-    t[#t+1] = format(stub,firsttable,tostring(CONTEXTLMTXMODE or 0))
+    t[#t+1] = format(stub,firsttable)
     io.savedata(name,concat(t,"\n"))
     logs.newline()
 end
 
-lua.registerfinalizer(makestub,"create stub file")
+lua.registerinitexfinalizer(makestub,"create stub file")

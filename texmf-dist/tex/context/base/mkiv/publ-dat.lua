@@ -11,12 +11,6 @@ if not modules then modules = { } end modules ['publ-dat'] = {
 -- todo: dataset = datasets[dataset] => current = datasets[dataset]
 -- todo: maybe split this file
 
---[[ldx--
-<p>This is a prelude to integrated bibliography support. This file just loads
-bibtex files and converts them to xml so that the we access the content
-in a convenient way. Actually handling the data takes place elsewhere.</p>
---ldx]]--
-
 if not characters then
     dofile(resolvers.findfile("char-utf.lua"))
     dofile(resolvers.findfile("char-tex.lua"))
@@ -379,6 +373,7 @@ function publications.new(name)
         suffixes   = { },
         xmldata    = xmlconvert(xmlplaceholder),
         details    = { },
+        missing    = { },
         ordered    = { },
         nofbytes   = 0,
         entries    = nil, -- empty == all
@@ -632,13 +627,13 @@ do
     local r_value    = reference * Carg(1) / resolve
 
     local balanced   = P {
-        [1] = ((escape * (left+right)) + (collapsed + r_value + 1 - (left+right))^1 + V(2))^0,
-        [2] = left * V(1) * right,
+        ((escape * (left+right)) + (collapsed + r_value + 1 - (left+right))^1 + V(2))^0,
+        left * V(1) * right,
     }
 
  -- local unbalanced = P {
- --     [1] = left * V(2) * right,
- --     [2] = ((escape * (left+right)) + (collapsed + 1 - (left+right))^1 + V(1))^0,
+ --     left * V(2) * right,
+ --     ((escape * (left+right)) + (collapsed + 1 - (left+right))^1 + V(1))^0,
  -- }
 
     local unbalanced = (left/"") * balanced * (right/"") * P(-1)
@@ -732,6 +727,7 @@ do
                 end
             end
         end
+--         inspect(luadata)
         statistics.stoptiming(publications)
     end
 
@@ -1172,18 +1168,31 @@ do
         end
     end
 
-    function savers.lua(dataset,filename,tobesaved)
-        local list = { }
-        local n = 0
-        for tag, data in next, tobesaved do
+    function savers.lua(dataset,filename,tobesaved,options)
+        local list  = { }
+        local n     = 0
+
+        local function totable(data,category)
             local t = { }
             for key, value in next, data do
                 if not privates[key] then
-                    d[key] = value
+                    t[key] = value
                 end
             end
-            list[tag] = t
+            t.category = category
             n = n + 1
+            return t
+        end
+
+        if options.category then
+            setmetatableindex(list,"table")
+            for tag, data in next, tobesaved do
+                list[data.category or "unknown"][tag] = totable(data)
+            end
+        else
+            for tag, data in next, tobesaved do
+                list[tag] = totable(data,data.category)
+            end
         end
         report("%s entries from dataset %a saved in %a",n,dataset,filename)
         table.save(filename,list)
@@ -1200,6 +1209,7 @@ do
         local filename  = specification.filename
         local filetype  = specification.filetype
         local criterium = specification.criterium
+        local options   = settings_to_hash(specification.options or "")
         statistics.starttiming(publications)
         if not filename or filename == "" then
             report("no filename for saving given")
@@ -1229,7 +1239,7 @@ do
                     end
                 end
             end
-            saver(dataset,filename,tobesaved)
+            saver(dataset,filename,tobesaved,options)
         else
             report("unknown format %a for saving %a",filetype,dataset)
         end
@@ -1250,6 +1260,7 @@ do
                     { "filename" },
                     { "filetype" },
                     { "criterium" },
+                    { "options" },
                 }
             }
         }

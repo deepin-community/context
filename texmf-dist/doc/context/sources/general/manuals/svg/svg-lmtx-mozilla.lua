@@ -362,4 +362,148 @@ return {
           <circle cx="60" cy="110" r="3" fill="red" />
         </svg>
     ]],
+    -- https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Gradients
+    [[
+        <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="gradient" x1="0%" y1="0%" x2="0" y2="100%">
+              <stop offset="0%" style="stop-color:skyblue;" />
+              <stop offset="100%" style="stop-color:seagreen;" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="100%" height="100%" fill="url(#gradient)" />
+          <circle cx="50" cy="50" r="40" fill="black" />
+          <circle cx="150" cy="50" r="40" fill="black" opacity="0.3" />
+        </svg>
+    ]],
+    [==[
+        <svg width="120" height="240" version="1.1" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+              <linearGradient id="Gradient1">
+                <stop class="stop1" offset="0%"/>
+                <stop class="stop2" offset="50%"/>
+                <stop class="stop3" offset="100%"/>
+              </linearGradient>
+              <linearGradient id="Gradient2" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="red"/>
+                <stop offset="50%" stop-color="black" stop-opacity="0"/>
+                <stop offset="100%" stop-color="blue"/>
+              </linearGradient>
+              <style type="text/css">
+                #rect1 { fill: url(#Gradient1); }
+                .stop1 { stop-color: red; }
+                .stop2 { stop-color: black; stop-opacity: 0; }
+                .stop3 { stop-color: blue; }
+              </style>
+          </defs>
+          <rect id="rect1" x="10" y="10" rx="15" ry="15" width="100" height="100"/>
+          <rect x="10" y="120" rx="15" ry="15" width="100" height="100" fill="url(#Gradient2)"/>
+        </svg>
+    ]==],
+    [[
+        <svg width="120" height="240" version="1.1" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+              <radialGradient id="RadialGradient1">
+                <stop offset="0%" stop-color="red"/>
+                <stop offset="100%" stop-color="blue"/>
+              </radialGradient>
+              <radialGradient id="RadialGradient2" cx="0.25" cy="0.25" r="0.25">
+                <stop offset="0%" stop-color="red"/>
+                <stop offset="100%" stop-color="blue"/>
+              </radialGradient>
+          </defs>
+          <rect x="10" y="10" rx="15" ry="15" width="100" height="100" fill="url(#RadialGradient1)"/>
+          <rect x="10" y="120" rx="15" ry="15" width="100" height="100" fill="url(#RadialGradient2)"/>
+        </svg>
+    ]],
+    [[
+        <svg width="120" height="120" version="1.1"
+          xmlns="http://www.w3.org/2000/svg">
+          <defs>
+              <radialGradient id="Gradient"
+                    cx="0.5" cy="0.5" r="0.5" fx="0.25" fy="0.25">
+                <stop offset="0%" stop-color="red"/>
+                <stop offset="100%" stop-color="blue"/>
+              </radialGradient>
+          </defs>
+          <rect x="10" y="10" rx="15" ry="15" width="100" height="100" fill="url(#Gradient)" stroke="black" stroke-width="2"/>
+          <circle cx="60" cy="60" r="50" fill="transparent" stroke="white" stroke-width="2"/>
+          <circle cx="35" cy="35" r="2" fill="white" stroke="white"/>
+          <circle cx="60" cy="60" r="2" fill="white" stroke="white"/>
+          <text x="38" y="40" fill="white" font-family="sans-serif" font-size="10pt">(fx,fy)</text>
+          <text x="63" y="63" fill="white" font-family="sans-serif" font-size="10pt">(cx,cy)</text>
+        </svg>
+    ]],
+    [[
+        <svg width="220" height="220" version="1.1" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+              <radialGradient id="GradientPad"
+                    cx="0.5" cy="0.5" r="0.4" fx="0.75" fy="0.75"
+                    spreadMethod="pad">
+                <stop offset="0%" stop-color="red"/>
+                <stop offset="100%" stop-color="blue"/>
+              </radialGradient>
+              <radialGradient id="GradientRepeat"
+                    cx="0.5" cy="0.5" r="0.4" fx="0.75" fy="0.75"
+                    spreadMethod="repeat">
+                <stop offset="0%" stop-color="red"/>
+                <stop offset="100%" stop-color="blue"/>
+              </radialGradient>
+              <radialGradient id="GradientReflect"
+                    cx="0.5" cy="0.5" r="0.4" fx="0.75" fy="0.75"
+                    spreadMethod="reflect">
+                <stop offset="0%" stop-color="red"/>
+                <stop offset="100%" stop-color="blue"/>
+              </radialGradient>
+          </defs>
+          <rect x="10" y="10" rx="15" ry="15" width="100" height="100" fill="url(#GradientPad)"/>
+          <rect x="10" y="120" rx="15" ry="15" width="100" height="100" fill="url(#GradientRepeat)"/>
+          <rect x="120" y="120" rx="15" ry="15" width="100" height="100" fill="url(#GradientReflect)"/>
+          <text x="15" y="30" fill="white" font-family="sans-serif" font-size="12pt">Pad</text>
+          <text x="15" y="140" fill="white" font-family="sans-serif" font-size="12pt">Repeat</text>
+          <text x="125" y="140" fill="white" font-family="sans-serif" font-size="12pt">Reflect</text>
+        </svg>
+    ]],
+    [[
+        <svg viewBox="0 0 80 20" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+          <symbol id="myDot" width="10" height="10" viewBox="0 0 2 2">
+            <circle cx="1" cy="1" r="1" />
+          </symbol>
+          <path d="M0,10 h80 M10,0 v20 M25,0 v20 M40,0 v20 M55,0 v20 M70,0 v20" fill="none" stroke="pink" />
+          <use xlink:href="#myDot" x="5"  y="5" style="opacity:1.0" />
+          <use xlink:href="#myDot" x="20" y="5" style="opacity:0.8" />
+          <use xlink:href="#myDot" x="35" y="5" style="opacity:0.6" />
+          <use xlink:href="#myDot" x="50" y="5" style="opacity:0.4" />
+          <use xlink:href="#myDot" x="65" y="5" style="opacity:0.2" />
+        </svg>
+    ]],
+    [[
+        <svg width="200" height="250" version="1.1" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="10" width="30" height="30" stroke="black" fill="transparent" stroke-width="5"/>
+          <rect x="60" y="10" rx="10" ry="10" width="30" height="30" stroke="black" fill="transparent" stroke-width="5"/>
+          <circle cx="25" cy="75" r="20" stroke="red" fill="transparent" stroke-width="5"/>
+          <ellipse cx="75" cy="75" rx="20" ry="5" stroke="red" fill="transparent" stroke-width="5"/>
+          <line x1="10" x2="50" y1="110" y2="150" stroke="orange" stroke-width="5"/>
+          <polyline points="60 110 65 120 70 115 75 130 80 125 85 140 90 135 95 150 100 145" stroke="orange" fill="transparent" stroke-width="5"/>
+          <polygon points="50 160 55 180 70 180 60 190 65 205 50 195 35 205 40 190 30 180 45 180" stroke="green" fill="transparent" stroke-width="5"/>
+          <path d="M20,230 Q40,205 50,230 T90,230" fill="none" stroke="blue" stroke-width="5"/>
+        </svg>
+    ]],
+    [[
+        <svg viewBox="0 0 420 200" xmlns="http://www.w3.org/2000/svg">
+          <radialGradient id="gradient1" gradientUnits="userSpaceOnUse" cx="100" cy="100" r="100" fx="100" fy="100">
+            <stop offset="0%" stop-color="darkblue" />
+            <stop offset="50%" stop-color="skyblue" />
+            <stop offset="100%" stop-color="darkblue" />
+          </radialGradient>
+          <radialGradient id="gradient2" gradientUnits="userSpaceOnUse" cx="100" cy="100" r="100" fx="100" fy="100" gradientTransform="skewX(20) translate(-35, 0)">
+            <stop offset="0%" stop-color="darkblue" />
+            <stop offset="50%" stop-color="skyblue" />
+            <stop offset="100%" stop-color="darkblue" />
+          </radialGradient>
+          <rect x="0" y="0" width="200" height="200" fill="url(#gradient1)" />
+          <xrect x="0" y="0" width="200" height="200" fill="url(#gradient2)" style="transform: translateX(220px);" />
+          <rect x="0" y="0" width="200" height="200" fill="url(#gradient2)" transform="translateX(220px)" />
+        </svg>
+    ]],
 }

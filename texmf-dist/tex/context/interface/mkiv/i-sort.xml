@@ -74,6 +74,12 @@
                 <cd:parameter name="synonymcolor">
                     <cd:constant type="cd:color"/>
                 </cd:parameter>
+                <cd:parameter name="before">
+                    <cd:constant type="cd:command"/>
+                </cd:parameter>
+                <cd:parameter name="after">
+                    <cd:constant type="cd:command"/>
+                </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
@@ -133,7 +139,7 @@
         </cd:instances>
     </cd:command>
 
-    <cd:command name="doifelsecurrentsortingused" level="system" category="language conditional" file="strc-syn.mkiv">
+    <cd:command name="doifelsecurrentsortingused" level="system" category="language" keywords="conditional" file="strc-syn.mkiv">
         <cd:arguments>
             <cd:resolve name="argument-true"/>
             <cd:resolve name="argument-false"/>
@@ -170,32 +176,5 @@
             </cd:assignments>
         </cd:arguments>
     </cd:command>
-
-    <!--
-
-        <cd:command name="logo" level="document" category="language" file="strc-syn.mkiv">
-            <cd:arguments>
-                <cd:resolve name="keyword-name-optional"/>
-                <cd:content/>
-            </cd:arguments>
-        </cd:command>
-
-        <cd:command name="placelistoflogos" level="document" category="language" file="strc-syn.mkiv">
-            <cd:arguments>
-                <cd:assignments list="yes" optional="yes">
-                    <cd:inherit name="setupsorting"/>
-                </cd:assignments>
-            </cd:arguments>
-        </cd:command>
-
-        <cd:command name="completelistoflogos" level="document" category="language" file="strc-syn.mkiv">
-            <cd:arguments>
-                <cd:assignments list="yes" optional="yes">
-                    <cd:inherit name="setupsorting"/>
-                </cd:assignments>
-            </cd:arguments>
-        </cd:command>
-
-    -->
 
 </cd:interface>

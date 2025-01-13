@@ -78,9 +78,10 @@ local resolveprefix     = resolvers.resolve
 local texgetbox         = tex.getbox
 local texsetbox         = tex.setbox
 
-local hpack             = node.hpack
+local hpack             = nodes.hpack
 
 local new_latelua       = nodes.pool.latelua
+local new_hlist         = nodes.pool.hlist
 
 local context           = context
 
@@ -554,6 +555,11 @@ function figures.setpaths(locationset,pathlist)
             end
         end
     end
+    -- new
+    if environment.arguments.path then
+        table.insert(t,1,environment.arguments.path)
+    end
+    --
     figure_paths  = t
     last_pathlist = pathlist
     figures.paths = figure_paths
@@ -587,6 +593,7 @@ local function new() -- we could use metatables status -> used -> request but it
         controls   = false,
         display    = false,
         mask       = false,
+        crop       = false,
         conversion = false,
         resolution = false,
         color      = false,
@@ -703,11 +710,11 @@ implement { name = "figurestatus",   actions = { get, context }, arguments = { "
 implement { name = "figurerequest",  actions = { get, context }, arguments = { "'request'", "string", "string" } }
 implement { name = "figureused",     actions = { get, context }, arguments = { "'used'",    "string", "string" } }
 
-implement { name = "figurefilepath", actions = { get, file.dirname,  context }, arguments = { "'used'", "'fullname'" } }
-implement { name = "figurefilename", actions = { get, file.nameonly, context }, arguments = { "'used'", "'fullname'" } }
-implement { name = "figurefiletype", actions = { get, file.extname,  context }, arguments = { "'used'", "'fullname'" } }
+implement { name = "figurefilepath", public = true, actions = { get, file.dirname,  context }, arguments = { "'used'", "'fullname'" } }
+implement { name = "figurefilename", public = true, actions = { get, file.nameonly, context }, arguments = { "'used'", "'fullname'" } }
+implement { name = "figurefiletype", public = true, actions = { get, file.extname,  context }, arguments = { "'used'", "'fullname'" } }
 
-implement { name = "figuresetdimensions", actions = setdimensions, arguments = { "integer" } }
+implement { name = "figuresetdimensions", actions = setdimensions, arguments = "integer" }
 
 -- todo: local path or cache path
 
@@ -766,18 +773,20 @@ local function register(askedname,specification)
             local conversion = wipe(specification.conversion)
             local resolution = wipe(specification.resolution)
             local arguments  = wipe(specification.arguments)
+            local crop       = wipe(specification.crop)
             local newformat  = conversion
             if not newformat or newformat == "" then
                 newformat = defaultformat
             end
             if trace_conversion then
-                report_inclusion("checking conversion of %a, fullname %a, old format %a, new format %a, conversion %a, resolution %a, arguments %a",
+                report_inclusion("checking conversion of %a, fullname %a, old format %a, new format %a, conversion %a, resolution %a, crop %a, arguments %a",
                     askedname,
                     specification.fullname,
                     format,
                     newformat,
                     conversion or "default",
                     resolution or "default",
+                    crop       or "default",
                     arguments  or ""
                 )
             end
@@ -793,7 +802,7 @@ local function register(askedname,specification)
                 end
             end
             -- end of quick hack
-            local converter = (not remapper) and (newformat ~= format or resolution or arguments) and converters[format]
+            local converter = (not remapper) and (newformat ~= format or resolution or arguments) and converters[format] -- no crop here
             if converter then
                 local okay = converter[newformat]
                 if okay then
@@ -813,6 +822,10 @@ local function register(askedname,specification)
                 local oldname = specification.fullname
                 local newpath = file.dirname(oldname)
                 local oldbase = file.basename(oldname)
+                local runpath = environment.arguments.runpath
+                if runpath and runpath ~= "" and newpath == environment.arguments.path then
+                    newpath = runpath
+                end
                 --
                 -- problem: we can have weird filenames, like a.b.c (no suffix) and a.b.c.gif
                 -- so we cannot safely remove a suffix (unless we do that for known suffixes)
@@ -853,6 +866,10 @@ local function register(askedname,specification)
                 if arguments then
                     hash = hash .. "[a:" .. arguments .. "]"
                 end
+                if crop then
+                    hash = hash .. "[c:" .. crop .. "]"
+                end
+                newbase = gsub(newbase,"%.","_") -- nicer to have no suffix in the name
                 if hash ~= "" then
                     newbase = newbase .. "_" .. md5.hex(hash)
                 end
@@ -877,7 +894,7 @@ local function register(askedname,specification)
                     if trace_conversion then
                         report_inclusion("converting %a (%a) from %a to %a",askedname,oldname,format,newformat)
                     end
-                    converter(oldname,newname,resolution or "", arguments or "")
+                    converter(oldname,newname,resolution or "", arguments or "",specification) -- in retrospect a table
                 else
                     if trace_conversion then
                         report_inclusion("no need to convert %a (%a) from %a to %a",askedname,oldname,format,newformat)
@@ -971,10 +988,12 @@ local function locate(request) -- name, format, cache
     local askedconversion = request.conversion
     local askedresolution = request.resolution
     local askedarguments  = request.arguments
+    local askedcrop       = request.crop
     local askedhash       = f_hash_part(
         askedname,
         askedconversion or "default",
         askedresolution or "default",
+        askedcrop       or "default",
         askedarguments  or ""
     )
     local foundname       = figures_found[askedhash]
@@ -1029,6 +1048,7 @@ local function locate(request) -- name, format, cache
                 cache      = askedcache,
                 conversion = askedconversion,
                 resolution = askedresolution,
+                crop       = askedcrop,
                 arguments  = askedarguments,
             })
         end
@@ -1066,6 +1086,7 @@ local function locate(request) -- name, format, cache
                     conversion = askedconversion,
                     resolution = askedresolution,
                     arguments  = askedarguments,
+                    crop       = askedcrop,
                     internal   = internal,
                 })
             elseif quitscanning then
@@ -1086,6 +1107,7 @@ local function locate(request) -- name, format, cache
                     cache      = askedcache,
                     conversion = askedconversion,
                     resolution = askedresolution,
+                    crop       = askedcrop,
                     arguments  = askedarguments,
                 })
             end
@@ -1105,6 +1127,7 @@ local function locate(request) -- name, format, cache
                         cache      = askedcache,
                         conversion = askedconversion,
                         resolution = askedresolution,
+                        crop       = askedcrop,
                         arguments  = askedarguments,
                     })
                 end
@@ -1119,6 +1142,7 @@ local function locate(request) -- name, format, cache
                         cache      = askedcache,
                         conversion = askedconversion,
                         resolution = askedresolution,
+                        crop       = askedcrop,
                         arguments  = askedarguments,
                     })
                 end
@@ -1143,6 +1167,7 @@ local function locate(request) -- name, format, cache
                         cache      = askedcache,
                         conversion = askedconversion,
                         resolution = askedresolution,
+                        crop       = askedcrop,
                         arguments  = askedarguments,
                     })
                 end
@@ -1178,6 +1203,7 @@ local function locate(request) -- name, format, cache
                                     cache      = askedcache,
                                     conversion = askedconversion,
                                     resolution = askedresolution,
+                                    crop       = askedcrop,
                                     arguments  = askedarguments
                                 })
                             end
@@ -1206,6 +1232,7 @@ local function locate(request) -- name, format, cache
                                 cache      = askedcache,
                                 conversion = askedconversion,
                                 resolution = askedresolution,
+                                crop       = askedcrop,
                                 arguments  = askedarguments,
                             })
                         end
@@ -1231,6 +1258,7 @@ local function locate(request) -- name, format, cache
                             cache      = askedcache,
                             conversion = askedconversion,
                             resolution = askedresolution,
+                            crop       = askedcrop,
                             arguments  = askedarguments,
                         })
                     end
@@ -1241,6 +1269,7 @@ local function locate(request) -- name, format, cache
     return register(askedname, { -- these two are needed for hashing 'found'
         conversion = askedconversion,
         resolution = askedresolution,
+        crop       = askedcrop,
         arguments  = askedarguments,
     })
 end
@@ -1373,11 +1402,10 @@ end
 function figures.dummy(data)
     data = data or callstack[#callstack] or lastfiguredata
     local dr, du, nr = data.request, data.used, figures.boxnumber
-    local box  = hpack(node.new("hlist")) -- we need to set the dir (luatex 0.60 buglet)
+    local box  = hpack(new_hlist()) -- we need to set the dir (luatex 0.60 buglet)
     du.width   = du.width  or figures.defaultwidth
     du.height  = du.height or figures.defaultheight
     du.depth   = du.depth  or figures.defaultdepth
- -- box.dir    = "TLT"
     box.width  = du.width
     box.height = du.height
     box.depth  = du.depth
@@ -1456,6 +1484,7 @@ function checkers.generic(data)
     local size          = dr.size or "crop"
     local color         = dr.color or "natural"
     local mask          = dr.mask or "none"
+    local crop          = dr.crop or "none"
     local conversion    = dr.conversion
     local resolution    = dr.resolution
     local arguments     = dr.arguments
@@ -1477,6 +1506,7 @@ function checkers.generic(data)
         size,
         color,
         mask,
+        crop,
         conversion,
         resolution,
         arguments
@@ -2072,6 +2102,7 @@ implement {
             { "preview" },
             { "display" },
             { "mask" },
+            { "crop" },
             { "conversion" },
             { "resolution" },
             { "color" },

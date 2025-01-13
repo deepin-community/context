@@ -38,7 +38,7 @@ local getnucleus        = nuts.getnucleus
 local getsub            = nuts.getsub
 local getsup            = nuts.getsup
 
-local set_attributes    = nuts.setattributes
+local setattributes     = nuts.setattributes
 
 local nextnode          = nuts.traversers.node
 
@@ -52,7 +52,7 @@ local subbox_code       = nodecodes.subbox         -- attr list
 local submlist_code     = nodecodes.submlist       -- attr list
 local mathchar_code     = nodecodes.mathchar       -- attr fam char
 local mathtextchar_code = nodecodes.mathtextchar   -- attr fam char
-local delim_code        = nodecodes.delim          -- attr small_fam small_char large_fam large_char
+local delimiter_code    = nodecodes.delimiter      -- attr small_fam small_char large_fam large_char
 local style_code        = nodecodes.style          -- attr style
 local choice_code       = nodecodes.choice         -- attr display text script scriptscript
 local fence_code        = nodecodes.fence          -- attr subtype
@@ -99,7 +99,6 @@ local chardata          = characters.data
 local getmathcodes      = tex.getmathcodes
 local mathcodes         = mathematics.codes
 local ordinary_mathcode = mathcodes.ordinary
-local variable_mathcode = mathcodes.variable
 
 local fromunicode16     = fonts.mappings.fromunicode16
 local fontcharacters    = fonts.hashes.characters
@@ -226,7 +225,7 @@ process = function(start) -- we cannot use the processor as we have no finalizer
                 local char = getchar(start)
                 local code = getmathcodes(char)
                 local tag
-                if code == ordinary_mathcode or code == variable_mathcode then
+                if code == ordinary_mathcode then
                     local ch = chardata[char]
                     local mc = ch and ch.mathclass
                     if mc == "number" then
@@ -259,7 +258,7 @@ process = function(start) -- we cannot use the processor as we have no finalizer
                 stop_tagged()
              -- showtag(start,id,false)
                 break
-            elseif id == delim_code then
+            elseif id == delimiter_code then
                 -- check for code
                 setattr(start,a_tagged,start_tagged("mo"))
                 stop_tagged()
@@ -297,7 +296,7 @@ process = function(start) -- we cannot use the processor as we have no finalizer
                                 -- empty list
                             elseif not attr then
                                 -- box comes from strange place
-                                set_attributes(list,a_tagged,text) -- only the first node ?
+                                setattributes(list,a_tagged,text) -- only the first node ?
                             else
                                 -- Beware, the first node in list is the actual list so we definitely
                                 -- need to nest. This approach is a hack, maybe I'll make a proper
@@ -390,13 +389,13 @@ process = function(start) -- we cannot use the processor as we have no finalizer
                                 setattr(start,a_tagged,start_tagged("mrow"))
                                 process(list)
                                 stop_tagged()
-                            elseif actionstack[#actionstack] == action then
+                            elseif actionstack[#actionstack] == detail then
                                 setattr(start,a_tagged,start_tagged("mrow"))
                                 process(list)
                                 stop_tagged()
                             else
-                                insert(actionstack,action)
-                                setattr(start,a_tagged,start_tagged("mrow",{ detail = action }))
+                                insert(actionstack,detail)
+                                setattr(start,a_tagged,start_tagged("mrow",{ detail = detail }))
                                 process(list)
                                 stop_tagged()
                                 remove(actionstack)

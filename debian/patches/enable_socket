@@ -1,0 +1,22 @@
+--- context.orig/texmf-dist/scripts/context/lua/mtxrun.lua
++++ context/texmf-dist/scripts/context/lua/mtxrun.lua
+@@ -25855,7 +25855,8 @@
+  end
+  return concat(flags," ")
+ end
+-local template=[[--ini %primaryflags% --lua=%luafile% %texfile% %secondaryflags% %redirect%]]
++-- local template=[[--ini %primaryflags% --lua=%luafile% %texfile% %secondaryflags% %redirect%]]
++local template=[[--ini %primaryflags% --socket --shell-escape --lua=%luafile% %texfile% %secondaryflags% %redirect%]]
+ local checkers={
+  primaryflags="verbose",
+  secondaryflags="verbose",
+@@ -25990,7 +25991,8 @@
+  report_format()
+  lfs.chdir(startupdir)
+ end
+-local template=[[%primaryflags% --fmt=%fmtfile% --lua=%luafile% %texfile% %secondaryflags%]]
++-- local template=[[%primaryflags% --fmt=%fmtfile% --lua=%luafile% %texfile% %secondaryflags%]]
++local template=[[%primaryflags% --socket --shell-escape --fmt=%fmtfile% --lua=%luafile% %texfile% %secondaryflags%]]
+ local checkers={
+  primaryflags="verbose",
+  secondaryflags="verbose",

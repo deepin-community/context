@@ -1,4 +1,4 @@
-% language=uk
+% language=us engine=luatex runpath=texruns:manuals/luatex
 
 \environment luatex-style
 
@@ -129,6 +129,20 @@ sections:
 \NC \lpr {Udelimiterunder} \NC 0 + 0--FF + 10FFFF   \NC \NR
 \LL
 \stoptabulate
+
+Instead of the pseudo class variable (7) you can use a family number as signal
+for using the current family. This permits classifying characters with a class
+and still let the family adapt. The trigger family is set with \lpr
+{variablefam}. So:
+
+\starttyping
+\variablefam"24
+\Umathchardef\foo "3 "24 123
+\foo \fam9
+\stoptyping
+
+Results in a curly left brace taken from family 9 with class \quote {relation}
+and spacing around it will be accordingly.
 
 \stopsection
 
@@ -754,6 +768,11 @@ to fully control spacing. Therefore \LUATEX\ comes with a new directive: \lpr
 \LL
 \stoptabulate
 
+By default the short skip detection is not adapted to r2l typesetting and that
+hasn't been the case since the start of the project. Changing it could break
+hacks that users came up with but when you set \lpr {matheqdirmode} to a positive
+value direction will be taken into account.
+
 \subsection {Nolimit correction}
 
 \topicindex {math+limits}
@@ -769,13 +788,13 @@ right end. The question is: how often is this implemented, and if so, do the
 kerns assume correction too. Anyway, with this parameter one can control it.
 
 \starttabulate[|l|ck1|ck1|ck1|ck1|ck1|ck1|]
-    \NC
-        \NC \mathnolimitsmode0    $\displaystyle\int\nolimits^0_1$
-        \NC \mathnolimitsmode1    $\displaystyle\int\nolimits^0_1$
-        \NC \mathnolimitsmode2    $\displaystyle\int\nolimits^0_1$
-        \NC \mathnolimitsmode3    $\displaystyle\int\nolimits^0_1$
-        \NC \mathnolimitsmode4    $\displaystyle\int\nolimits^0_1$
-        \NC \mathnolimitsmode8000 $\displaystyle\int\nolimits^0_1$
+    \NC % probably not ok, we need a raw int here
+        \NC \mathnolimitsmode0    $\displaystyle\mathop{\normalint}\nolimits^0_1$
+        \NC \mathnolimitsmode1    $\displaystyle\mathop{\normalint}\nolimits^0_1$
+        \NC \mathnolimitsmode2    $\displaystyle\mathop{\normalint}\nolimits^0_1$
+        \NC \mathnolimitsmode3    $\displaystyle\mathop{\normalint}\nolimits^0_1$
+        \NC \mathnolimitsmode4    $\displaystyle\mathop{\normalint}\nolimits^0_1$
+        \NC \mathnolimitsmode8000 $\displaystyle\mathop{\normalint}\nolimits^0_1$
     \NC \NR
     \TB
     \BC mode
@@ -817,9 +836,9 @@ experimenting.
 \topicindex {math+italics}
 
 The \lpr {mathitalicsmode} parameter can be set to~1 to force italic correction
-before noads that represent some more complex structure (read: everything
-that is not an ord, bin, rel, open, close, punct or inner). We show a Cambria
-example.
+before noads that represent some more complex structure (read: everything that is
+not an ord, bin, rel, open, close, punct or inner). A value of~2 will enforce the
+old school font code path for all italics. We show a Cambria example.
 
 \starttexdefinition Whatever #1
     \NC \type{\mathitalicsmode = #1}
@@ -1242,6 +1261,31 @@ $\Uhextensible width 1pt middle 0 "2194$
 font metrics are involved we have a different code path for traditional fonts end
 \OPENTYPE\ fonts.
 
+Sometimes you might want to act upon the size of a delimiter, something that is
+not really possible because of the fact that they are calculated {\em after} most
+has been typeset already. In the following example the all|-|zero specification
+is the trigger to make a fake box with the last delimiter dimensions and shift.
+It's an ugly hack but its relative simple and not intrusive implementation has no
+side effects. Any other heuristic solution would not satisfy possible demands
+anyway. Here is a rather low level example:
+
+\startbuffer
+\startformula
+\Uleft  \Udelimiter 5 0 "222B
+\frac{\frac{a}{b}}{\frac{c}{d}}
+\Uright \Udelimiter 5 0 "222B
+\kern-2\fontcharwd\textfont0 "222B
+\mathlimop{\Uvextensible \Udelimiter 0 0 0}_1^2 x
+\stopformula
+\stopbuffer
+
+\typebuffer
+
+The last line, by passing zero values, results in a fake operator that has the
+dimensions of the previous delimiter. We can then backtrack over the (presumed)
+width and the two numbers become limit operators. As said, it's not pretty but it
+works.
+
 \subsection{Fractions}
 
 \topicindex {math+fractions}
@@ -1305,6 +1349,9 @@ For Latin Modern the result looks as follows:
         \NR
     \stoptabulate
 \stop
+
+The keyword \type {norule} will hide the rule with the above variants while
+keeping the rule related spacing.
 
 \subsection {Delimiters: \type{\Uleft}, \prm {Umiddle} and \prm {Uright}}
 
@@ -1454,7 +1501,7 @@ $
 $
 \stopbuffer
 
-\typebuffer
+\typebuffer[script]
 
 results in \inlinebuffer[script].
 
@@ -1547,6 +1594,40 @@ Because there are quite some math related parameters and values, it is possible
 to limit tracing. Only when \type {tracingassigns} and|/|or \type
 {tracingrestores} are set to~2 or more they will be traced.
 
+\subsection {Math options with \lpr {mathdefaultsmode}}
+
+This option has been introduced because \LATEX\ developers wanted some of the
+defaults to be different from the ones that were set in stone when we froze
+\LUATEX. The default values are:
+
+\starttabulate[|l|c|c|]
+\DB                 \BC scanning \BC rendering \NC \NR
+\TB
+\NC radical/root    \NC cramped  \NC cramped   \NC \NR
+\NC under delimiter \NC cramped  \NC supstyle  \NC \NR
+\NC over delimiter  \NC cramped  \NC substyle  \NC \NR
+\NC delimiter under \NC cramped  \NC current   \NC \NR
+\NC delimiter over  \NC cramped  \NC current   \NC \NR
+\LL
+\stoptabulate
+
+When \type {\mathdefaultsmode} is larger than zero, we have:
+
+\starttabulate[|l|c|c|]
+\DB                 \BC scanning \BC rendering \NC \NR
+\TB
+\NC radical/root    \NC cramped  \NC cramped   \NC \NR
+\NC under delimiter \NC substyle \NC substyle  \NC \NR
+\NC over delimiter  \NC supstyle \NC supstyle  \NC \NR
+\NC delimiter under \NC current  \NC current   \NC \NR
+\NC delimiter over  \NC cramped  \NC cramped   \NC \NR
+\LL
+\stoptabulate
+
+It is outside the scope of this manual to discuss the rationale behind these
+defaults. The zero values date back from the early times. If needed you can
+explicitly set the style in the content argument.
+
 \subsection {Math options with \lpr {mathoption}}
 
 The logic in the math engine is rather complex and there are often no universal
@@ -1560,7 +1641,7 @@ This option was introduced for testing purposes when the math engine got split
 code paths and it forces the engine to treat new fonts as old ones with respect
 to italic correction etc. There are no guarantees given with respect to the final
 result and unexpected side effects are not seen as bugs as they relate to font
-properties. Ther eis currently only one option:
+properties. There is currently only one option:
 
 \startbuffer
 \mathoption old 1

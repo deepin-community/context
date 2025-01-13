@@ -6,16 +6,13 @@ if not modules then modules = { } end modules ['core-uti'] = {
     license   = "see context related readme files"
 }
 
--- todo: keep track of changes here (hm, track access, and only true when
--- accessed and changed)
-
---[[ldx--
-<p>A utility file has always been part of <l n='context'/> and with
-the move to <l n='luatex'/> we also moved a lot of multi-pass info
-to a <l n='lua'/> table. Instead of loading a <l n='tex'/> based
-utility file under different setups, we now load a table once. This
-saves much runtime but at the cost of more memory usage.</p>
---ldx]]--
+-- A utility file has always been part of ConTeXt and with the move to LuaTeX we
+-- also moved a lot of multi-pass info to a Lua table. Instead of loading a TeX
+-- based utility file under different setups, we now load a table once. This saves
+-- much runtime but at the cost of more memory usage.
+--
+-- In the meantime the overhead is a bit more due to the amount of data being saved
+-- and more agressive compacting.
 
 local math = math
 local format, match = string.format, string.match
@@ -43,17 +40,12 @@ local report_passes  = logs.reporter("job","passes")
 job                  = job or { }
 local job            = job
 
-job.version          = 1.31
+job.version          = 1.32
 job.packversion      = 1.02
 
--- some day we will implement loading of other jobs and then we need
--- job.jobs
-
---[[ldx--
-<p>Variables are saved using in the previously defined table and passed
-onto <l n='tex'/> using the following method. Of course one can also
-directly access the variable using a <l n='lua'/> call.</p>
---ldx]]--
+-- Variables are saved using in the previously defined table and passed onto TeX
+-- using the following method. Of course one can also directly access the variable
+-- using a Lua call.
 
 local savelist, comment = { }, { }
 
@@ -73,10 +65,9 @@ local enabled     = true
 local initialized = false
 
 directives.register("job.save",function(v) enabled = v end)
-----------.register("job.keep",function(v) kept    = v end)
 
-function job.disablesave() -- can be command
-    enabled = false
+function job.disablesave()
+    enabled = false -- for instance called when an error
 end
 
 function job.initialize(loadname,savename)
@@ -89,10 +80,7 @@ function job.initialize(loadname,savename)
         end
         job.load(loadname) -- has to come after structure is defined !
         luatex.registerstopactions(function()
-            if enabled and not status.lasterrorstring or status.lasterrorstring == "" then
-             -- if kept then
-             --     job.keep(loadname) -- could move to mtx-context instead
-             -- end
+            if enabled then
                 job.save(savename)
             end
         end)
@@ -396,37 +384,24 @@ statistics.register("jobdata time",function()
     end
 end)
 
--- statistics.register("callbacks", function()
---     local total, indirect = status.callbacks or 0, status.indirect_callbacks or 0
---     local pages = texgetcount('realpageno') - 1
---     if pages > 1 then
---         return format("direct: %s, indirect: %s, total: %s (%i per page)", total-indirect, indirect, total, total/pages)
---     else
---         return format("direct: %s, indirect: %s, total: %s", total-indirect, indirect, total)
---     end
--- end)
-
-function statistics.callbacks()
+statistics.register("callbacks", function()
     local c_internal = status.callbacks or 0
     local c_file     = status.indirect_callbacks or 0
     local c_direct   = status.direct_callbacks or 0
-    local c_late     = backends.noflatelua() or 0
+    local c_late     = backends.getcallbackstate().count
     local c_function = status.function_callbacks or 0
     local c_total    = c_internal + c_file + c_direct + c_late + c_function
-    local n_pages    = texgetcount('realpageno') - 1
+    local n_pages    = structures.pages.nofpages or 0
     local c_average  = n_pages > 0 and math.round(c_total/n_pages) or 0
-    local s_result   = format (
-        c_average > 0 and "internal: %s, file: %s, direct: %s, late: %s, function %s, total: %s (%s per page)"
-                       or "internal: %s, file: %s, direct: %s, late: %s, function %s, total: %s",
+    local result     = format (
+        "internal: %s, file: %s, direct: %s, late: %s, function %s, total: %s (%s per page)",
         c_internal, c_file, c_direct, c_late, c_function, c_total, c_average
     )
     statistics.callbacks = function()
-        return s_result
+        return result
     end
-    return s_result
-end
-
-statistics.register("callbacks", statistics.callbacks)
+    return result
+end)
 
 statistics.register("randomizer", function()
     if rmethod and rvalue then

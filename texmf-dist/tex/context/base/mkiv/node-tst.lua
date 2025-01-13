@@ -16,11 +16,7 @@ local glue_code                  = nodecodes.glue
 local penalty_code               = nodecodes.penalty
 local kern_code                  = nodecodes.kern
 local glyph_code                 = nodecodes.glyph
-local whatsit_code               = nodecodes.whatsit
-local hlist_code                 = nodecodes.hlist
 
-local leftskip_code              = gluecodes.leftskip
-local rightskip_code             = gluecodes.rightskip
 local abovedisplayshortskip_code = gluecodes.abovedisplayshortskip
 local belowdisplayshortskip_code = gluecodes.belowdisplayshortskip
 
@@ -35,52 +31,16 @@ local getkern                    = nuts.getkern
 local getpenalty                 = nuts.getpenalty
 local getwidth                   = nuts.getwidth
 
-local find_node_tail             = nuts.tail
-
-function nuts.leftmarginwidth(n) -- todo: three values
-    while n do
-        local id = getid(n)
-        if id == glue_code then
-            return getsubtype(n) == leftskip_code and getwidth(n) or 0
-        elseif id == whatsit_code then
-            n = getnext(n)
-        elseif id == hlist_code then
-            return getwidth(n)
-        else
-            break
-        end
-    end
-    return 0
-end
-
-function nuts.rightmarginwidth(n)
-    if n then
-        n = find_node_tail(n)
-        while n do
-            local id = getid(n)
-            if id == glue_code then
-                return getsubtype(n) == rightskip_code and getwidth(n) or 0
-            elseif id == whatsit_code then
-                n = getprev(n)
-            else
-                break
-            end
-        end
-    end
-    return false
-end
-
 function nuts.somespace(n,all)
     if n then
         local id = getid(n)
         if id == glue_code then
             return (all or (getwidth(n) ~= 0)) and glue_code -- temp: or 0
         elseif id == kern_code then
-            return (all or (getkern(n) ~= 0)) and kern
+            return (all or (getkern(n) ~= 0)) and kern_code
         elseif id == glyph_code then
-            local category = chardata[getchar(n)].category
          -- maybe more category checks are needed
-            return (category == "zs") and glyph_code
+            return (chardata[getchar(n)].category == "zs") and glyph_code
         end
     end
     return false

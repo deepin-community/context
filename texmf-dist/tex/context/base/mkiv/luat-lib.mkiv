@@ -19,13 +19,13 @@
 \registerctxluafile{util-sac}{optimize}
 \registerctxluafile{util-sto}{} % could also be done in trac-deb.mkiv
 \registerctxluafile{util-pck}{}
-\registerctxluafile{util-prs}{}
+\registerctxluafile{util-prs}{autosuffix}
 \registerctxluafile{util-fmt}{}
 \registerctxluafile{util-dim}{}
 
 \registerctxluafile{trac-set}{}
-\registerctxluafile{trac-log}{}
-\registerctxluafile{trac-inf}{}
+\registerctxluafile{luat-log}{autosuffix}
+\registerctxluafile{trac-inf}{autosuffix}
 \registerctxluafile{util-lua}{}
 \registerctxluafile{util-deb}{} % could also be done in trac-deb.mkiv
 
@@ -45,9 +45,7 @@
 \registerctxluafile{util-soc-imp-http}   {}
 \registerctxluafile{util-soc-imp-tp}     {}
 
-\ifcase\contextlmtxmode\else
-    \registerctxluafile{util-zip}{}
-\fi
+\registerctxluafile{util-zip}{}
 
 \registerctxluafile{data-ini}{}
 \registerctxluafile{data-exp}{}
@@ -57,13 +55,14 @@
 \registerctxluafile{data-res}{}
 \registerctxluafile{data-inp}{}
 \registerctxluafile{data-out}{}
-\registerctxluafile{data-fil}{} % opener gets overloaded in data-tex
+\registerctxluafile{data-fil}{autosuffix} % opener gets overloaded in data-tex
 
 \registerctxluafile{data-pre}{} % after data-res
 \registerctxluafile{data-bin}{} % before data-tex
 \registerctxluafile{data-tex}{} % after data-pre
 \registerctxluafile{data-vir}{}
 \registerctxluafile{data-zip}{}
+%registerctxluafile{data-tar}{}
 %registerctxluafile{data-crl}{}
 \registerctxluafile{data-sch}{}
 \registerctxluafile{data-tre}{}
@@ -73,13 +72,9 @@
 \registerctxluafile{data-use}{}
 \registerctxluafile{data-aux}{}
 
-% \ifcase\contextlmtxmode
-%     \registerctxluafile{util-lib}{}
-% \fi
-
 \registerctxluafile{luat-cbk}{}
 \registerctxluafile{luat-run}{}
-\registerctxluafile{luat-fio}{}
+\registerctxluafile{luat-fio}{autosuffix}
 \registerctxluafile{luat-cnf}{}
 \registerctxluafile{luat-lua}{}
 \registerctxluafile{luat-sto}{}
@@ -93,14 +88,16 @@
 \registerctxluafile{luat-mac}{}
 %registerctxluafile{luat-prp}{} % for the moment of not much use
 
+\registerctxluafile{util-lib}{}
+
 \registerctxluafile{lxml-tab}{}
 \registerctxluafile{lxml-lpt}{}
 \registerctxluafile{lxml-xml}{}
 \registerctxluafile{lxml-aux}{}
 \registerctxluafile{lxml-mis}{}
 
-\normalprotected\def\writestatus#1#2{\ctxlua{logs.status([==[#1]==],[==[#2]==])}}
-\normalprotected\def\writestring  #1{\ctxlua{logs.writer([==[#1]==],"\string\n")}}
-\normalprotected\def\writeline      {\ctxlua{logs.newline()}}
+\protected\def\writestatus#1#2{\ctxlua{logs.status([==[#1]==],[==[#2]==])}}
+\protected\def\writestring  #1{\ctxlua{logs.writer([==[#1]==],"\string\n")}}
+\protected\def\writeline      {\ctxlua{logs.newline()}}
 
 \endinput

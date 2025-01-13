@@ -1,4 +1,4 @@
-% language=us
+% language=us runpath=texruns:manuals/lowlevel
 
 % I started this series in June 2019 and I bet that it will never be complete or
 % extensive enough. But I'll do my best to make it as useful as possible ConTeXt
@@ -14,6 +14,7 @@
   [document]
   [title=No Title,
    author=No Author,
+   coauthor=,
    color=NoColor]
 
 \setupbodyfont
@@ -43,6 +44,10 @@
   [subsection]
   [style=\bfa,
    color=darkgray]
+
+\setuplist
+  [chapter]
+  [style=bold]
 
 \setupfootertexts
   [section] % [\documentvariable{title}]
@@ -87,17 +92,50 @@
         withcolor "white" ;
 \stopuseMPgraphic
 
+\definesectionlevels
+  [default]
+  [%{chapter,title},
+   {section,subject},
+   {subsection,subsubject},
+   {subsubsection,subsubsubject},
+   {subsubsubsection,subsubsubject},
+   {subsubsubsubsection,subsubsubject}]
+
 \startsetups document:start
 
     \startMPpage
+    StartPage;
         \includeMPgraphic{titlepage} ;
+    StopPage;
     \stopMPpage
 
     \page
 
-    \startsubject[title=Contents]
-        \placelist[section][criterium=previous]
-    \stopsubject
+    \startsubjectlevel[title=Contents]
+        \placelist[chapter,section] [criterium=previous]
+    \stopsubjectlevel
+
+\stopsetups
+
+\startsetups document:stop
+
+\testpage[6]
+
+%startsubjectlevel[title=Colofon]
+\startsectionlevel[title=Colofon,number=no,saveinlist=no]
+
+    \starttabulate
+        \NC Author      \NC Hans Hagen
+                           \doifdocumentvariable{coauthor}{ & \documentvariable{coauthor}}
+                                               \NC \NR
+        \NC \CONTEXT    \NC \contextversion    \NC \NR
+        \NC \LUAMETATEX \NC \texengineversion  \NC \NR
+        \NC Support     \NC www.pragma-ade.com \NC \NR
+        \NC             \NC contextgarden.net  \NC \NR
+    \stoptabulate
+
+\stopsectionlevel
+%stopsubjectlevel
 
 \stopsetups
 

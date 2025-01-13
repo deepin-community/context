@@ -42,17 +42,21 @@ local function initialize(tfmdata,key,value)
         local newwidth   = false
         local newheight  = false
         local newdepth   = false
+        local newshift   = false
         if value == "strut" then
             newheight = gettexdimen("strutht")
             newdepth  = gettexdimen("strutdp")
         elseif value == "mono" then
             newwidth  = emwidth
+        elseif value == "halfmono" then
+            newwidth  = emwidth / 2
         else
             -- there are fonts out there with no x_height ...
             local spec = settings_to_array(value)
             newwidth  = spec[1]
             newheight = spec[2]
             newdepth  = spec[3]
+            newshift  = spec[4]
             local quad      = parameters.quad      or 0
             local ascender  = parameters.ascender  or 0
             local descender = parameters.descender or 0
@@ -85,6 +89,7 @@ local function initialize(tfmdata,key,value)
                 parameters.x_heigth = (ascender + descender) / 2
             end
         end
+        -- todo: hshift too
         if newwidth or newheight or newdepth then
             for unicode, character in next, characters do
                 local oldwidth  = character.width
@@ -95,11 +100,13 @@ local function initialize(tfmdata,key,value)
                 local depth  = newdepth  or olddepth  or 0
                 if oldwidth ~= width or oldheight ~= height or olddepth ~= depth then
                     character.width  = width
+-- character.advance  = oldwidth
                     character.height = height
                     character.depth  = depth
                     if oldwidth ~= width then
+                        -- todo: xoffset
                         local commands = character.commands
-                        local hshift   = rightcommand[(width - oldwidth) / 2]
+                        local hshift   = rightcommand[newshift or ((width - oldwidth) / 2)]
                         if commands then
                             character.commands = prependcommands (
                                 commands,
@@ -129,16 +136,3 @@ local specification = {
 
 registerotffeature(specification)
 registerafmfeature(specification)
-
-local function initialize(tfmdata,value)
-    tfmdata.properties.realdimensions = value and true
-end
-
-registerotffeature {
-    name        = "realdimensions",
-    description = "accept negative dimensions",
-    initializers = {
-        base = initialize,
-        node = initialize,
-    }
-}

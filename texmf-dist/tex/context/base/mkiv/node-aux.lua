@@ -21,8 +21,7 @@ local glyph_code         = nodecodes.glyph
 local hlist_code         = nodecodes.hlist
 local vlist_code         = nodecodes.vlist
 local attributelist_code = nodecodes.attributelist -- temporary
-local localpar_code      = nodecodes.localpar
-local ligatureglyph_code = nodes.glyphcodes.ligature
+local par_code           = nodecodes.par
 
 local nuts               = nodes.nuts
 local tonut              = nuts.tonut
@@ -48,18 +47,17 @@ local setlink            = nuts.setlink
 local setlist            = nuts.setlist
 local setnext            = nuts.setnext
 local setprev            = nuts.setprev
-local setcomponents      = nuts.setcomponents
 local setattrlist        = nuts.setattrlist
 
 local traversers         = nuts.traversers
 local nextnode           = traversers.node
 local nextglyph          = traversers.glyph
 
-local flush_node         = nuts.flush
-local flush_list         = nuts.flush_list
+local flushnode          = nuts.flush
+local flushlist          = nuts.flushlist
 local hpack_nodes        = nuts.hpack
-local unset_attribute    = nuts.unset_attribute
-local first_glyph        = nuts.first_glyph
+local unsetattribute     = nuts.unsetattribute
+local firstglyph         = nuts.firstglyph
 local copy_node          = nuts.copy
 local find_tail          = nuts.tail
 local getbox             = nuts.getbox
@@ -87,7 +85,7 @@ local report_error       = logs.reporter("node-aux:error")
 -- function tex.takebox(id)
 --     local box = tex.getbox(id)
 --     if box then
---         local copy = node.copy(box)
+--         local copy = nodes.copy(box)
 --         local list = box.list
 --         copy.list = list
 --         box.list = nil
@@ -131,7 +129,7 @@ end
 function nuts.takelist(n)
     local l = getlist(n)
     setlist(n)
-    flush_node(n)
+    flushnode(n)
     return l
 end
 
@@ -144,7 +142,7 @@ local function repackhlist(list,...)
     local temp, b = hpack_nodes(list,...)
     list = getlist(temp)
     setlist(temp)
-    flush_node(temp)
+    flushnode(temp)
     return list, b
 end
 
@@ -155,50 +153,59 @@ function nodes.repackhlist(list,...)
     return tonode(list), b
 end
 
-local function set_attributes(head,attr,value)
-    for n, id in nextnode, head do
-        setattr(n,attr,value)
-        if id == hlist_node or id == vlist_node then
-            set_attributes(getlist(n),attr,value)
-        end
-    end
-end
+if not nuts.setattributes then
 
-local function set_unset_attributes(head,attr,value)
-    for n, id in nextnode, head do
-        if not getattr(n,attr) then
+    local function setattributes(head,attr,value)
+        for n, id in nextnode, head do
             setattr(n,attr,value)
-        end
-        if id == hlist_code or id == vlist_code then
-            set_unset_attributes(getlist(n),attr,value)
-        end
-    end
-end
-
-local function unset_attributes(head,attr)
-    for n, id in nextnode, head do
-        setattr(n,attr,unsetvalue)
-        if id == hlist_code or id == vlist_code then
-            unset_attributes(getlist(n),attr)
+            if id == hlist_node or id == vlist_node then
+                setattributes(getlist(n),attr,value)
+            end
         end
     end
+
+    nuts .setattributes = setattributes
+    nodes.setattributes = vianuts(setattributes)
+
 end
 
--- for old times sake
+if not nuts.setunsetattributes then
 
-nuts.setattribute        = nuts.setattr                      nodes.setattribute       = nodes.setattr
-nuts.getattribute        = nuts.getattr                      nodes.getattribute       = nodes.getattr
-nuts.unsetattribute      = nuts.unset_attribute              nodes.unsetattribute     = nodes.unset_attribute
-nuts.has_attribute       = nuts.has_attribute                nodes.has_attribute      = nodes.has_attribute
-nuts.firstglyph          = nuts.first_glyph                  nodes.firstglyph         = nodes.first_glyph
+    local function setunsetattributes(head,attr,value)
+        for n, id in nextnode, head do
+            if not getattr(n,attr) then
+                setattr(n,attr,value)
+            end
+            if id == hlist_code or id == vlist_code then
+                setunsetattributes(getlist(n),attr,value)
+            end
+        end
+    end
 
-nuts.setattributes       = set_attributes                    nodes.setattributes      = vianuts(set_attributes)
-nuts.setunsetattributes  = set_unset_attributes              nodes.setunsetattributes = vianuts(set_unset_attributes)
-nuts.unsetattributes     = unset_attributes                  nodes.unsetattributes    = vianuts(unset_attributes)
+    nuts .setunsetattributes = setunsetattributes
+    nodes.setunsetattributes = vianuts(setunsetattributes)
+
+end
+
+if not nuts.unsetattributes then
+
+    local function unsetattributes(head,attr)
+        for n, id in nextnode, head do
+            setattr(n,attr,unsetvalue)
+            if id == hlist_code or id == vlist_code then
+                unsetattributes(getlist(n),attr)
+            end
+        end
+    end
+
+    nuts .unsetattributes = unsetattributes
+    nodes.unsetattributes = vianuts(unsetattributes)
+
+end
 
 function nuts.firstcharacter(n,untagged) -- tagged == subtype > 255
     if untagged then
-        return first_glyph(n)
+        return firstglyph(n)
     else
         for g in nextglyph ,n do
             return g
@@ -372,7 +379,7 @@ local function rehpack(n,width)
     local set, order, sign = getboxglue(temp)
     setboxglue(n,set,order,sign)
     setlist(temp)
-    flush_node(temp)
+    flushnode(temp)
     return n
 end
 
@@ -382,167 +389,11 @@ function nodes.rehpack(n,...)
     rehpack(tonut(n),...)
 end
 
-if CONTEXTLMTXMODE > 0 then
-
-    local fastcopy = table.fastcopy
-    local getprop  = nuts.getprop
-    local setprop  = nuts.setprop
-
-    local function set_components(base,list)
-        local t = { }
-        local n = 0
-        while list do
-            local char = isglyph(list)
-            if char then
-                n = n + 1
-                t[n] = char
-            end
-            list = getnext(list)
-        end
-        setprop(base,"components",n > 0 and t or false)
-    end
-
-    local function get_components(base)
-        return getprop(base,"components")
-    end
-
-    local function copy_no_components(base)
-        local copy = copy_node(base)
-        setprop(copy,"components",false) -- no metatable lookup!
-        return copy
-    end
-
-    local function copy_only_glyphs(base)
-        local t = getprop(base,"components") -- also metatable
-        if t then
-            return fastcopy(t)
-        end
-    end
-
-    local function do_count(t,marks)
-        local n = 0
-        if t then
-            for i=1,#t do
-                local c = t[i]
-                if type(c) == "table" then
-                    n = n + do_count(t,marks)
-                elseif not marks[c] then
-                    n = n + 1
-                else
-                    --marks don't count
-                end
-            end
-        end
-        return n
-    end
-
-    -- start is a mark and we need to keep that one
-
-    local done = false
-
-    local function count_components(base,marks)
-        local char = isglyph(base)
-        if char then
-            if getsubtype(base) == ligatureglyph_code then
-                if not done then
-                    logs.report("fonts","!")
-                    logs.report("fonts","! check count_components with mkiv !")
-                    logs.report("fonts","!")
-                    done = true
-                end
-                local t = getprop(base,"components")
-                if t then
-                    return do_count(t,marks)
-                end
-            elseif not marks[char] then
-                return 1
-            end
-        end
-        return 0
-    end
-
-    nuts.set_components     = set_components
-    nuts.get_components     = get_components
-    nuts.copy_only_glyphs   = copy_only_glyphs
-    nuts.copy_no_components = copy_no_components
-    nuts.count_components   = count_components
-
-else
-
-    local get_components = node.direct.getcomponents
-    local set_components = node.direct.setcomponents
-
-    local function copy_no_components(g,copyinjection)
-        local components = get_components(g)
-        if components then
-            set_components(g)
-            local n = copy_node(g)
-            if copyinjection then
-                copyinjection(n,g)
-            end
-            set_components(g,components)
-            -- maybe also upgrade the subtype but we don't use it anyway
-            return n
-        else
-            local n = copy_node(g)
-            if copyinjection then
-                copyinjection(n,g)
-            end
-            return n
-        end
-    end
-
-    local function copy_only_glyphs(current)
-        local head     = nil
-        local previous = nil
-        for n in nextglyph, current do
-            n = copy_node(n)
-            if head then
-                setlink(previous,n)
-            else
-                head = n
-            end
-            previous = n
-        end
-        return head
-    end
-
-    -- start is a mark and we need to keep that one
-
-    local function count_components(start,marks)
-        local char = isglyph(start)
-        if char then
-            if getsubtype(start) == ligatureglyph_code then
-                local n = 0
-                local components = get_components(start)
-                while components do
-                    n = n + count_components(components,marks)
-                    components = getnext(components)
-                end
-                return n
-            elseif not marks[char] then
-                return 1
-            end
-        end
-        return 0
-    end
-
-    nuts.set_components     = set_components
-    nuts.get_components     = get_components
-    nuts.copy_only_glyphs   = copy_only_glyphs
-    nuts.copy_no_components = copy_no_components
-    nuts.count_components   = count_components
-
-end
-
-nuts.setcomponents = function() report_error("unsupported: %a","setcomponents") end
-nuts.getcomponents = function() report_error("unsupported: %a","getcomponents") end
-
 do
 
-    local localparcodes = nodes.localparcodes
-    local hmodepar_code = localparcodes.vmode_par
-    local vmodepar_code = localparcodes.hmode_par
+    local parcodes      = nodes.parcodes
+    local hmodepar_code = parcodes.vmode_par
+    local vmodepar_code = parcodes.hmode_par
 
     local getnest       = tex.getnest
     local getsubtype    = nuts.getsubtype
@@ -550,7 +401,7 @@ do
     function nuts.setparproperty(action,...)
         local tail = tonut(getnest().tail)
         while tail do
-            if getid(tail) == localpar_code then
+            if getid(tail) == par_code then
                 local s = getsubtype(tail)
                 if s == hmodepar_code or s == vmodepar_code then
                     return action(tail,...)
@@ -564,17 +415,14 @@ do
 
     local getsubtype = nodes.getsubtype
 
-    function nodes.start_of_par(n)
+    function nodes.startofpar(n)
         local s = getsubtype(n)
         return s == hmodepar_code or s == vmodepar_code
     end
 
 end
 
--- Currently only in luametatex ... experimental anyway .. if it doesn't end
--- up in luatex I'll move this to a different module.
-
-do
+if not nuts.getnormalizedline then
 
     local nextnode           = traversers.glue
     local findfail           = nuts.tail
@@ -583,8 +431,6 @@ do
     local getsubtype         = nuts.getsubtype
     local getlist            = nuts.getlist
     local getwidth           = nuts.getwidth
-
-    local direct             = node.direct
 
     local nodecodes          = nodes.nodecodes
     local skipcodes          = nodes.skipcodes
@@ -599,7 +445,7 @@ do
     local indentskip_code    = skipcodes.indentskip
     local parfillskip_code   = skipcodes.parfillskip
 
-    local find_node = direct.find_node or function(h,t,s)
+    nuts.findnode = node.direct.find_node or function(h,t,s)
         if h then
             if s then
                 for node, subtype in traversers[t] do
@@ -615,16 +461,13 @@ do
         end
     end
 
-    nuts.find_node = find_node
 
-    nodes.getnormalizeline = node.getnormalizeline or function() return 0 end
-    nodes.setnormalizeline = node.setnormalizeline or function()          end
-
-    nuts.getnormalizedline = direct.getnormalizedline or function(h)
+    function nuts.getnormalizedline(h)
         if getid(h) == hlist_code and getsubtype(h) == line_code then
             local ls, rs = 0, 0
             local lh, rh = 0, 0
-            local is, ps = 0, 0
+            local lp, rp = 0, 0
+            local is     = 0
             local h = getlist(h)
             local t = findtail(h)
             for n, subtype in nextglue, h do
@@ -633,241 +476,21 @@ do
                 elseif subtype == lefthangskip_code  then lh = getwidth(n)
                 elseif subtype == righthangskip_code then rh = getwidth(n)
                 elseif subtype == indentskip_code    then is = getwidth(n)
-                elseif subtype == parfillskip_code   then ps = getwidth(n)
+                elseif subtype == parfillskip_code   then rp = getwidth(n)
                 end
             end
-            return ls, rs, lh, rh, is, ps, h, t
+            return {
+                leftskip         = ls,
+                rightskip        = rs,
+                lefthangskip     = lh,
+                righthangskip    = rh,
+                indent           = is,
+                parfillrightskip = rp,
+                parfillleftskip  = lp,
+                head             = h,
+                tail             = t,
+            }
         end
-    end
-
-end
-
-if not nodes.count then
-
-    local type = type
-
-    local direct   = node.direct
-    local todirect = direct.tovaliddirect
-    local tonode   = direct.tonode
-
-    local count  = direct.count
-    local length = direct.length
-    local slide  = direct.slide
-
-    function node.count(id,first,last)
-        return count(id,first and todirect(first), last and todirect(last) or nil)
-    end
-
-    function node.length(first,last)
-        return length(first and todirect(first), last and todirect(last) or nil)
-    end
-
-    function node.slide(n)
-        if n then
-            n = slide(todirect(n))
-            if n then
-                return tonode(n)
-            end
-        end
-        return nil
-    end
-
-    local hyphenating = direct.hyphenating
-    local ligaturing  = direct.ligaturing
-    local kerning     = direct.kerning
-
-    -- kind of inconsistent
-
-    function node.hyphenating(first,last)
-        if first then
-            local h, t = hyphenating(todirect(first), last and todirect(last) or nil)
-            return h and tonode(h) or nil, t and tonode(t) or nil, true
-        else
-            return nil, false
-        end
-    end
-
-    function node.ligaturing(first,last)
-        if first then
-            local h, t = ligaturing(todirect(first), last and todirect(last) or nil)
-            return h and tonode(h) or nil, t and tonode(t) or nil, true
-        else
-            return nil, false
-        end
-    end
-
-    function node.kerning(first,last)
-        if first then
-            local h, t = kerning(todirect(first), last and todirect(last) or nil)
-            return h and tonode(h) or nil, t and tonode(t) or nil, true
-        else
-            return nil, false
-        end
-     end
-
-    local protect_glyph    = direct.protect_glyph
-    local unprotect_glyph  = direct.unprotect_glyph
-    local protect_glyphs   = direct.protect_glyphs
-    local unprotect_glyphs = direct.unprotect_glyphs
-
-    function node.protect_glyphs(first,last)
-        protect_glyphs(todirect(first), last and todirect(last) or nil)
-    end
-
-    function node.unprotect_glyphs(first,last)
-        unprotect_glyphs(todirect(first), last and todirect(last) or nil)
-    end
-
-    function node.protect_glyph(first)
-        protect_glyph(todirect(first))
-    end
-
-    function node.unprotect_glyph(first)
-        unprotect_glyph(todirect(first))
-    end
-
-    local flatten_discretionaries = direct.flatten_discretionaries
-    local check_discretionaries   = direct.check_discretionaries
-    local check_discretionary     = direct.check_discretionary
-
-    function node.flatten_discretionaries(first)
-        local h, count = flatten_discretionaries(todirect(first))
-        return tonode(h), count
-    end
-
-    function node.check_discretionaries(n)
-        check_discretionaries(todirect(n))
-    end
-
-    function node.check_discretionary(n)
-        check_discretionary(todirect(n))
-    end
-
-    local hpack         = direct.hpack
-    local vpack         = direct.vpack
-    local list_to_hlist = direct.mlist_to_hlist
-
-    function node.hpack(head,...)
-        local h, badness = hpack(head and todirect(head) or nil,...)
-        return tonode(h), badness
-    end
-
-    function node.vpack(head,...)
-        local h, badness = vpack(head and todirect(head) or nil,...)
-        return tonode(h), badness
-    end
-
-    function node.mlist_to_hlist(head,...)
-        return tonode(mlist_to_hlist(head and todirect(head) or nil,...))
-    end
-
-    local end_of_math    = direct.end_of_math
-    local find_attribute = direct.find_attribute
-    local first_glyph    = direct.first_glyph
-
-    function node.end_of_math(n)
-        if n then
-            n = end_of_math(todirect(n))
-            if n then
-                return tonode(n)
-            end
-        end
-        return nil
-    end
-
-    function node.find_attribute(n,a)
-        if n then
-            local v, n = find_attribute(todirect(n),a)
-            if n then
-                return v, tonode(n)
-            end
-        end
-        return nil
-    end
-
-    function node.first_glyph(first,last)
-        local n = first_glyph(todirect(first), last and todirect(last) or nil)
-        return n and tonode(n) or nil
-    end
-
-    local dimensions      = direct.dimensions
-    local rangedimensions = direct.rangedimensions
-    local effective_glue  = direct.effective_glue
-
-    function node.dimensions(a,b,c,d,e)
-        if type(a) == "userdata" then
-            a = todirect(a)
-            if type(b) == "userdata" then
-                b = todirect(b)
-            end
-            return dimensions(a,b)
-        else
-            d = todirect(d)
-            if type(e) == "userdata" then
-                e = todirect(e)
-            end
-            return dimensions(a,b,c,d,e)
-        end
-        return 0, 0, 0
-    end
-
-    function node.rangedimensions(parent,first,last)
-        return rangedimenensions(todirect(parent),todirect(first),last and todirect(last))
-    end
-
-    function node.effective_glue(list,parent)
-        return effective_glue(list and todirect(list) or nil,parent and todirect(parent) or nil)
-    end
-
-    local uses_font            = direct.uses_font
-    local has_glyph            = direct.has_glyph
-    local protrusion_skippable = direct.protrusion_skippable
-    local prepend_prevdepth    = direct.prepend_prevdepth
-    local make_extensible      = direct.make_extensible
-
-    function node.uses_font(n,f)
-        return uses_font(todirect(n),f)
-    end
-
-    function node.has_glyph(n)
-        return has_glyph(todirect(n))
-    end
-
-    function node.protrusion_skippable(n)
-        return protrusion_skippable(todirect(n))
-    end
-
-    function node.prepend_prevdepth(n)
-        local n, d = prepend_prevdepth(todirect(n))
-        return tonode(n), d
-    end
-
-    function node.make_extensible(...)
-        local n = make_extensible(...)
-        return n and tonode(n) or nil
-    end
-
-    local last_node = direct.last_node
-
-    function node.last_node()
-        local n = last_node()
-        return n and tonode(n) or nil
-    end
-
-    local is_zero_glue = direct.is_zero_glue
-    local getglue      = direct.getglue
-    local setglue      = direct.setglue
-
-    function node.is_zero_glue(n)
-        return is_zero_glue(todirect(n))
-    end
-
-    function node.get_glue(n)
-        return get_glue(todirect(n))
-    end
-
-    function node.set_glue(n)
-        return set_glue(todirect(n))
     end
 
 end

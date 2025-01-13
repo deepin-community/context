@@ -460,6 +460,7 @@ local function preprocessentries(rawdata)
         local processors = rawdata.processors
         local et         = entries.entries
         local kt         = entries.keys
+        local pt         = entries.processors
         local entryproc  = processors and processors.entry
         local pageproc   = processors and processors.page
         local coding     = rawdata.metadata.coding
@@ -483,16 +484,20 @@ local function preprocessentries(rawdata)
             end
             kt = lpegmatch(coding == "xml" and entrysplitter_xml or entrysplitter_tex,k)
         end
+        if not pt then
+            pt = { }
+        end
         --
         entries = { }
         local ok = false
         for k=#et,1,-1 do
             local etk = et[k]
             local ktk = kt[k]
+            local ptk = pt[k]
             if not ok and etk == "" then
                 entries[k] = nil
             else
-                entries[k] = { etk or "", ktk ~= "" and ktk or nil }
+                entries[k] = { etk or "", ktk ~= "" and ktk or false, ptk ~= "" and ptk or false }
                 ok = true
             end
         end
@@ -677,31 +682,33 @@ implement {
                     { "catcodes", "integer" },
                     { "own" },
                     { "xmlroot" },
-                    { "xmlsetup" }
+                    { "xmlsetup" },
                 }
             },
             { "entries", {
                     { "entries", "list" },
                     { "keys", "list" },
+                    { "processors", "list" },
                     { "entry" },
-                    { "key" }
+                    { "key" },
+                    { "processor" },
                 }
             },
             { "references", {
                     { "internal", "integer" },
                     { "section", "integer" },
                     { "view" },
-                    { "label" }
+                    { "label" },
                 }
             },
             { "seeword", {
-                    { "text" }
+                    { "text" },
                 }
             },
             { "processors", {
                     { "entry" },
                     { "key" },
-                    { "page" }
+                    { "page" },
                 }
             },
             { "userdata" },
@@ -1148,7 +1155,12 @@ local function collapsedpage(pages)
         local second_first_last = second_first.references.lastrealpage
         if first_last_last then
             first_last_pn = first_last_last
-            if second_first == second_last and second_first_pn <= first_last_pn then
+            if first_last_pn == second_first_pn then
+                -- 2-3, 3-9 -> 2-9
+                pages[i-1] = { first_first, second_last }
+                remove(pages,i)
+                return true
+            elseif second_first == second_last and second_first_pn <= first_last_pn then
                 -- 2=8, 5 -> 12=8
                 remove(pages,i)
                 return true
@@ -1258,6 +1270,7 @@ function registers.flush(data,options,prefixspec,pagespec)
         while d < #data do
             d = d + 1
             local entry    = data[d]
+-- inspect(entry)
             local metadata = entry.metadata
             local kind     = metadata.kind
             local list     = entry.list
@@ -1266,8 +1279,9 @@ function registers.flush(data,options,prefixspec,pagespec)
                 e[i] = false
             end
             for i=1,maxlevel do
+                local li = list[i]
                 if list[i] then
-                    e[i] = list[i][1]
+                    e[i] = li[1]
                 end
                 if e[i] == done[i] then
                     -- skip
@@ -1309,7 +1323,7 @@ function registers.flush(data,options,prefixspec,pagespec)
                     local processors = entry.processors
                     local internal   = references.internal or 0
                     local seeparent  = references.seeparent or ""
-                    local processor  = processors and processors[1] or ""
+                    local processor  = (li and li[3]) or (processors and processors[1]) or ""
                     -- so, we need to keep e as is (local), or we need local title = e[i] ... which might be
                     -- more of a problem
                     ctx_startregisterentry(0) -- will become a counter

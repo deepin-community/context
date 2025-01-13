@@ -22,17 +22,24 @@ local tokenbits      = tokens.bits
 
 local scanstring     = scanners.string
 local scanargument   = scanners.argument
+local scandelimited  = scanners.delimited  -- lmtx
 local scanverbatim   = scanners.verbatim
 local scantokenlist  = scanners.tokenlist
+local scantoks       = scanners.toks
 local scaninteger    = scanners.integer
+local scancardinal   = scanners.cardinal
 local scannumber     = scanners.number
 local scankeyword    = scanners.keyword
 local scankeywordcs  = scanners.keywordcs
 local scanword       = scanners.word
+local scanletters    = scanners.letters
 local scankey        = scanners.key
 local scancode       = scanners.code
 local scanboolean    = scanners.boolean
 local scandimen      = scanners.dimen
+local scanglue       = scanners.glue
+local scangluevalues = scanners.gluevalues
+local scangluespec   = scanners.gluespec
 local scancsname     = scanners.csname
 
 local todimen        = number.todimen
@@ -113,22 +120,24 @@ local function scantable(t,data)
     if not data then
         data = { }
     end
-    local wrapped = scanopen()
-    while true do
-        local key = scanword()
-        if key then
-            local get = t[key]
-            if get then
-                data[key] = get()
+    if t then
+        local wrapped = scanopen()
+        while true do
+            local key = scanword(true)
+            if key then
+                local get = t[key]
+                if get then
+                    data[key] = get()
+                else
+                    -- catch all we can get
+                end
             else
-                -- catch all we can get
+                break
             end
-        else
-            break
         end
-    end
-    if wrapped then
-        scanclose()
+        if wrapped then
+            scanclose()
+        end
     end
     return data
 end
@@ -165,42 +174,89 @@ function scanners.whd()
     end
 end
 
+-- begin lmtx
+
+local l = utf.byte("[")
+local r = utf.byte("]")
+
+local function scanbracketed()
+    local s = scandelimited(l, r)
+    if s then
+        return s
+    else
+        local readstate = status.getreadstate()
+        report_scan("missing argument in line %i of %a", readstate.linenumber, readstate.filename)
+        return ""
+    end
+end
+
+local function scanoptional()
+    return scandelimited(l, r) or ""
+end
+
+local function scanbracketedasis()
+    return scandelimited(l, r, false)
+end
+
+local function scanargumentasis()
+    return scanargument(false)
+end
+
+scanners.bracketed     = scanbracketed
+scanners.optional      = scanoptional
+scanners.bracketedasis = scanbracketedasis
+scanners.argumentasis  = scanargumentasis
+
+-- end lmtx
+
 local shortcuts = {
-    tokens          = tokens,
-    bits            = tokenbits,
-    open            = open,
-    close           = close,
-    scanners        = scanners,
-    scanstring      = scanstring,
-    scanargument    = scanargument,
-    scanverbatim    = scanverbatim,
-    scantokenlist   = scantokenlist,
-    scaninteger     = scaninteger,
-    scannumber      = scannumber,
-    scantable       = scantable,
-    scankeyword     = scankeyword,
-    scankeywordcs   = scankeywordcs,
-    scanword        = scanword,
- -- scankey         = scankey,
-    scancode        = scancode,
-    scanboolean     = scanboolean,
-    scandimen       = scandimen,
-    scandimension   = scandimen,
-    scanbox         = scanners.box,
-    scanhbox        = scanners.hbox,
-    scanvbox        = scanners.vbox,
-    scanvtop        = scanners.vtop,
-    scanconditional = scanconditional,
-    scanopen        = scanopen,
-    scanclose       = scanclose,
-    scanlist        = scanlist,
-    scancsname      = scancsname,
-    todimen         = todimen,
-    tonumber        = tonumber,
-    tostring        = tostring,
-    toboolean       = toboolean,
-    inspect         = inspect,
-    report          = report_scan,
+    tokens            = tokens,
+    bits              = tokenbits,
+    open              = open,
+    close             = close,
+    scanners          = scanners,
+    scanstring        = scanstring,
+    scanargument      = scanargument,
+    scanverbatim      = scanverbatim,
+    scantokenlist     = scantokenlist,
+    scantoks          = scantoks,
+    scaninteger       = scaninteger,
+    scancardinal      = scancardinal,
+    scannumber        = scannumber,
+    scantable         = scantable, -- not directly useable
+    scankeyword       = scankeyword,
+    scankeywordcs     = scankeywordcs,
+    scanword          = scanword,
+    scanletters       = scanletters,
+ -- scankey           = scankey,
+    scancode          = scancode,
+    scanboolean       = scanboolean,
+    scanglue          = scanglue, -- list
+    scangluespec      = scangluespec,
+    scangluevalues    = scangluevalues,
+    scandimen         = scandimen,
+    scandimension     = scandimen,
+    scanbox           = scanners.box,
+    scanhbox          = scanners.hbox,
+    scanvbox          = scanners.vbox,
+    scanvtop          = scanners.vtop,
+    scanconditional   = scanconditional,
+    scanopen          = scanopen,
+    scanclose         = scanclose,
+    scanlist          = scanlist,
+    scancsname        = scancsname,
+    todimen           = todimen,
+    tonumber          = tonumber,
+    tostring          = tostring,
+    toboolean         = toboolean,
+    inspect           = inspect,
+    report            = report_scan,
+    -- lmtx
+    scandelimited     = scandelimited, -- not directly useable
+    scanbracketed     = scanbracketed,
+    scanoptional      = scanoptional,
+    scanbracketedasis = scanbracketedasis,
+    scanargumentasis  = scanargumentasis,
 }
 
 tokens.shortcuts = shortcuts
@@ -221,21 +277,19 @@ tokens.converters = {
     toglue    = "todimen",
 }
 
--- We could just pickup a keyword but then we really need to make sure
--- that no number follows it when that is the assignment and adding
--- an optional = defeats the gain in speed. Currently we have sources
--- with no spaces (\startcontextdefinitioncode ...) so it fails there.
+-- We could just pickup a keyword but then we really need to make sure that no number
+-- follows it when that is the assignment and adding an optional = defeats the gain
+-- in speed. Currently we have sources with no spaces (\startcontextdefinitioncode
+-- ...) so it fails there.
 --
--- Another drawback is that we then need to use { } instead of ending
--- with \relax (as we can do now) but that is no big deal. It's just
--- that I then need to check the TeX end. More pain than gain and a bit
--- risky too.
+-- Another drawback is that we then need to use { } instead of ending with \relax (as
+-- we can do now) but that is no big deal. It's just that I then need to check the TeX
+-- end. More pain than gain and a bit risky too. Using scanletters works better, but
+-- the gain is only some 10 percent but if we don't have keywords with numbers it might
+-- make sense in the end, some day.
 
 local f_if       = formatters[    "  if scankeywordcs('%s') then data['%s'] = scan%s()"]
 local f_elseif   = formatters["  elseif scankeywordcs('%s') then data['%s'] = scan%s()"]
-
------ f_if       = formatters["  local key = scanword() if key == '' then break elseif key == '%s' then data['%s'] = scan%s()"]
------ f_elseif   = formatters["  elseif key == '%s' then data['%s'] = scan%s()"]
 
 ----- f_if_x     = formatters[    "  if not data['%s'] and scankeywordcs('%s') then data['%s'] = scan%s()"]
 ----- f_elseif_x = formatters["  elseif not data['%s'] and scankeywordcs('%s') then data['%s'] = scan%s()"]
@@ -249,51 +303,22 @@ local f_elseif_c = formatters["  elseif scankeywordcs('%s') then data['%s'] = %s
 local f_scan_c   = formatters["%s(scan%s())"]
 
 -- see above
---
------ f_if_c     = formatters["  local key = scanword() if key == '' then break elseif key == '%s' then data['%s'] = %s(scan%s())"]
------ f_elseif_c = formatters["  elseif k == '%s' then data['%s'] = %s(scan%s())"]
 
-local f_any      = formatters["  else local key = scanword() if key then data[key] = scan%s() else break end end"]
-local f_any_c    = formatters["  else local key = scanword() if key then data[key] = %s(scan%s()) else break end end"]
+local f_any      = formatters["  else local key = scanword(true) if key then data[key] = scan%s() else break end end"]
+local f_any_c    = formatters["  else local key = scanword(true) if key then data[key] = %s(scan%s()) else break end end"]
 local s_done     = "  else break end"
 
-local f_any_all  = formatters["  local key = scanword() if key then data[key] = scan%s() else break end"]
-local f_any_all_c= formatters["  local key = scanword() if key then data[key] = %s(scan%s()) else break end"]
+local f_any_all  = formatters["  local key = scanword(true) if key then data[key] = scan%s() else break end"]
+local f_any_all_c= formatters["  local key = scanword(true) if key then data[key] = %s(scan%s()) else break end"]
 
 local f_table    = formatters["%\nt\nreturn function()\n  local data = { }\n%s\n  return %s\nend\n"]
 local f_sequence = formatters["%\nt\n%\nt\n%\nt\nreturn function()\n    return %s\nend\n"]
+local f_singular = formatters["%\nt\n%\nt\n\nreturn function(%s)\n    return %s\nend\n"]
 local f_simple   = formatters["%\nt\nreturn function()\n    return %s\nend\n"]
 local f_string   = formatters["%q"]
 local f_action_f = formatters["action%s(%s)"]
 local f_action_s = formatters["local action%s = tokens._action[%s]"]
 local f_nested   = formatters["local function scan%s()\n  local data = { }\n%s\n  return data\nend\n"]
-
--- local f_check = formatters[ [[
---   local wrapped = false
---   while true do
---     local c = scancode(open)
---     if c == 123 then
---       wrapped = true
---       break
---     elseif c ~= 32 then
---       break
---     end
---   end
---   while true do
---     ]] .. "%\nt\n" .. [[
---     %s
---   end
---   if wrapped then
---     while true do
---       local c = scancode(close)
---       if c == 125 then
---         break
---       elseif c ~= 32 then
---         break
---       end
---     end
---   end
--- ]] ]
 
 local f_check = formatters[ [[
   local wrapped = scanopen()
@@ -317,6 +342,16 @@ local presets = {
     ["6 strings"] = { "string", "string", "string", "string", "string", "string" },
     ["7 strings"] = { "string", "string", "string", "string", "string", "string", "string" },
     ["8 strings"] = { "string", "string", "string", "string", "string", "string", "string", "string" },
+
+    ["1 argument" ] = { "argument" },
+    ["2 arguments"] = { "argument", "argument" },
+    ["3 arguments"] = { "argument", "argument", "argument" },
+    ["4 arguments"] = { "argument", "argument", "argument", "argument" },
+
+    ["1 integer"]  = { "integer" },
+    ["2 integers"] = { "integer", "integer" },
+    ["3 integers"] = { "integer", "integer", "integer" },
+    ["4 integers"] = { "integer", "integer", "integer", "integer" },
 }
 
 tokens.presets = presets
@@ -331,6 +366,7 @@ function tokens.compile(specification)
         a = { a }
     end
     local code
+    local args
     local function compile(t,nested)
         local done = s_done
         local r = { }
@@ -437,6 +473,23 @@ function tokens.compile(specification)
         else
             return scanners[ti]
         end
+    elseif #t == 0 then
+        if specification.usage == "value" then
+            code = "b"
+            args = "_,b"
+        else
+            code = ""
+            args = ""
+        end
+        if a then
+            tokens._action = a
+            for i=1,#a do
+                code = f_action_f(i,code)
+                n    = n + 1
+                f[n] = f_action_s(i,i)
+            end
+        end
+        code = f_singular(c,f,args,code)
     else
         local r = { }
         local p = { }
@@ -522,7 +575,7 @@ end
 --         { "nature",  "boolean" },
 --         { "escape",  "string" },
 --         { "escape"  },
---     }
+--     },
 --     "boolean",
 -- }
 --

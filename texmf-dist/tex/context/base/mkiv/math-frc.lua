@@ -13,6 +13,7 @@ local variables = interfaces.variables
 
 local v_no      = variables.no
 local v_yes     = variables.yes
+local v_hidden  = variables.hidden
 
 local resolved  = {
     [0x007B] = "\\{",
@@ -35,11 +36,12 @@ local function mathfraction(how,left,right,width)
         else
             context("\\atopwithdelims%s%s",resolved[left],resolved[right])
         end
-    elseif how == v_yes then
+    elseif how == v_yes or how == v_hidden then
+        local norule = how == v_hidden and LUATEXFUNCTIONALITY > 7361 and " norule " or ""
         if left == 0x002E and right == 0x002E then
-            context("\\normalabove%ssp",width)
+            context("\\normalabove%s%s%ssp",norule,width)
         else
-            context("\\abovewithdelims%s%s%ssp",resolved[left],resolved[right],width)
+            context("\\abovewithdelims%s%s%s%s%ssp",norule,resolved[left],resolved[right],width)
         end
     else -- v_auto
         if left == 0x002E and right == 0x002E then

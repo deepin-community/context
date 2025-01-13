@@ -51,70 +51,74 @@ local utfchar = utf.char
 local setmetatable = setmetatable
 local formatters = string.formatters
 
-local directiondata       = characters.directions
-local mirrordata          = characters.mirrors
-local textclassdata       = characters.textclasses
+local directiondata        = characters.directions
+local mirrordata           = characters.mirrors
+local textclassdata        = characters.textclasses
 
-local nuts                = nodes.nuts
+local nuts                 = nodes.nuts
 
-local getnext             = nuts.getnext
-local getid               = nuts.getid
-local getsubtype          = nuts.getsubtype
-local getlist             = nuts.getlist
-local getchar             = nuts.getchar
-local getattr             = nuts.getattr
-local getprop             = nuts.getprop
-local getdirection        = nuts.getdirection
-local isglyph             = nuts.isglyph
+local getnext              = nuts.getnext
+local getprev              = nuts.getprev
+local getid                = nuts.getid
+local getsubtype           = nuts.getsubtype
+local getlist              = nuts.getlist
+local getchar              = nuts.getchar
+local getattr              = nuts.getattr
+local getprop              = nuts.getprop
+local getdirection         = nuts.getdirection
+local isglyph              = nuts.isglyph
 
-local setprop             = nuts.setprop
-local setchar             = nuts.setchar
-local setdirection        = nuts.setdirection
-local setattrlist         = nuts.setattrlist
+local setprop              = nuts.setprop
+local setchar              = nuts.setchar
+local setdirection         = nuts.setdirection
+local setattrlist          = nuts.setattrlist
 
-local properties          = nodes.properties.data
+local properties           = nodes.properties.data
 
-local remove_node         = nuts.remove
-local insert_node_after   = nuts.insert_after
-local insert_node_before  = nuts.insert_before
-local start_of_par        = nuts.start_of_par
+local remove_node          = nuts.remove
+local insertnodeafter      = nuts.insertafter
+local insertnodebefore     = nuts.insertbefore
 
-local nodepool            = nuts.pool
-local new_direction       = nodepool.direction
+local startofpar           = nuts.startofpar
 
-local nodecodes           = nodes.nodecodes
-local gluecodes           = nodes.gluecodes
+local nodepool             = nuts.pool
+local new_direction        = nodepool.direction
 
-local glyph_code          = nodecodes.glyph
-local glue_code           = nodecodes.glue
-local hlist_code          = nodecodes.hlist
-local vlist_code          = nodecodes.vlist
-local math_code           = nodecodes.math
-local dir_code            = nodecodes.dir
-local localpar_code       = nodecodes.localpar
+local nodecodes            = nodes.nodecodes
+local gluecodes            = nodes.gluecodes
 
-local parfillskip_code    = gluecodes.parfillskip
+local glyph_code           = nodecodes.glyph
+local glue_code            = nodecodes.glue
+local hlist_code           = nodecodes.hlist
+local vlist_code           = nodecodes.vlist
+local math_code            = nodecodes.math
+local dir_code             = nodecodes.dir
+local par_code             = nodecodes.par
+local penalty_code         = nodecodes.penalty
 
-local dirvalues           = nodes.dirvalues
-local lefttoright_code    = dirvalues.lefttoright
-local righttoleft_code    = dirvalues.righttoleft
+local parfillskip_code     = gluecodes.parfillskip
+local parfillleftskip_code = gluecodes.parfillleftskip
 
-local maximum_stack       = 0xFF
+local dirvalues            = nodes.dirvalues
+local lefttoright_code     = dirvalues.lefttoright
+local righttoleft_code     = dirvalues.righttoleft
 
-local a_directions        = attributes.private('directions')
+local maximum_stack        = 0xFF
 
-local directions          = typesetters.directions
-local setcolor            = directions.setcolor
-local getfences           = directions.getfences
+local a_directions         = attributes.private('directions')
 
-local remove_controls     = true  directives.register("typesetters.directions.removecontrols",function(v) remove_controls  = v end)
------ analyze_fences      = true  directives.register("typesetters.directions.analyzefences", function(v) analyze_fences   = v end)
+local directions           = typesetters.directions
+local setcolor             = directions.setcolor
+local getfences            = directions.getfences
 
-local report_directions   = logs.reporter("typesetting","directions three")
+local remove_controls      = true  directives.register("typesetters.directions.removecontrols",function(v) remove_controls  = v end)
+----- analyze_fences       = true  directives.register("typesetters.directions.analyzefences", function(v) analyze_fences   = v end)
 
-local trace_directions    = false trackers.register("typesetters.directions",         function(v) trace_directions = v end)
-local trace_details       = false trackers.register("typesetters.directions.details", function(v) trace_details    = v end)
-local trace_list          = false trackers.register("typesetters.directions.list",    function(v) trace_list       = v end)
+local report_directions    = logs.reporter("typesetting","directions three")
+
+local trace_directions     = false trackers.register("typesetters.directions",         function(v) trace_directions = v end)
+local trace_details        = false trackers.register("typesetters.directions.details", function(v) trace_details    = v end)
+local trace_list           = false trackers.register("typesetters.directions.list",    function(v) trace_list       = v end)
 
 -- strong (old):
 --
@@ -413,17 +417,11 @@ end
 local function get_baselevel(head,list,size,direction)
     if direction == lefttoright_code or direction == righttoleft_code then
         return direction, true
-    elseif getid(head) == localpar_code and start_of_par(head) then
+    elseif getid(head) == par_code and startofpar(head) then
         direction = getdirection(head)
         if direction == lefttoright_code or direction == righttoleft_code then
             return direction, true
         end
-    end
-    -- for old times sake we we handle strings too
-    if direction == "TLT" then
-        return lefttoright_code, true
-    elseif direction == "TRT" then
-        return righttoleft_code, true
     end
     -- P2, P3
     for i=1,size do
@@ -601,23 +599,23 @@ local function resolve_weak(list,size,start,limit,orderbefore,orderafter)
     else -- only more efficient when we have es/cs
         local runner = start + 2
         if runner <= limit then
-            local before = list[start]
-            local entry  = list[start + 1]
-            local after  = list[runner]
+            local before  = list[start]
+            local current = list[start + 1]
+            local after   = list[runner]
             while after do
-                local direction = entry.direction
+                local direction = current.direction
                 if direction == "es" then
                     if before.direction == "en" and after.direction == "en" then
-                        entry.direction = "en"
+                        current.direction = "en"
                     end
                 elseif direction == "cs" then
                     local prevdirection = before.direction
                     if prevdirection == "en" then
                         if after.direction == "en" then
-                            entry.direction = "en"
+                            current.direction = "en"
                         end
                     elseif prevdirection == "an" and after.direction == "an" then
-                        entry.direction = "an"
+                        current.direction = "an"
                     end
                 end
                 before  = current
@@ -687,7 +685,8 @@ end
 
 local function resolve_neutral(list,size,start,limit,orderbefore,orderafter)
     -- N1, N2
-    for i=start,limit do
+    local i = start
+    while i <= limit do
         local entry = list[i]
         if b_s_ws_on[entry.direction] then
             -- this needs checking
@@ -949,20 +948,31 @@ local function apply_to_list(list,size,head,pardir)
         elseif id == hlist_code or id == vlist_code then
             setdirection(current,pardir) -- is this really needed?
         elseif id == glue_code then
+            -- Maybe I should also fix dua and dub but on the other hand ... why?
             if enddir and getsubtype(current) == parfillskip_code then
                 -- insert the last enddir before \parfillskip glue
-                head = insert_node_before(head,current,new_direction(enddir,true))
+                local c = current
+                local p = getprev(c)
+                if p and getid(p) == glue_code and getsubtype(p) == parfillleftskip_code then
+                    c = p
+                    p = getprev(c)
+                end
+                if p and getid(p) == penalty_code then -- linepenalty
+                    c = p
+                end
+                -- there is always a par nodes so head will stay
+                head = insertnodebefore(head,c,new_direction(enddir,true))
                 enddir = false
             end
         elseif begindir then
-            if id == localpar_code and start_of_par(current) then
-                -- localpar should always be the 1st node
-                head, current = insert_node_after(head,current,new_direction(begindir))
+            if id == par_code and startofpar(current) then
+                -- par should always be the 1st node
+                head, current = insertnodeafter(head,current,new_direction(begindir))
                 begindir = nil
             end
         end
         if begindir then
-            head = insert_node_before(head,current,new_direction(begindir))
+            head = insertnodebefore(head,current,new_direction(begindir))
         end
         local skip = entry.skip
         if skip and skip > 0 then
@@ -977,7 +987,7 @@ local function apply_to_list(list,size,head,pardir)
             end
         end
         if enddir then
-            head, current = insert_node_after(head,current,new_direction(enddir,true))
+            head, current = insertnodeafter(head,current,new_direction(enddir,true))
         end
         if not entry.remove then
             current = getnext(current)
