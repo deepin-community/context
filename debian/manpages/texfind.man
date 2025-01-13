@@ -1,4 +1,4 @@
-.TH "TEXFIND" "1" "December 2006" "texfind" "ConTeXt" 
+.TH "TEXFIND" "1" "December 2006" "texfind" "ConTeXt"
 .de URL
 \\$2 \(laURL: \\$1 \(ra\\$3
 ..
@@ -14,20 +14,20 @@
 .fi
 ..
 
-.SH "NAME" 
+.SH "NAME"
 texfind \- graphical tool to search for text in TeX input files
 
-.SH "SYNOPSIS" 
-.PP 
+.SH "SYNOPSIS"
+.PP
 \fBtexfind\fP  [ \fIOPTION\fP ...  ]
 
-.SH "DESCRIPTION" 
-.PP 
+.SH "DESCRIPTION"
+.PP
 \fBtexfind\fP is a graphical, interactive tool that helps you
 searching through TeX input files, including subdirectories, and
 allows you to do search/replace tasks using \fBperl\fP(1) regular
 expressions. It opens two windows: One displays the directory
-hierarchy and allows to select different search directories. The
+hierarchy and allows you to select different search directories. The
 second window is used to enter the query and display the results.
 
 .SH "SEARCHING"
@@ -41,9 +41,9 @@ which gives you lots of flexibility. The search-and-replace function
 also uses perl regex syntax, but you can also just use simple
 strings. Currently there is no way to save changed files.
 
-.SH "MENU" 
+.SH "MENU"
 
-Use the right mouse button to open a menu. 
+Use the right mouse button to open a menu.
 .HP
 \fBFile\fP : Currently only used to exit the program
 .HP
@@ -55,28 +55,28 @@ replace single or all occurrences of a string, but currently it is not
 possible to change the file.
 .PP
 \fBView\fP : Select specific lines, and adjust word or character
-wrapping.  
+wrapping.
 
-.SH "OPTIONS" 
+.SH "OPTIONS"
 .HP
 \fB\-\-font\fR : specify the font used for the menu. Default is
-courier. 
+courier.
 .HP
 Other options probably exist.   I appreciate input by the program
 authors, experienced users, or Perl geeks.
 .HP
-.SH "SEE ALSO" 
+.SH "SEE ALSO"
 
 .IP \(bu
 \fBperl\fP(1), \fBperlre\fP(1).
 .IP \(bu
 .URL "http://www.contextgarden.net" "ConTeXt wiki" .
 
-.SH "BUGS" 
+.SH "BUGS"
 
 None known. However, the replace function isn't the most useful one.
 
-.SH "AUTHOR" 
+.SH "AUTHOR"
 
 \fBtexfind\fP was written for the ConTeXt package by Hans Hagen and
 Ton Otten, PRAGMA.

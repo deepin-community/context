@@ -6,15 +6,14 @@ if not modules then modules = { } end modules ['x-asciimath'] = {
     license   = "see context related readme files"
 }
 
---[[ldx--
-<p>Some backgrounds are discussed in <t>x-asciimath.mkiv</t>. This is a third version. I first
-tried a to make a proper expression parser but it's not that easy. First we have to avoid left
-recursion, which is not that trivial (maybe a future version of lpeg will provide that), and
-second there is not really a syntax but a mix of expressions and sequences with some fuzzy logic
-applied. Most problematic are fractions and we also need to handle incomplete expressions. So,
-instead we (sort of) tokenize the string and then do some passes over the result. Yes, it's real
-ugly and unsatisfying code mess down here. Don't take this as an example.</p>
---ldx]]--
+-- Some backgrounds are discussed in 'x-asciimath.mkiv'. This is a third version. I
+-- first tried a to make a proper expression parser but it's not that easy. First we
+-- have to avoid left recursion, which is not that trivial (maybe a future version
+-- of lpeg will provide that), and second there is not really a syntax but a mix of
+-- expressions and sequences with some fuzzy logic applied. Most problematic are
+-- fractions and we also need to handle incomplete expressions. So, instead we (sort
+-- of) tokenize the string and then do some passes over the result. Yes, it's real
+-- ugly and unsatisfying code mess down here. Don't take this as an example.
 
 -- todo: spaces around all elements in cleanup?
 -- todo: filter from files listed in tuc file
@@ -25,7 +24,7 @@ local trace_digits     = false  if trackers then trackers.register("modules.asci
 
 local report_asciimath = logs.reporter("mathematics","asciimath")
 
-local asciimath        = { }
+local asciimath        = asciimath or { }
 local moduledata       = moduledata or { }
 moduledata.asciimath   = asciimath
 
@@ -732,6 +731,32 @@ local reserved = {
 
 }
 
+-- This is an undocumented option for Ton (math4all):
+
+-- \startluacode
+-- if not asciimath then
+--     asciimath = {
+--         extras = {
+--             ["GTK"] = { false, "\\text{\\it GTK}" }, -- proper kerning/spacing
+--         }
+--     }
+-- end
+-- \stopluacode
+--
+-- \usemodule[asciimath]
+-- \starttext
+--    \asciimath{GTK}
+-- stoptext
+
+local extras = asciimath.extras
+if extras then
+    for k, v in next, extras do
+        if not reserved[k] then
+            reserved[k] = v
+        end
+    end
+end
+
 -- a..z A..Z : allemaal op italic alphabet
 -- en dan default naar upright "upr a"
 
@@ -1403,6 +1428,7 @@ local function collapse_stupids(t)
             if type(one) == "table" then
                 one = collapse(one,level)
                 t[m] = current .. "{" .. one .. "}"
+--                 t[m] = current .. "\\begingroup" .. one .. "\\endgroup"
                 i = i + 2
             else
                 t[m] = current

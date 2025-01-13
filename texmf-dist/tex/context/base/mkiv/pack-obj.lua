@@ -6,10 +6,8 @@ if not modules then modules = { } end modules ['pack-obj'] = {
     license   = "see context related readme files"
 }
 
---[[ldx--
-<p>We save object references in the main utility table. jobobjects are
-reusable components.</p>
---ldx]]--
+-- We save object references in the main utility table; job objects are reusable
+-- components.
 
 local context         = context
 local codeinjections  = backends.codeinjections
@@ -176,6 +174,7 @@ function objects.restore(ns,id) -- why not just pass a box number here too (ok, 
                 number = index,
                 page   = getcount("realpageno"),
             }
+            -- list is a rule
             setlink(list,page)
         end
         setbox("objectbox",hbox)

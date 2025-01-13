@@ -503,6 +503,7 @@ local function btxauthor(dataset,tag,field,settings)
             ctx_btxsetup(combiner)
             ctx_btxstopauthor()
         end
+
         if index then
             oneauthor(index)
         elseif max == 1 then
@@ -515,9 +516,11 @@ local function btxauthor(dataset,tag,field,settings)
                 oneauthor(absmax,true)
             end
         end
+
     else
         report("ignored field %a of tag %a, used field %a is no author",field,tag,usedfield)
     end
+
 end
 
 implement {
@@ -530,9 +533,9 @@ implement {
     name      = "btxauthor",
     actions   = btxauthor,
     arguments = {
-        "string",
-        "string",
-        "string",
+        "argument",
+        "argument",
+        "argument",
         {
             { "combiner" },
             { "kind" },
@@ -992,6 +995,22 @@ publications.sortmethods.authoryear = {
         { field = "pages",   default = "",     unknown = "" },
         { field = "title",   default = "",     unknown = "" },
         { field = "index",   default = "",     unknown = "" },
+    },
+}
+
+publications.sortmethods.authortitle = {
+    sequence = {
+        { field = "author",    default = "",           unknown = "" },
+        { field = "title",     default = "",           unknown = "" },
+        { field = "booktitle", default = "",           unknown = "" }, -- if this is an untitled section (e.g., introduction, foreword, preface) of a book or a review of a book
+        { field = "maintitle", default = "",           unknown = "" }, -- if this is an untitled section or volume in a multivolume collection
+        { field = "volume",    default = "",           unknown = "" },
+        { field = "part",      default = "",           unknown = "" },
+        { field = "date",      default = "9998-13-32", unknown = "9999-14-33" }, -- some specifications allow date instead of year, month, day
+        { field = "year",      default = "9998",       unknown = "9999" },
+        { field = "month",     default = "13",         unknown = "14" },
+        { field = "day",       default = "32",         unknown = "33" },
+        { field = "index",     default = "",           unknown = "" },
     },
 }
 

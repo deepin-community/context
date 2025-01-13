@@ -21,10 +21,7 @@ local getsubtype         = nuts.getsubtype
 local getlist            = nuts.getlist
 local setlist            = nuts.setlist
 
-local end_of_math        = nuts.end_of_math
-
 local nodecodes          = nodes.nodecodes
-local leadercodes        = nodes.leadercodes
 local gluecodes          = nodes.gluecodes
 local kerncodes          = nodes.kerncodes
 
@@ -43,8 +40,7 @@ local vlist_code         = nodecodes.vlist
 local userskip_code      = gluecodes.userskip
 local spaceskip_code     = gluecodes.spaceskip
 local xspaceskip_code    = gluecodes.xspaceskip
-
-local leaders_code       = leadercodes.leaders
+local leaders_code       = gluecodes.leaders
 
 local fontkern_code      = kerncodes.fontkern
 
@@ -124,7 +120,9 @@ local function processwords(attribute,data,flush,head,parent,skip) -- we have hl
         local continue, leaders, done, strip, level = false, false, false, true, -1
         while n do
             local id = getid(n)
-            if id == glyph_code or id == rule_code or (id == hlist_code and getattr(n,a_runningtext)) then
+            if id == glyph_code or id == rule_code or (id == hlist_code and getattr(n,a_runningtext))
+or id == disc_code or id == boundary_code
+            then
                 local aa = getattr(n,attribute)
                 if aa and aa ~= skip then
                     if aa == a then
@@ -166,10 +164,10 @@ local function processwords(attribute,data,flush,head,parent,skip) -- we have hl
                         setlist(n,(processwords(attribute,data,flush,list,n,aa))) -- watch ()
                     end
                 end
-            elseif id == disc_code or id == boundary_code then
-                if f then
-                    l = n
-                end
+--             elseif id == disc_code or id == boundary_code then
+--                 if f then
+--                     l = n
+--                 end
             elseif id == kern_code and getsubtype(n) == fontkern_code then
                 if f then
                     l = n

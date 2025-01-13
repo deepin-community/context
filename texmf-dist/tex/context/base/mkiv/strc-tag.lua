@@ -104,6 +104,7 @@ local properties     = allocate { -- todo: more "record = true" to improve forma
 
     lines                 = { pdf = "Code",       nature = "display" },
     line                  = { pdf = "Code",       nature = "mixed"   },
+    linenumber            = { pdf = "Span",       nature = "inline"   },
 
     synonym               = { pdf = "Span",       nature = "inline"  },
     sorting               = { pdf = "Span",       nature = "inline"  },
@@ -265,8 +266,8 @@ end
 function structures.atlocation(str)
     local specification = taglist[texgetattribute(a_tagged)]
     if specification then
+        local list = specification.taglist
         if list then
-            local taglist = specification.taglist
             local pattern = patterns[str]
             for i=#list,1,-1 do
                 if find(list[i],pattern) then
@@ -362,7 +363,9 @@ function tags.start(tag,specification)
             metadata = nil
         end
         local userdata = specification.userdata
-        if userdata ~= "" and type(userdata) == "string"  then
+        if userdata == "" then
+            specification.userdata = nil
+        elseif type(userdata) == "string"  then
             specification.userdata = settings_to_hash(userdata)
         end
         local detail = specification.detail

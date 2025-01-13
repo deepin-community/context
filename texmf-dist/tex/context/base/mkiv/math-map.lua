@@ -1,36 +1,19 @@
 if not modules then modules = { } end modules ['math-map'] = {
     version   = 1.001,
+    optimize  = true,
     comment   = "companion to math-ini.mkiv",
     author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
     copyright = "PRAGMA ADE / ConTeXt Development Team",
     license   = "see context related readme files"
 }
 
--- todo: make sparse .. if self
-
---[[ldx--
-<p>Remapping mathematics alphabets.</p>
---ldx]]--
-
--- oldstyle: not really mathematics but happened to be part of
--- the mathematics fonts in cmr
---
--- persian: we will also provide mappers for other
--- scripts
-
--- todo: alphabets namespace
--- maybe: script/scriptscript dynamic,
-
--- superscripped primes get unscripted !
-
--- to be looked into once the fonts are ready (will become font
--- goodie):
---
--- (U+2202,U+1D715) : upright
--- (U+2202,U+1D715) : italic
--- (U+2202,U+1D715) : upright
---
--- plus add them to the regular vectors below so that they honor \it etc
+-- persian: we will also provide mappers for other scripts
+-- todo   : alphabets namespace
+-- maybe  : script/scriptscript dynamic,
+-- check  : (U+2202,U+1D715) : upright
+--          (U+2202,U+1D715) : italic
+--          (U+2202,U+1D715) : upright
+--          add them to the regular vectors below so that they honor \it etc
 
 local type, next = type, next
 local merged, sortedhash = table.merged, table.sortedhash
@@ -688,9 +671,9 @@ local issygreek = regular_tf.symbols
 local isgreek   = merged(islcgreek,isucgreek,issygreek)
 
 local greekremapping = {
-    [1] = { what = "unchanged" }, -- upright
-    [2] = { what = "upright", it = "tf", bi = "bf" }, -- upright
-    [3] = { what = "italic",  tf = "it", bf = "bi" }, -- italic
+    { what = "unchanged" }, -- upright
+    { what = "upright", it = "tf", bi = "bf" }, -- upright
+    { what = "italic",  tf = "it", bf = "bi" }, -- italic
 }
 
 local usedremap = { }

@@ -30,8 +30,8 @@
 
 \writestatus{loading}{ConTeXt Language Macros / Initialization}
 
-\registerctxluafile{lang-dis}{}
-\registerctxluafile{lang-hyp}{}
+\registerctxluafile{lang-dis}{autosuffix}
+\registerctxluafile{lang-hyp}{autosuffix}
 
 \unprotect
 
@@ -45,8 +45,10 @@
 
 \newcount\compoundhyphenpenalty
 
-\automatichyphenmode    \plusone
-\hyphenpenaltymode      \plusfour
+\ifcase\contextlmtxmode
+    \hyphenpenaltymode\plusfour
+    \automatichyphenmode\plusone
+\fi
 
 \hyphenpenalty            50 % hyphenator
 \automatichyphenpenalty   50 % -
@@ -150,7 +152,7 @@ rightedge    {\dummyparameter\c!rightedge}%
   {\clf_sethyphenationfeatures{#1}}
 
 \unexpanded\def\resethyphenationfeatures
-  {\hyphenationattribute\attributeunsetvalue}
+  {\attribute\hyphenationattribute\attributeunsetvalue}
 
 \resethyphenationfeatures
 

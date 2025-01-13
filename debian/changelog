@@ -1,3 +1,68 @@
+context (2024.04.01.20240428+dfsg-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Hilmar Preusse <hille42@web.de>  Wed, 05 Jun 2024 14:12:28 +0200
+
+context (2024.04.01.20240428+dfsg-1) experimental; urgency=medium
+
+  * New upstream release, suitable for TL 2024.
+    - Refresh patches.
+
+ -- Hilmar Preusse <hille42@web.de>  Sun, 28 Apr 2024 20:53:59 +0200
+
+context (2023.05.05.20230730+dfsg-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Hilmar Preusse <hille42@web.de>  Sun, 27 Aug 2023 23:40:37 +0200
+
+context (2023.05.05.20230730+dfsg-1) experimental; urgency=medium
+
+  * New upstream release, suitable for TL 2023.
+    - Refresh patches.
+  * Start using luametatex for processing ConTeXt files.
+  * Do not generate ConTeXt MarkIV formats (and LuaMetaTeX) formats
+    in postinst (will be generated during run time).
+  * Remove ICC color profiles from package, as they are non-free.
+  * Enable "--socket" as run time option in mtxrun (needed after
+    upgrade to luatex 1.17.0).
+
+ -- Hilmar Preusse <hille42@web.de>  Sun, 30 Jul 2023 22:06:57 +0200
+
+context (2021.03.05.20230120+dfsg-1) unstable; urgency=medium
+
+  * Remove some TeX files not meeting the DFSG from orig.tar.gz
+    (Closes: #1029127)
+  * Replace "fonts-freefont" by "fonts-freefont-otf" in Recommends.
+
+ -- Hilmar Preusse <hille42@web.de>  Fri, 20 Jan 2023 23:38:39 +0100
+
+context (2021.03.05.20220211-1) unstable; urgency=medium
+
+  [ Hilmar Preusse ]
+  * New upstream release, suitable for TL 2021.
+  * Add me to Uploaders field.
+  * Add Lintian fixes & Overrides.
+  * Introduce dh sequencer for debian/rules file.
+
+  [ Adam Reviczky ]
+  * Bump standards version, no changes necessary
+    (https://github.com/debian-tex/context/pull/11)
+
+  [ Debian Janitor ]
+  * Add missing build dependency on dh addon.
+  * Set upstream metadata fields: Repository.
+  * Remove 1 obsolete maintscript entry.
+  * Bump debhelper from old 12 to 13.
+  * Remove Section on context that duplicates source.
+  * Remove constraints unnecessary since buster:
+    + Build-Depends-Indep: Drop versioned constraint on tex-common.
+    + context: Drop versioned constraint on lmodern in Depends.
+    + context: Drop versioned constraint on texlive-xetex in Conflicts.
+
+ -- Hilmar Preusse <hille42@web.de>  Sun, 13 Feb 2022 23:32:13 +0100
+
 context (2020.03.10.20200331-1) unstable; urgency=medium
 
   [ Debian Janitor ]

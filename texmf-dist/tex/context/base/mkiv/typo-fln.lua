@@ -56,22 +56,22 @@ local glyph_code         = nodecodes.glyph
 local disc_code          = nodecodes.disc
 local kern_code          = nodecodes.kern
 local glue_code          = nodecodes.glue
-local localpar_code      = nodecodes.localpar
+local par_code           = nodecodes.par
 
 local spaceskip_code     = nodes.gluecodes.spaceskip
 
 local nextglyph          = nuts.traversers.glyph
 local nextdisc           = nuts.traversers.disc
 
-local flush_node_list    = nuts.flush_list
-local flush_node         = nuts.flush_node
-local copy_node_list     = nuts.copy_list
-local insert_node_before = nuts.insert_before
-local insert_node_after  = nuts.insert_after
+local flushnodelist      = nuts.flushlist
+local flushnode          = nuts.flushnode
+local copy_node_list     = nuts.copylist
+local insertnodebefore   = nuts.insertbefore
+local insertnodeafter    = nuts.insertafter
 local remove_node        = nuts.remove
 local getdimensions      = nuts.dimensions
 local hpack_node_list    = nuts.hpack
-local start_of_par       = nuts.start_of_par
+local startofpar         = nuts.startofpar
 
 local nodepool           = nuts.pool
 local newpenalty         = nodepool.penalty
@@ -136,7 +136,7 @@ actions[v_line] = function(head,setting)
     local temp       = copy_node_list(head)
     local linebreaks = { }
 
-    set = function(head)
+    local set = function(head)
         for g in nextglyph, head do
             if dynamic > 0 then
                 setglyphdata(g,dynamic)
@@ -180,9 +180,9 @@ actions[v_line] = function(head,setting)
          --        nodes.handlers.protectglyphs(temp)  -- not needed as we discard
          -- temp = typesetters.spacings.handler(temp)  -- maybe when enabled
          -- temp = typesetters.kerns.handler(temp)     -- maybe when enabled
--- temp = typesetters.cases.handler(temp)     -- maybe when enabled
-flush_node_list(temp);
+         -- temp = typesetters.cases.handler(temp)     -- maybe when enabled
             local width = getdimensions(temp)
+            flushnodelist(temp)
             return width
         end
 
@@ -230,7 +230,7 @@ flush_node_list(temp);
         end
     end
 
-    flush_node_list(temp)
+    flushnodelist(temp)
 
     local start = head
     local n     = 0
@@ -296,11 +296,11 @@ flush_node_list(temp);
                     end
                 end
                 setdisc(disc,pre,post,replace)
-                flush_node(disc)
+                flushnode(disc)
             elseif id == glue_code then
                 n = n + 1
                 if linebreak ~= n then
-                    head = insert_node_before(head,start,newpenalty(10000)) -- nobreak
+                    head = insertnodebefore(head,start,newpenalty(10000)) -- nobreak
                 end
             end
             local next = getnext(start)
@@ -308,11 +308,11 @@ flush_node_list(temp);
                 if start ~= head then
                     local where = id == glue_code and getprev(start) or start
                     if trace_firstlines then
-                        head, where = insert_node_after(head,where,newpenalty(10000)) -- nobreak
-                        head, where = insert_node_after(head,where,newkern(-65536))
-                        head, where = insert_node_after(head,where,tracerrule(65536,4*65536,2*65536,"darkblue"))
+                        head, where = insertnodeafter(head,where,newpenalty(10000)) -- nobreak
+                        head, where = insertnodeafter(head,where,newkern(-65536))
+                        head, where = insertnodeafter(head,where,tracerrule(65536,4*65536,2*65536,"darkblue"))
                     end
-                    head, where = insert_node_after(head,where,newpenalty(-10000)) -- break
+                    head, where = insertnodeafter(head,where,newpenalty(-10000)) -- break
                 end
                 start = next
                 break
@@ -372,7 +372,7 @@ end
 actions[v_default] = actions[v_line]
 
 function firstlines.handler(head)
-    if getid(head) == localpar_code and start_of_par(head) then
+    if getid(head) == par_code and startofpar(head) then
         local settings = getprop(head,a_firstline)
         if settings then
             disableaction("processors","typesetters.firstlines.handler")

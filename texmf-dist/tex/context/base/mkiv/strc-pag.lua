@@ -35,6 +35,8 @@ local stopapplyprocessor  = processors.stopapply
 local texsetcount         = tex.setcount
 local texgetcount         = tex.getcount
 
+local texconditionals     = tex.conditionals
+
 local ctx_convertnumber   = context.convertnumber
 
 -- storage
@@ -82,6 +84,7 @@ function pages.save(prefixdata,numberdata,extradata)
             block        = sections.currentblock(),
             prefixdata   = prefixdata and helpers.simplify(prefixdata),
             numberdata   = numberdata and helpers.simplify(numberdata),
+            marked       = pages.markedlist(realpage), -- not yet defined
         }
         tobesaved[realpage] = data
         if not collected[realpage] then
@@ -252,7 +255,7 @@ function helpers.analyze(entry,specification)
     if not section then
         return entry, false, "no section"
     end
-    local sectiondata = sections.collected[references.section]
+    local sectiondata = references.sectiondata or sections.collected[references.section] -- so we use an already resolved external one
     if not sectiondata then
         return entry, false, "no section data"
     end
@@ -269,7 +272,7 @@ function helpers.analyze(entry,specification)
     return entry, sectiondata, "okay"
 end
 
-function helpers.prefix(data,prefixspec,nosuffix)
+function helpers.prefix(data,prefixspec,nosuffix) -- not only page
     if data then
         local _, prefixdata, status = helpers.analyze(data,prefixspec)
         if prefixdata then
@@ -440,6 +443,6 @@ implement { -- weird place
 
 interfaces.implement {
     name      = "pageofinternal",
-    arguments = { "integer" },
+    arguments = "integer",
     actions   = helpers.pageofinternal,
 }

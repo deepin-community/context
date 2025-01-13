@@ -16,6 +16,9 @@
 %
 % to be redone (was experiment) .. can be hooked into margin code
 % reshuffle arguments
+%
+% this is early luatex code, 2007 or even before that, and it shows ... we
+% have better tricks now
 
 \writestatus{loading}{ConTeXt Core Macros / Line Numbering}
 
@@ -43,14 +46,15 @@
 \definesystemattribute[linereference][public]
 
 \appendtoksonce
-    \attribute\linenumberattribute\attributeunsetvalue
+    \c_attr_linenumber\attributeunsetvalue
 \to \everyforgetall
 
 \appendtoks
-    \attribute\linenumberattribute \attributeunsetvalue
+    \c_attr_linenumber\attributeunsetvalue
 \to \everyinsidefloat
 
-\newcount   \linenumber % not used
+\mutable\let\linenumber\!!zerocount
+
 \newbox     \b_page_lines_scratch
 \newcount   \c_page_lines_reference
 \newconstant\c_page_lines_nesting
@@ -127,7 +131,7 @@
 \unexpanded\def\page_lines_some_reference#1#2#3%
   {\dontleavehmode\begingroup
    \global\advance\c_page_lines_reference\plusone
-   \attribute\linereferenceattribute\c_page_lines_reference
+   \c_attr_linereference\c_page_lines_reference
    #3% todo: #3{#1} as there is no need to pass #1 as part of #3
    % for the moment we use a simple system i.e. no prefixes etc .. todo: store as number
    \c_strc_references_bind_state\zerocount % we don't want the prewordbreak and manage it here
@@ -312,11 +316,11 @@
    \or
      \page_lines_start_define % only when assignment
    \fi
-   \attribute\linenumberattribute\csname\??linenumberinginstance\currentlinenumbering\endcsname\relax}
+   \c_attr_linenumber\csname\??linenumberinginstance\currentlinenumbering\endcsname\relax}
 
 \unexpanded\def\stoplinenumbering
   {\ifconditional\c_pages_lines_nesting=\plusone
-     \attribute\linenumberattribute\attributeunsetvalue
+     \c_attr_linenumber\attributeunsetvalue
      \the\aftereverylinenumbering
      \ifconditional\c_page_lines_auto_narrow\par\fi
    \fi
@@ -348,6 +352,9 @@
 
 \def\page_lines_add_numbers_to_box#box#column#max#nesting%
   {\bgroup
+   \ifconditional\c_strc_tags_enabled
+     \strc_tags_enable_indeed
+   \fi
    \b_page_lines_number     #box\relax
    \c_page_lines_column     #column\relax
    \c_page_lines_last_column#max\relax
@@ -459,24 +466,34 @@
 % \def\dodollap{\hbox to \zeropoint{\normalhss\box\nextbox}\endgroup}
 
 \def\page_line_handle_left#align#width#distance%
-  {\llap
+  {\dostarttagged\t!linenumber\empty
+   \llap
      {\page_lines_number_inject#align#width%
+      \dostarttagged\t!ignore\empty
       \kern\dimexpr
         #distance+\d_page_lines_distance
         \ifconditional\c_page_lines_dir_left_to_right\else+\d_page_lines_line_width\fi
       \relax
       \the\everylinenumber
-      \hss}}
+      \hss
+      \dostoptagged}%
+   \dostoptagged}
 
 \def\page_line_handle_right#align#width#distance%
-  {\rlap
-     {\kern\dimexpr
+  {\dostarttagged\t!linenumber\empty
+   \rlap
+     {\dostarttagged\t!ignore\empty
+      \kern\dimexpr
         #distance+\d_page_lines_distance
         \ifconditional\c_page_lines_dir_left_to_right+\d_page_lines_line_width\fi
       \relax
+      \dostoptagged
       \page_lines_number_inject#align#width%
+      \dostarttagged\t!ignore\empty
       \the\everylinenumber
-      \hss}}
+      \hss
+      \dostoptagged}%
+   \dostoptagged}
 
 \setuvalue{\??linenumberinghandler\v!left}%
   {\page_line_handle_left\p_align\leftmarginwidth\leftmargindistance}

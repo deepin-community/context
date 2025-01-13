@@ -1,5 +1,6 @@
 if not modules then modules = { } end modules ['lpdf-ini'] = {
     version   = 1.001,
+    optimize  = true,
     comment   = "companion to lpdf-ini.mkiv",
     author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
     copyright = "PRAGMA ADE / ConTeXt Development Team",
@@ -7,6 +8,9 @@ if not modules then modules = { } end modules ['lpdf-ini'] = {
 }
 
 -- beware of "too many locals" here
+--
+-- The lua files are still hybrid ones but we keep that as a reference for the
+-- lmt variants that started out as copies.
 
 local setmetatable, getmetatable, type, next, tostring, tonumber, rawset = setmetatable, getmetatable, type, next, tostring, tonumber, rawset
 local char, byte, format, gsub, concat, match, sub, gmatch = string.char, string.byte, string.format, string.gsub, table.concat, string.match, string.sub, string.gmatch
@@ -25,7 +29,6 @@ local report_finalizing = logs.reporter("backend","finalizing")
 local report_blocked    = logs.reporter("backend","blocked")
 
 local implement         = interfaces.implement
-local two_strings       = interfaces.strings[2]
 
 local context           = context
 
@@ -295,7 +298,9 @@ do
         if v < 0x10000 then
             v = format("%04x",v)
         else
-            v = format("%04x%04x",rshift(v,10),v%1024+0xDC00)
+            v = v - 0x10000
+            v = format("%04x%04x",rshift(v,10)+0xD800,v%1024+0xDC00)
+         -- v = format("%04x%04x",rshift(v-0x10000,10)+0xD800,v%1024+0xDC00)
         end
         t[k] = v
         return v
@@ -316,7 +321,7 @@ do
     local pattern = C(4) / function(s) -- needs checking !
         local now = tonumber(s,16)
         if more > 0 then
-            now = (more-0xD800)*0x400 + (now-0xDC00) + 0x10000 -- the 0x10000 smells wrong
+            now = (more-0xD800)*0x400 + (now-0xDC00) + 0x10000
             more = 0
             return utfchar(now)
         elseif now >= 0xD800 and now <= 0xDBFF then
@@ -445,10 +450,14 @@ do
 
     local f_key_null       = formatters["/%s null"]
     local f_key_value      = formatters["/%s %s"]
-    local f_key_dictionary = formatters["/%s << % t >>"]
-    local f_dictionary     = formatters["<< % t >>"]
-    local f_key_array      = formatters["/%s [ % t ]"]
-    local f_array          = formatters["[ % t ]"]
+ -- local f_key_dictionary = formatters["/%s << % t >>"]
+ -- local f_dictionary     = formatters["<< % t >>"]
+    local f_key_dictionary = formatters["/%s << %s >>"]
+    local f_dictionary     = formatters["<< %s >>"]
+ -- local f_key_array      = formatters["/%s [ % t ]"]
+ -- local f_array          = formatters["[ % t ]"]
+    local f_key_array      = formatters["/%s [ %s ]"]
+    local f_array          = formatters["[ %s ]"]
     local f_key_number     = formatters["/%s %N"]  -- always with max 9 digits and integer is possible
     local f_tonumber       = formatters["%N"]      -- always with max 9 digits and integer is possible
 
@@ -501,8 +510,9 @@ do
             if e then
                 r[n+1] = e
             end
+            r = concat(r," ")
             if contentonly then
-                return concat(r," ")
+                return r
             elseif key then
                 return f_key_dictionary(key,r)
             else
@@ -550,8 +560,9 @@ do
             if e then
                 r[tn+1] = e
             end
+            r = concat(r," ")
             if contentonly then
-                return concat(r, " ")
+                return r
             elseif key then
                 return f_key_array(key,r)
             else
@@ -1399,13 +1410,14 @@ do
         return timestamp
     end
 
-    lpdf.settime(tonumber(resolvers.variable("start_time")) or tonumber(resolvers.variable("SOURCE_DATE_EPOCH"))) -- bah
+ -- lpdf.settime(tonumber(resolvers.variable("starttime")) or tonumber(resolvers.variable("SOURCE_DATE_EPOCH"))) -- bah
+    lpdf.settime(tonumber(resolvers.variable("starttime")))
 
     function lpdf.pdftimestamp(str)
         local t = type(str)
         if t == "string" then
             local Y, M, D, h, m, s, Zs, Zh, Zm = match(str,"^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)([%+%-])(%d%d):(%d%d)$")
-            return Y and format("D:%s%s%s%s%s%s%s%s'%s'",Y,M,D,h,m,s,Zs,Zh,Zm)
+            return Y and format("D:%s%s%s%s%s%s%s%s'%s",Y,M,D,h,m,s,Zs,Zh,Zm)
         else
             return osdate("D:%Y%m%d%H%M%S",t == "number" and str or ostime()) -- maybe "!D..." : universal time
         end
@@ -1553,16 +1565,16 @@ end
 -- interface
 
 implement { name = "lpdf_collectedresources",                             actions = { lpdf.collectedresources, context } }
-implement { name = "lpdf_addtocatalog",          arguments = two_strings, actions = lpdf.addtocatalog }
-implement { name = "lpdf_addtoinfo",             arguments = two_strings, actions = function(a,b,c) lpdf.addtoinfo(a,b,c) end } -- gets adapted
-implement { name = "lpdf_addtonames",            arguments = two_strings, actions = lpdf.addtonames }
-implement { name = "lpdf_addtopageattributes",   arguments = two_strings, actions = lpdf.addtopageattributes }
-implement { name = "lpdf_addtopagesattributes",  arguments = two_strings, actions = lpdf.addtopagesattributes }
-implement { name = "lpdf_addtopageresources",    arguments = two_strings, actions = lpdf.addtopageresources }
-implement { name = "lpdf_adddocumentextgstate",  arguments = two_strings, actions = function(a,b) lpdf.adddocumentextgstate (a,pdfverbose(b)) end }
-implement { name = "lpdf_adddocumentcolorspace", arguments = two_strings, actions = function(a,b) lpdf.adddocumentcolorspace(a,pdfverbose(b)) end }
-implement { name = "lpdf_adddocumentpattern",    arguments = two_strings, actions = function(a,b) lpdf.adddocumentpattern   (a,pdfverbose(b)) end }
-implement { name = "lpdf_adddocumentshade",      arguments = two_strings, actions = function(a,b) lpdf.adddocumentshade     (a,pdfverbose(b)) end }
+implement { name = "lpdf_addtocatalog",          arguments = "2 strings", actions = lpdf.addtocatalog }
+implement { name = "lpdf_addtoinfo",             arguments = "2 strings", actions = function(a,b,c) lpdf.addtoinfo(a,b,c) end } -- gets adapted
+implement { name = "lpdf_addtonames",            arguments = "2 strings", actions = lpdf.addtonames }
+implement { name = "lpdf_addtopageattributes",   arguments = "2 strings", actions = lpdf.addtopageattributes }
+implement { name = "lpdf_addtopagesattributes",  arguments = "2 strings", actions = lpdf.addtopagesattributes }
+implement { name = "lpdf_addtopageresources",    arguments = "2 strings", actions = lpdf.addtopageresources }
+implement { name = "lpdf_adddocumentextgstate",  arguments = "2 strings", actions = function(a,b) lpdf.adddocumentextgstate (a,pdfverbose(b)) end }
+implement { name = "lpdf_adddocumentcolorspace", arguments = "2 strings", actions = function(a,b) lpdf.adddocumentcolorspace(a,pdfverbose(b)) end }
+implement { name = "lpdf_adddocumentpattern",    arguments = "2 strings", actions = function(a,b) lpdf.adddocumentpattern   (a,pdfverbose(b)) end }
+implement { name = "lpdf_adddocumentshade",      arguments = "2 strings", actions = function(a,b) lpdf.adddocumentshade     (a,pdfverbose(b)) end }
 
 -- more helpers: copy from lepd to lpdf
 

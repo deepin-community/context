@@ -37,8 +37,7 @@ local tonode            = nuts.tonode
 local tonut             = nuts.tonut
 
 local vpack             = nuts.vpack
-local flushlist         = nuts.flush_list
------ removenode        = nuts.remove
+local flushlist         = nuts.flushlist
 
 local setlink           = nuts.setlink
 local setlist           = nuts.setlist
@@ -62,7 +61,7 @@ local takebox           = nuts.takebox
 local takelist          = nuts.takelist
 local splitbox          = nuts.splitbox
 local getattribute      = nuts.getattribute
-local copylist          = nuts.copy_list
+local copylist          = nuts.copylist
 
 local getbox            = nuts.getbox
 local getcount          = tex.getcount
@@ -408,6 +407,7 @@ end
 local function here(c,r,nr,nofcolumns,nofrows,cells,width,spans)
     local rr = r + nr - 1
     if rr > nofrows then
+        report("%i rows needed, %i rows available, no slots free at (%i,%i), discarding",rr,nofrows,c,r)
         return false
     end
     local cc = 0
@@ -425,14 +425,14 @@ local function here(c,r,nr,nofcolumns,nofrows,cells,width,spans)
         end
     end
     if cc == 0 or cc > nofcolumns then
-     -- report("needed %p, no slot free at (%i,%i)",width,c,r)
+        report("needed %p, no slot free at (%i,%i), discarding",width,c,r)
         return false
     end
     for i=c,cc do
         local column = cells[i]
         for j=r,rr do
             if column[j] then
-             -- report("width %p, needed %p, checking (%i,%i) x (%i,%i), %s",width,wc,c,r,nc,nr,"quit")
+                report("width %p, needed %p, checking (%i,%i) x (%i,%i), %s",width,wc,c,r,nc,nr,"quit")
                 return false
             end
         end
@@ -659,6 +659,7 @@ function columnsets.check(t)
         cfound, rfound, nc = action(c,r,nr,lastcolumn,nofrows,cells,boxwidth-threshold,spans)
     end
     if not cfound and method ~= v_here then
+--     if not cfound and method == v_here then
         cfound, rfound, nc = here(c,r,nr,lastcolumn,nofrows,cells,boxwidth-threshold,spans)
     end
     if cfound then
@@ -1248,7 +1249,7 @@ end
 
 -- The interface.
 
-interfaces.implement {
+implement {
     name      = "definecolumnset",
     actions   = columnsets.define,
     arguments = { {
@@ -1256,7 +1257,7 @@ interfaces.implement {
     } }
 }
 
-interfaces.implement {
+implement {
     name      = "resetcolumnset",
     actions   = columnsets.reset,
     arguments = { {
@@ -1272,49 +1273,49 @@ interfaces.implement {
     } }
 }
 
-interfaces.implement {
+implement {
     name      = "preparecolumnsetflush",
     actions   = columnsets.prepareflush,
     arguments = "string",
 }
 
-interfaces.implement {
+implement {
     name      = "finishcolumnsetflush",
     actions   = columnsets.finishflush,
     arguments = "string",
 }
 
-interfaces.implement {
+implement {
     name      = "flushcolumnsetcolumn",
     actions   = columnsets.flushcolumn,
     arguments = { "string" ,"integer" },
 }
 
-interfaces.implement {
+implement {
     name      = "setvsizecolumnset",
     actions   = columnsets.setvsize,
     arguments = "string",
 }
 
-interfaces.implement {
+implement {
     name      = "sethsizecolumnset",
     actions   = columnsets.sethsize,
     arguments = "string",
 }
 
-interfaces.implement {
+implement {
     name      = "sethsizecolumnspan",
     actions   = columnsets.sethspan,
     arguments = { "string" ,"integer" },
 }
 
-interfaces.implement {
+implement {
     name      = "flushcolumnsetrest",
     actions   = columnsets.flushrest,
     arguments = { "string", "integer" },
 }
 
-interfaces.implement {
+implement {
     name      = "blockcolumnset",
     actions   = columnsets.block,
     arguments = { {
@@ -1328,7 +1329,7 @@ interfaces.implement {
     } }
 }
 
-interfaces.implement {
+implement {
     name      = "checkcolumnset",
     actions   = columnsets.check,
     arguments = { {
@@ -1344,7 +1345,7 @@ interfaces.implement {
     } }
 }
 
-interfaces.implement {
+implement {
     name      = "putincolumnset",
     actions   = columnsets.put,
     arguments = { {
@@ -1356,13 +1357,13 @@ interfaces.implement {
     } }
 }
 
-interfaces.implement {
+implement {
     name    = "addtocolumnset",
     actions = columnsets.add,
     arguments = { "string", "integer" },
 }
 
-interfaces.implement {
+implement {
     name    = "setcolumnsetlines",
     actions = columnsets.setlines,
     arguments = { {
@@ -1373,7 +1374,7 @@ interfaces.implement {
     } }
 }
 
-interfaces.implement {
+implement {
     name    = "setcolumnsetstart",
     actions = columnsets.setstart,
     arguments = { {
@@ -1384,7 +1385,7 @@ interfaces.implement {
     } }
 }
 
-interfaces.implement {
+implement {
     name    = "setcolumnsetproperties",
     actions = columnsets.setproperties,
     arguments = { {
@@ -1395,7 +1396,7 @@ interfaces.implement {
     } }
 }
 
-interfaces.implement {
+implement {
     name      = "registercolumnsetarea",
     actions   = columnsets.registerarea,
     arguments = { {
@@ -1410,13 +1411,13 @@ interfaces.implement {
     } }
 }
 
-interfaces.implement {
+implement {
     name      = "flushcolumnsetareas",
     actions   = columnsets.flushareas,
     arguments = "string",
 }
 
-interfaces.implement {
+implement {
     name      = "setcolumnsetarea",
     actions   = columnsets.setarea,
     arguments = { {
@@ -1428,18 +1429,18 @@ interfaces.implement {
     } }
 }
 
-interfaces.implement {
+implement {
     name      = "columnsetgoto",
     actions   = columnsets["goto"],
     arguments = "2 strings",
 }
 
-interfaces.implement {
+implement {
     name      = "columnsetnoto",
     actions   = columnsets["noto"],
 }
 
-interfaces.implement {
+implement {
     name      = "columnsetcurrentcolumn",
     actions   = columnsets.currentcolumn,
     arguments = "string",

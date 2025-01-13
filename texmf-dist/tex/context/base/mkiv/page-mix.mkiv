@@ -31,10 +31,6 @@
 % offsets (inner ones, so we change the hsize  ... needed with backgrounds
 % when no content we currently loose the page
 
-% luatex buglet:
-%
-% \ctxlua{tex.setbox("global",0,node.hpack(nodes.pool.glyph("a",font.current())))}\box0
-
 \registerctxluafile{page-mix}{}
 
 \unprotect
@@ -125,6 +121,7 @@
 \setnewconstant\c_page_mix_routine_error    \plusfour
 
 \newconditional\c_page_mix_process_notes
+\newconditional\c_page_mix_grid_snapping
 
 %D The main environment is called as follows:
 %D
@@ -253,9 +250,15 @@
 %D The error routine is there but unlikely to be called. It is a left-over from
 %D the traditional routine that might come in handy some day.
 
+\def\page_mix_construct_and_shipout#1#2#3%
+  {\ifconditional\c_page_mix_grid_snapping\else\gridsnappingfalse\fi % maybe only for notes (bottom alignment)
+   \page_otr_construct_and_shipout#1#2#3%
+   \ifconditional\c_page_mix_grid_snapping     \gridsnappingtrue \fi}
+
+
 \def\page_mix_routine_error
   {\showmessage\m!columns3\empty
-   \page_otr_construct_and_shipout\unvbox\normalpagebox\zerocount} % three arguments
+   \page_mix_construct_and_shipout\unvbox\normalpagebox\zerocount} % three arguments
 
 %D Some settings (and actions) depend on the current output routine and setting the
 %D hsize and vsize is among them. The calculation of the hsize is done elsewhere.
@@ -300,9 +303,11 @@
 
 \def\page_mix_enable_grid_snapping
   {\edef\p_grid{\mixedcolumnsparameter\c!grid}%
+   \setfalse\c_page_mix_grid_snapping
    \ifx\p_grid\empty
      % just follow the default grid settings
    \else
+     \ifgridsnapping\settrue\c_page_mix_grid_snapping\fi
      \gridsnappingtrue
      \setsystemmode\v!grid
      \spac_grids_snap_value_set\p_grid
@@ -795,7 +800,6 @@
 %      \hss
 %    \egroup}
 
-
 \unexpanded\def\page_mix_routine_continue
   {\bgroup
    \forgetall
@@ -803,7 +807,7 @@
    \setbox\b_page_mix_collected\vpack{\unvbox\normalpagebox}% brrr we need to make a tight box (combine this in lua)
    \page_mix_routine_construct\v!no
    \page_mix_routine_package
-   \page_otr_construct_and_shipout\box\b_page_mix_collected\zerocount % three arguments
+   \page_mix_construct_and_shipout\box\b_page_mix_collected\zerocount % three arguments
    \clf_mixflushrest
    \clf_mixcleanup
    \egroup}
@@ -841,7 +845,7 @@
         % 1 = we have stuff left, so flush and rebalance
         %writestatus\m!columns{flush continue}%
         \page_mix_routine_package
-        \page_otr_construct_and_shipout\box\b_page_mix_collected\zerocount % three arguments
+        \page_mix_construct_and_shipout\box\b_page_mix_collected\zerocount % three arguments
         \setbox\b_page_mix_collected\vpack{\clf_mixflushrest}% we could avoid this
         \clf_mixcleanup
         \ifdim\ht\b_page_mix_collected=\zeropoint
@@ -1005,7 +1009,7 @@
   {\page_one_place_float_force}
 
 \unexpanded\def\page_mix_command_side_float_output
-  {\page_otr_construct_and_shipout\unvbox\normalpagebox\zerocount} % three arguments
+  {\page_mix_construct_and_shipout\unvbox\normalpagebox\zerocount} % three arguments
 
 \unexpanded\def\page_mix_command_synchronize_side_floats
   {\page_sides_forget_floats}
@@ -1029,7 +1033,7 @@
    \begingroup
    \scratchdimen\dimexpr#1\lineheight\ifsecondargument+#2\fi\relax
    \ifdim\scratchdimen>\zeropoint
-     \attribute\checkedbreakattribute\number\scratchdimen
+     \c_attr_checkedbreak\number\scratchdimen % why \number
      \penalty\c_page_mix_break_forced\relax
    \fi
    \endgroup}

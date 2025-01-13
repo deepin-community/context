@@ -9,7 +9,7 @@ dhit_libkpathsea_configured ()
 case "$1" in
   configure)
     # dealing with doc link changes, bug #716892
-    # tex-common >=4 removes the link 
+    # tex-common >=4 removes the link
     #   /usr/share/texmf/doc -> /usr/share/doc/texmf
     # In addition, the preinst of tex-common renames the link
     # and the postinst removes the backup of the link
@@ -30,7 +30,7 @@ case "$1" in
     #
     # We deal with this case by moving the files back to the
     # proper place in the following way
-    # - preinst: 
+    # - preinst:
     #   If . tex-common is at version ~ 3, context at 2012
     #      . /u/s/texmf/doc is a link as specified above
     #   then
@@ -73,36 +73,49 @@ case "$1" in
     #
     if dhit_libkpathsea_configured; then
       tempfile=$(mktemp -p /tmp mtxrun.XXXXXXXX)
-      printf "Running mtxrun --generate. This may take some time... "
-      if mtxrun --generate > $tempfile 2>&1 ; then
-        rm -f $tempfile
-        echo "done."
-      else
-        exec >&2
-        echo
-        echo "mtxrun --generate failed. Output has been stored in"
-        echo "$tempfile"
-        echo "Please include this file if you report a bug."
-        echo
-        exit 1
-      fi
+    #  printf "Running mtxrun --generate. This may take some time... "
+    #  if mtxrun --generate > $tempfile 2>&1 ; then
+    #    rm -f $tempfile
+    #    echo "done."
+    #  else
+    #    exec >&2
+    #    echo
+    #    echo "mtxrun --generate failed. Output has been stored in"
+    #    echo "$tempfile"
+    #    echo "Please include this file if you report a bug."
+    #    echo
+    #    exit 1
+    #  fi
       tempfile=$(mktemp -p /tmp luatools.XXXXXXXX)
-      printf "Pregenerating ConTeXt MarkIV format. This may take some time... "
-      if luatools --make cont-en > $tempfile 2>&1 ; then
-        rm -f $tempfile
-        echo "done."
-      else
-        exec >&2
-        echo
-        echo "luatools --make cont-en failed. Output has been stored in"
-        echo "$tempfile"
-        echo "Please include this file if you report a bug."
-        echo
-        exit 1
-      fi
+    #  printf "Pregenerating ConTeXt MarkIV format. This may take some time... "
+    #  if luatools --make cont-en > $tempfile 2>&1 ; then
+    #    rm -f $tempfile
+    #    echo "done."
+    #  else
+    #    exec >&2
+    #    echo
+    #    echo "luatools --make cont-en failed. Output has been stored in"
+    #    echo "$tempfile"
+    #    echo "Please include this file if you report a bug."
+    #    echo
+    #    exit 1
+    #  fi
+      tempfile=$(mktemp -p /tmp luametatex.XXXXXXXX)
+    #  printf "Pregenerating LuaMetaTeX format files. This may take some time... "
+    #  if mtxrun --make cont-en > $tempfile 2>&1 ; then
+    #    rm -f $tempfile
+    #    echo "done."
+    #  else
+    #    exec >&2
+    #    echo
+    #    echo "Generating LuaMetaTeX format files failed."
+    #    echo "$tempfile"
+    #    echo "Please include this file if you report a bug."
+    #    echo
+    #    exit 1
+    #  fi
     fi
   ;;
 esac
 
 #DEBHELPER#
-

@@ -18,11 +18,11 @@
 fdf2tex \- Convert PDF formular data (FDF) into something (Con)TeX(t) can
 handle
 .PP
-.SH "SYNOPSIS" 
+.SH "SYNOPSIS"
 \fBfdf2tex\fP \fIinfile\fP [ \fIoutfile\fP ]
 .PP
 \fBfdf2tan\fP \fIinfile\fP
-.PP 
+.PP
 .SH DESCRIPTION
 .PP
 Converts PDF formular data (FDF) into something (Con)TeX(t) can
@@ -33,7 +33,7 @@ file processing, so most users do not need to worry about it.
 .PP
 Probably none -- all errors are in this manpage
 .PP
-.SH "SEE ALSO" 
+.SH "SEE ALSO"
 .IP \(bu
 \fBtexexec\fP(1).
 .IP \(bu
@@ -43,7 +43,7 @@ available from
 .IP \(bu
 .URL "http://www.contextgarden.net" "ConTeXt wiki" .
 
-.SH "AUTHOR" 
+.SH "AUTHOR"
 
 This manual page was written by Frank K\[:u]ster <frank@kuesterei.ch>,
 for the Debian GNU/Linux system, and modified by Sanjoy Mahajan

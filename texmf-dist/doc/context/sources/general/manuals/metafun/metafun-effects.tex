@@ -1,6 +1,4 @@
-% language=uk
-%
-% copyright=pragma-ade readme=readme.pdf licence=cc-by-nc-sa
+% language=us runpath=texruns:manuals/metafun
 
 % graphic text takes 5 sec on 21
 
@@ -234,9 +232,12 @@ path p ; p := fullcircle scaled u shifted (u/4,0);
 % fill p rotated 210 withcolor transparent("\MPvar{a}",.5,xgreen) ;
 % fill p rotated 330 withcolor transparent("\MPvar{a}",.5,xblue) ;
 
-fill p rotated  90 withcolor (0,0,1,0) withtransparency("\MPvar{a}",.5) ;
-fill p rotated 210 withcolor (0,1,0)   withtransparency("\MPvar{a}",.5) ;
-fill p rotated 330 withcolor (0,0,1)   withtransparency("\MPvar{a}",.5) ;
+% fill p rotated  90 withcolor (0,0,1,0) withtransparency("\MPvar{a}",.5) ;
+% fill p rotated 210 withcolor (0,1,0)   withtransparency("\MPvar{a}",.5) ;
+% fill p rotated 330 withcolor (0,0,1)   withtransparency("\MPvar{a}",.5) ;
+fill p rotated  90 withcolor (0,0,1,0) withtransparency(\MPvar{b},.5) ;
+fill p rotated 210 withcolor (0,1,0)   withtransparency(\MPvar{b},.5) ;
+fill p rotated 330 withcolor (0,0,1)   withtransparency(\MPvar{b},.5) ;
 \stopuseMPgraphic
 
 \startplacefigure[location=here,reference=fig:transparencies,title={The 12 transparency alternatives by name.}]
@@ -246,22 +247,22 @@ fill p rotated 330 withcolor (0,0,1)   withtransparency("\MPvar{a}",.5) ;
         \setupcombination[nx=4,ny=4]
     }
     \startcombination
-      {\useMPgraphic{test}{a=normal}}     {\tttf normal}
-      {\useMPgraphic{test}{a=multiply}}   {\tttf multiply}
-      {\useMPgraphic{test}{a=screen}}     {\tttf screen}
-      {\useMPgraphic{test}{a=overlay}}    {\tttf overlay}
-      {\useMPgraphic{test}{a=softlight}}  {\tttf softlight}
-      {\useMPgraphic{test}{a=hardlight}}  {\tttf hardlight}
-      {\useMPgraphic{test}{a=colordodge}} {\tttf colordodge}
-      {\useMPgraphic{test}{a=colorburn}}  {\tttf colorburn}
-      {\useMPgraphic{test}{a=darken}}     {\tttf darken}
-      {\useMPgraphic{test}{a=lighten}}    {\tttf lighten}
-      {\useMPgraphic{test}{a=difference}} {\tttf difference}
-      {\useMPgraphic{test}{a=exclusion}}  {\tttf exclusion}
-      {\useMPgraphic{test}{a=hue}}        {\tttf hue}
-      {\useMPgraphic{test}{a=saturation}} {\tttf saturation}
-      {\useMPgraphic{test}{a=color}}      {\tttf color}
-      {\useMPgraphic{test}{a=luminosity}} {\tttf luminosity}
+      {\useMPgraphic{test}{b=1,a=normal}}      {\tttf normal}
+      {\useMPgraphic{test}{b=2,a=multiply}}    {\tttf multiply} % here the mu in multiply triggers lookahead in lmtx
+      {\useMPgraphic{test}{b=3,a=screen}}      {\tttf screen}
+      {\useMPgraphic{test}{b=4,a=overlay}}     {\tttf overlay}
+      {\useMPgraphic{test}{b=5,a=softlight}}   {\tttf softlight}
+      {\useMPgraphic{test}{b=6,a=hardlight}}   {\tttf hardlight}
+      {\useMPgraphic{test}{b=7,a=colordodge}}  {\tttf colordodge}
+      {\useMPgraphic{test}{b=8,a=colorburn}}   {\tttf colorburn}
+      {\useMPgraphic{test}{b=9,a=darken}}      {\tttf darken}
+      {\useMPgraphic{test}{b=10,a=lighten}}    {\tttf lighten}
+      {\useMPgraphic{test}{b=11,a=difference}} {\tttf difference}
+      {\useMPgraphic{test}{b=12,a=exclusion}}  {\tttf exclusion}
+      {\useMPgraphic{test}{b=13,a=hue}}        {\tttf hue}
+      {\useMPgraphic{test}{b=14,a=saturation}} {\tttf saturation}
+      {\useMPgraphic{test}{b=15,a=color}}      {\tttf color}
+      {\useMPgraphic{test}{b=16,a=luminosity}} {\tttf luminosity}
     \stopcombination
 \stopplacefigure
 
@@ -317,9 +318,9 @@ Of course this also works well for \CMYK\ colors.
 Gray scales work as well:
 
 \startbuffer
-\definecolor[ta][s=.9,t=.7,a=11]
-\definecolor[tb][s=.7,t=.7,a=11]
-\definecolor[tc][s=.5,t=.7,a=11]
+\definecolor[tgraya][s=.9,t=.7,a=11]
+\definecolor[tgrayb][s=.7,t=.7,a=11]
+\definecolor[tgrayc][s=.5,t=.7,a=11]
 \stopbuffer
 
 \typebuffer \getbuffer
@@ -338,9 +339,9 @@ difference in fonts.
 % \stopbuffer
 
 \startbuffer
-draw textext("\color[ta]{\tf Hello}") scaled 5 ;
-draw textext("\color[tb]{\bf Hello}") scaled 5 ;
-draw textext("\color[tc]{\sl Hello}") scaled 5 ;
+draw textext("\color[tgraya]{\tf Hello}") scaled 5 ;
+draw textext("\color[tgrayb]{\bf Hello}") scaled 5 ;
+draw textext("\color[tgrayc]{\sl Hello}") scaled 5 ;
 \stopbuffer
 
 \typebuffer
@@ -363,9 +364,9 @@ moment shading is only supported in \PDF. In the following examples, we will use
 the next three colors:
 
 \startbuffer
-\definecolor[a][darkyellow]
-\definecolor[b][s=.8]
-\definecolor[c][darkred]
+\definecolor[mycolora][darkyellow]
+\definecolor[mycolorb][s=.8]
+\definecolor[mycolorc][darkred]
 \stopbuffer
 
 \typebuffer
@@ -386,13 +387,13 @@ First we discuss the old method which is still valid and also available in
 \startuniqueMPgraphic{CircularShade}
   path  p ;
   p := unitsquare xscaled \overlaywidth yscaled \overlayheight ;
-  circular_shade(p,0,\MPcolor{a},\MPcolor{b}) ;
+  circular_shade(p,0,\MPcolor{mycolora},\MPcolor{mycolorb}) ;
 \stopuniqueMPgraphic
 
 \startuniqueMPgraphic{LinearShade}
   path  p ;
   p := unitsquare xscaled \overlaywidth yscaled \overlayheight ;
-  linear_shade(p,0,\MPcolor{a},\MPcolor{b});
+  linear_shade(p,0,\MPcolor{mycolora},\MPcolor{mycolorb});
 \stopuniqueMPgraphic
 \stopbuffer
 
@@ -458,7 +459,7 @@ stepping through the color values, we can use the more efficient and generalized
      width := \overlaywidth ;
      height := \overlayheight ;
      path p ; p := unitsquare xscaled width yscaled height ;
-     #2_shade(p,#3,\MPcolor{a},\MPcolor{b}) ;
+     #2_shade(p,#3,\MPcolor{mycolora},\MPcolor{mycolorb}) ;
    \stopuniqueMPgraphic
    \defineoverlay[shade-#1][\uniqueMPgraphic{shade-#1}]%
    \framed[background=shade-#1,width=2cm,height=2cm,frame=off]{}}
@@ -501,7 +502,7 @@ stepping through the color values, we can use the more efficient and generalized
 % \startbuffer
 % path p ; p := fullcircle scaled 1cm ;
 % for i=0 step 2cm until 8cm :
-%   circular_shade(p shifted (i,0),0,\MPcolor{a},\MPcolor{b}) ;
+%   circular_shade(p shifted (i,0),0,\MPcolor{mycolora},\MPcolor{mycolorb}) ;
 % endfor ;
 % \stopbuffer
 %
@@ -518,7 +519,7 @@ stepping through the color values, we can use the more efficient and generalized
 % the center of the shading stays at the first circle.
 %
 % \startbuffer
-% circular_shade(fullcircle scaled 1cm,0,\MPcolor{a},\MPcolor{b}) ;
+% circular_shade(fullcircle scaled 1cm,0,\MPcolor{mycolora},\MPcolor{mycolorb}) ;
 % picture s ; s := currentpicture ; currentpicture := nullpicture ;
 % for i=0 step 2cm until 8cm :
 %   addto currentpicture also s shifted (i,0) ;
@@ -544,7 +545,7 @@ stepping through the color values, we can use the more efficient and generalized
 
 \startbuffer
 sh := define_circular_shade
-  (origin,origin,0,8cm,\MPcolor{a},\MPcolor{b}) ;
+  (origin,origin,0,8cm,\MPcolor{mycolora},\MPcolor{mycolorb}) ;
 for i=0 step 2cm until 8cm :
   fill fullcircle scaled 1cm shifted (i,0) withshade sh ;
 endfor ;
@@ -570,9 +571,9 @@ the shade. The next macro demonstrates the principles in a different way.
 def test_shade (expr a, b, ra, rb) =
   pickup pencircle scaled 1mm ;
 
-  color ca ; ca := \MPcolor{a} ;
-  color cb ; cb := \MPcolor{b} ;
-  color cc ; cc := \MPcolor{c} ;
+  color ca ; ca := \MPcolor{mycolora} ;
+  color cb ; cb := \MPcolor{mycolorb} ;
+  color cc ; cc := \MPcolor{mycolorc} ;
 
   path pa ; pa := fullcircle scaled 2ra shifted a ;
   path pb ; pb := fullcircle scaled 2rb shifted b ;
@@ -640,9 +641,9 @@ test_shade(origin shifted (.25cm,0), origin, .50cm, 1cm) ;
 def test_shade (expr a, b) =
   pickup pencircle scaled 1mm ;
 
-  color ca ; ca := \MPcolor{a} ;
-  color cb ; cb := \MPcolor{b} ;
-  color cc ; cc := \MPcolor{c} ;
+  color ca ; ca := \MPcolor{mycolora} ;
+  color cb ; cb := \MPcolor{mycolorb} ;
+  color cc ; cc := \MPcolor{mycolorc} ;
 
   sh := define_linear_shade(a,b,ca,cb) ;
 
@@ -1237,7 +1238,7 @@ definition.
 
 \startbuffer
 \startMPclip{head clip}
- w := \width ; h := \height ;
+ w := OverlayWidth ; h := OverlayHeight ;
  clip currentpicture to
   ((0,h)--(w,h){down}..{left}(0,0)--cycle) ;
 \stopMPclip
@@ -1305,7 +1306,7 @@ We can call up such a buffer as if it were an external figure. \in {Figure}
 \startbuffer[a]
 \startMPclip{text clip}
   clip currentpicture to fullcircle shifted (.5,.5)
-    xscaled \width yscaled \height ;
+    xscaled OverlayWidth yscaled OverlayHeight ;
 \stopMPclip
 \stopbuffer
 
@@ -1373,7 +1374,7 @@ in a similar way, using the predefined path \type {diamond}:
 \starttyping
 \startMPclip{diamond}
   clip currentpicture to unitdiamond
-    xscaled \width yscaled \height ;
+    xscaled OverlayWidth yscaled OverlayHeight ;
 \stopMPclip
 \stoptyping
 
@@ -1384,7 +1385,7 @@ with \CONTEXT.
 \starttyping
 \startMPclip{negellipse}
   clip currentpicture to (unitcircle peepholed unitsquare)
-    xscaled \width yscaled \height ;
+    xscaled OverlayWidth yscaled OverlayHeight ;
 \stopMPclip
 \stoptyping
 
@@ -1472,8 +1473,8 @@ graphics in \PNG, \PDF, and \JPG\ format, or more precise: those formats
 supported by \PDFTEX.\pagereference[hacker]
 
 \startbuffer
-draw externalfigure "hacker.png" scaled 5cm shifted (-6cm,0) ;
-draw externalfigure "hacker.png" scaled 5cm slanted .5 ;
+draw externalfigure "hacker.png" xsized 5cm shifted (-6cm,0) ;
+draw externalfigure "hacker.png" xsized 5cm slanted .5 ;
 \stopbuffer
 
 \typebuffer
@@ -1497,7 +1498,7 @@ for i := 1 upto 5 :
   c := .5(s,s) ;                      % center of picture
   d := (2cm*i,.5cm) randomized .5cm ; % displacement
   draw externalfigure "hacker.png"
-    scaled s rotatedaround (c,0 randomized 30) shifted d ;
+    ysized s rotatedaround (c,0 randomized 30) shifted d ;
 endfor ;
 \stopbuffer
 
@@ -1516,7 +1517,7 @@ figure inclusion and shading.
 
 \startbuffer
 picture p ;
-p := externalfigure "hacker.png" scaled 150pt ;
+p := externalfigure "hacker.png" xsized 150pt ;
 clip p to unitcircle scaled 150pt ;
 circular_shade(boundingbox p enlarged 10pt, 0, .2red, .9red) ;
 addto currentpicture also p ;
@@ -2025,6 +2026,7 @@ suffix determines the number of arguments and rendering. The \type {r} suffix
 reverses the order: the fill comes over the draw. There is a \type {p} suffix
 that returns just the picture.
 
+
 The next example demonstrates that you can combine \TEX's powerful line breaking
 algorithm with \METAPOST's graphic capabilities.
 
@@ -2115,7 +2117,7 @@ width is half the size specified.
 
 \startbuffer
 draw outlinetext.b
-  ("\mathematics{\left({{\sqrt{1+x}}\over{\sqrt{2+x^2}}}\right)}")
+  ("\mathematics{\left(\frac{\sqrt{1+x}}{\sqrt{2+x^2}}\right)}")
   (withcolor .850white)
   (withcolor .625red
    dashed evenly scaled .1
@@ -2222,14 +2224,14 @@ The \type {simple} option disables all. The simple results are shown in
 
 When you use this feature you need to be aware of the fact that fonts can have
 features, for instance ligatures and kerns between characters. In \in {figure}
-[fig:outlines:features] we see a few examples with and without features, one with
-Pagella (the Zapf quote) and one with Optima Nova (the Tufte quote).
+[fig:outlines:features] we see a few examples, one with Pagella (the Zapf quote)
+and one with Dejavu (the Tufte quote).
 
-\startplacefigure[reference=fig:outlines:features,title={Pagela (\OPENTYPE) and Optima Nova (\TYPEONE)}]
+\startplacefigure[reference=fig:outlines:features,title={Pagela and Dejavu}]
     \startcombination[1*4]
         \bgroup
             \def|#1|{-}%
-            \definedfont[texgyrepagella-regular.otf*none]%
+            \definedfont[file:texgyrepagella-regular.otf*none]%
             \startMPcode
                 draw outlinetext.b
                     ("\framed[align=normal,width=max]{\input{zapf}}")
@@ -2239,7 +2241,7 @@ Pagella (the Zapf quote) and one with Optima Nova (the Tufte quote).
         \egroup {pagella / no features}
         \bgroup
             \def|#1|{-}%
-            \definedfont[texgyrepagella-regular.otf*default]%
+            \definedfont[file:texgyrepagella-regular.otf*default]%
             \startMPcode
                 draw outlinetext.b
                     ("\framed[align=normal,width=max]{\input{zapf}}")
@@ -2249,24 +2251,24 @@ Pagella (the Zapf quote) and one with Optima Nova (the Tufte quote).
         \egroup {pagella / default features}
         \bgroup
             \def|#1|{-}%
-            \definedfont[lt55476.afm*none]% optima nova
+            \definedfont[file:dejavuserif.ttf*none]%
             \startMPcode
                 draw outlinetext.b
                     ("\framed[align=normal,width=max]{\input{tufte}}")
                     (withcolor .375white)
                     (withcolor .625green withpen pencircle scaled 1/10) ;
             \stopMPcode
-        \egroup {optima nova / no features}
+        \egroup {dejavu serif / no features}
         \bgroup
             \def|#1|{-}%
-            \definedfont[lt55476.afm*default]% optima nova
+            \definedfont[file:dejavuserif.ttf*default]%
             \startMPcode
                 draw outlinetext.b
                     ("\framed[align=normal,width=max]{\input{tufte}}")
                     (withcolor .375white)
                     (withcolor .625yellow withpen pencircle scaled 1/10) ;
             \stopMPcode
-        \egroup {optima nova / default features}
+        \egroup {dejavu serif / default features}
     \stopcombination
 \stopplacefigure
 
@@ -2285,6 +2287,219 @@ like:
 
 \startlinecorrection
     \processMPbuffer
+\stoplinecorrection
+
+The next example needs the \type {hanbatang-lvt.ttf} font so when you process this
+you might want to install that first. In \MKIV\ and \LMTX\ you can put that font
+in \typ {<texroot>/texmf-fonts/data/hanbantang} or a similar path.
+
+We start by defining the font:
+
+% \definefontfeature
+%   [korean-base]
+%   [goodies=hanbatanglvt,
+%    colorscheme=default,
+%    mode=node,
+%    script=hang,
+%    language=kor]
+
+\startbuffer
+\definefontfeature
+  [korean-base]
+  [goodies=hanbatanglvt,
+   colorscheme=default,
+   mode=node,
+   script=hang,
+   language=kor]
+
+\definefont[KoreanFont][file:hanbatanglvt*korean-base]
+\stopbuffer
+
+\typebuffer \getbuffer
+
+Next we define a macro that will draw the outline:
+
+\startbuffer
+\startMPdefinitions
+string KoreanColors[] ;
+
+KoreanColors[1] := "darkred" ;
+KoreanColors[2] := "darkgreen" ;
+KoreanColors[3] := "darkblue" ;
+KoreanColors[4] := "darkyellow" ;
+KoreanColors[5] := "darkgray" ;
+
+newinternal KoreanSplit ; KoreanSplit := -1 ;
+newinternal KoreanCode  ; KoreanCode  := -2 ;
+newinternal KoreanMode  ; KoreanMode  := KoreanSplit ;
+
+def KoreanOutline(expr txt) =
+  picture p ; p := outlinetext.p(txt) ;
+  numeric n ; n := 0 ;
+  string old, new ; old := "" ;
+  for i within p :
+    if KoreanMode == KoreanSplit :
+      n := n + 1 ;
+    elseif KoreanMode == KoreanCode :
+      new := prescriptpart i ;
+      if new <> old :
+          old := new ;
+          n := n + 1 ;
+      fi ;
+    else :
+      n := KoreanMode ;
+    fi ;
+    if unknown KoreanColors[n] :
+      n := 1 ;
+    fi ;
+    draw pathpart i
+      withpen pencircle scaled 1/10
+      withcolor KoreanColors[n] ;
+  endfor ;
+enddef ;
+
+def KoreanTest(expr txt) =
+  image (
+    KoreanMode  := KoreanSplit ; KoreanOutline(txt) ;
+    currentpicture := currentpicture shifted (- xpart urcorner currentpicture, 0);
+    KoreanMode  := KoreanCode ; KoreanOutline(txt) ;
+    currentpicture := currentpicture shifted (- xpart urcorner currentpicture, 0);
+    KoreanMode  := 3 ; KoreanOutline(txt) ;
+  )
+enddef ;
+\stopMPdefinitions
+\stopbuffer
+
+Because we want to reuse this definition, we define it for all what comes:
+
+\typebuffer \getbuffer
+
+% entered as three characters: ᄅ  ᅡ  ᆺ (mail collapses)
+%
+% \startMPcode KoreanTest("\KoreanFont 랏") ; \stopMPcode
+
+\startbuffer
+\startcombination[3*2]
+    {\startMPcode draw KoreanTest("\KoreanFont 랏") ysized 15mm ; \stopMPcode} {}
+    {\startMPcode draw KoreanTest("\KoreanFont 논") ysized 15mm ; \stopMPcode} {}
+    {\startMPcode draw KoreanTest("\KoreanFont 왕") ysized 15mm ; \stopMPcode} {}
+    {\startMPcode draw KoreanTest("\KoreanFont 닭") ysized 15mm ; \stopMPcode} {}
+    {\startMPcode draw KoreanTest("\KoreanFont 박") ysized 15mm ; \stopMPcode} {}
+    {\startMPcode draw KoreanTest("\KoreanFont 서") ysized 15mm ; \stopMPcode} {}
+\stopcombination
+\stopbuffer
+
+We use this macro in the following example. The results can be seen in \in
+{figure} [koreanoutlines]. There is one drawback of this example: It contributes
+a lot to the runtime: about 2.5~seconds to a 16~second run without this example.
+\footnote {This is partly due to an enforced intermediate garbage collection
+step.} The font itself loads fast but the outlines take their time because a few
+hundred megabytes of \LUA\ tables are involved. Instead you can define the
+feature to use \typ {goodies=hanbatanglvt} and \typ {colorscheme=default} and
+play with that.
+
+\typebuffer
+
+\startplacefigure[title=Some Korean magic,reference=koreanoutlines]
+    \doifelsemode{optional} {
+        \getbuffer
+    } {
+        \framed{A large optional example is not shown here!}
+    }
+\stopplacefigure
+
+On the mailing list occasionally questions pop op with respect to outlines and
+user Garulfo came up with a neat solution for shaded text. First some examples:
+
+\startbuffer
+\startMPcode
+   picture p ; p := lmt_outline [
+     text          = "\strut foo f o o",
+     drawcolor     = "white",
+     rulethickness = .2
+   ] ysized 3cm ;
+   fill boundingbox p
+    withshademethod "linear"
+    withshadedirection(0,1)
+    withshadecolors ("darkblue", "darkyellow") ;
+   draw p;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+Here the background shines through the text:
+
+\startlinecorrection \getbuffer \stoplinecorrection
+
+You can actually use the effects features which for a larger text is more
+efficient because it just renders the font differently. The result is
+shown in \in {figure} [fig:effects:text].
+
+\startbuffer[effects-text]
+\startuseMPgraphic{MyShade}
+  fill OverlayBox
+    withshademethod "linear"
+    withshadedirection(0,1)
+   withshadecolors (red, blue) ;
+\stopuseMPgraphic
+
+\defineoverlay[MyShade][\useMPgraphic{MyShade}]
+
+\setupbackgrounds[page][background=MyShade]
+
+\startmakeup
+    \definedfont[SerifBold*default @ 50pt] \setupinterlinespace
+
+    \defineeffect[MyOutline][alternative=outer,rulethickness=1pt]
+
+    \startcolor[white]
+        \starteffect[MyOutline]
+            \input jojomayer
+        \stopeffect
+    \stopcolor
+\stopmakeup
+\stopbuffer
+
+\typebuffer[effects-text]
+
+\startplacefigure[title=Regular text effects,reference=fig:effects:text]
+    \typesetbuffer[effects-text][height=.3\textheight]
+\stopplacefigure
+
+We now come to the neat example:
+
+\startbuffer
+\startMPcode
+    picture tt ; tt := lmt_outline [
+        kind = "fillup",
+        text = "\definedfont[name:texgyrepagellabold*default]foo f o o",
+    ] xsized 12cm ;
+
+    path bb ; bb := boundingbox tt ;
+
+    path pp ; pp := bb enlarged 2cm ;
+
+    fill pp
+       withshademethod "linear"
+       withshadedirection down
+       withshadecolors ("darkred", "darkblue") ;
+
+    for i within tt :
+        nofill pathpart i;
+    endfor ;
+
+    eofill bb withcolor "darkgray" ;
+    clip currentpicture to bb ;
+\stopMPcode
+\stopbuffer
+
+\typebuffer
+
+It uses a clever combination of refilling the shape and background:
+
+\startlinecorrection
+    \getbuffer
 \stoplinecorrection
 
 \stopsection

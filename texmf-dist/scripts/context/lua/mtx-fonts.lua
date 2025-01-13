@@ -12,11 +12,14 @@ local givenfiles  = environment.files
 
 local suffix, addsuffix, removesuffix, replacesuffix = file.suffix, file.addsuffix, file.removesuffix, file.replacesuffix
 local nameonly, basename, joinpath, collapsepath = file.nameonly, file.basename, file.join, file.collapsepath
-local lower = string.lower
+local lower, gsub = string.lower, string.gsub
 local concat = table.concat
 local write_nl = (logs and logs.writer) or (texio and texio.write_nl) or print
 
-local otlversion  = 3.111
+local versions = {
+    otl = 3.140,
+    one = 1.520,
+}
 
 local helpinfo = [[
 <?xml version="1.0"?>
@@ -58,6 +61,10 @@ local helpinfo = [[
    <title>Examples</title>
    <subcategory>
     <example><command>mtxrun --script font --list somename (== --pattern=*somename*)</command></example>
+   </subcategory>
+   <subcategory>
+    <example><command>mtxrun --script font --list --file filename</command></example>
+    <example><command>mtxrun --script font --list --name --pattern=*somefile*</command></example>
    </subcategory>
    <subcategory>
     <example><command>mtxrun --script font --list --name somename</command></example>
@@ -123,7 +130,7 @@ loadmodule("font-otr.lua")
 loadmodule("font-cff.lua")
 loadmodule("font-ttf.lua")
 loadmodule("font-tmp.lua")
-loadmodule("font-dsp.lua")
+loadmodule("font-dsp.lua") -- autosuffix
 loadmodule("font-oup.lua")
 
 loadmodule("font-otl.lua")
@@ -183,6 +190,9 @@ function fonts.names.simple(alsotypeone)
     local simplelist = { "ttf", "otf", "ttc", alsotypeone and "afm" or nil }
     local name = "luatex-fonts-names.lua"
     local path = collapsepath(caches.getwritablepath("..","..","generic","fonts","data"))
+
+    path = gsub(path, "luametatex%-cache", "luatex-cache") -- maybe have an option to force it
+
     fonts.names.filters.list = simplelist
     fonts.names.version = simpleversion -- this number is the same as in font-dum.lua
     report("generating font database for 'luatex-fonts' version %s",fonts.names.version)
@@ -281,14 +291,19 @@ local function showfeatures(tag,specification)
                 for f,ff in table.sortedhash(data) do
                     local done = false
                     for s, ss in table.sortedhash(ff) do
-                        if s == "*"  then s       = "all" end
-                        if ss  ["*"] then ss["*"] = nil ss.all = true end
+                        local s = s == "*" and all or s
+                        if ss["*"] then
+                            ss["*"] = nil
+                            ss.all  = true
+                        end
+                        local name
                         if done then
-                            f = ""
+                            name = ""
                         else
                             done = true
+                            name = f
                         end
-                        report("  % -8s % -8s % -8s",f,s,concat(table.sortedkeys(ss), " ")) -- todo: padd 4
+                        report("  %-8s %-8s %-8s",name,s,concat(table.sortedkeys(ss), " ")) -- todo: padd 4
                     end
                 end
             end
@@ -310,7 +325,7 @@ local function showfeatures(tag,specification)
             report("  method   feature         formats")
             report()
             for k, v in table.sortedhash(methods) do
-                report("  % -8s % -14s  %s",k,v.feature,v.format)
+                report("  %-8s %-14s  %s",k,v.feature,v.format)
             end
         end
     end
@@ -351,9 +366,14 @@ local function list_specifications(t,info)
                     fontweight(entry.fontweight),
                 }
             end
-            table.insert(s,1,{"familyname","weight","style","width","variant","fontname","filename","subfont","fontweight"})
-            table.insert(s,2,{"","","","","","","","",""})
-            utilities.formatters.formatcolumns(s)
+            local h = {
+                {"familyname","weight","style","width","variant","fontname","filename","subfont","fontweight"},
+                {"","","","","","","","",""}
+            }
+            utilities.formatters.formatcolumns(s,false,h)
+            for k=1,#h do
+                write_nl(h[k])
+            end
             for k=1,#s do
                 write_nl(s[k])
             end
@@ -406,46 +426,46 @@ function scripts.fonts.list()
 
     if getargument("name") then
         if pattern then
-            --~ mtxrun --script font --list --name --pattern=*somename*
+            -- mtxrun --script font --list --name --pattern=*somename*
             list_matches(fonts.names.list(string.topattern(pattern,true),reload,all),info)
         elseif filter then
             report("not supported: --list --name --filter",name)
         elseif given then
-            --~ mtxrun --script font --list --name somename
+            -- mtxrun --script font --list --name somename
             list_matches(fonts.names.list(given,reload,all),info)
         else
             report("not supported: --list --name <no specification>",name)
         end
     elseif getargument("spec") then
         if pattern then
-            --~ mtxrun --script font --list --spec --pattern=*somename*
+            -- mtxrun --script font --list --spec --pattern=*somename*
             report("not supported: --list --spec --pattern",name)
         elseif filter then
-            --~ mtxrun --script font --list --spec --filter="fontname=somename"
+            -- mtxrun --script font --list --spec --filter="fontname=somename"
             list_specifications(fonts.names.getlookups(filter),info)
         elseif given then
-            --~ mtxrun --script font --list --spec somename
+            -- mtxrun --script font --list --spec somename
             list_specifications(fonts.names.collectspec(given,reload,all),info)
         else
             report("not supported: --list --spec <no specification>",name)
         end
     elseif getargument("file") then
         if pattern then
-            --~ mtxrun --script font --list --file --pattern=*somename*
+            -- mtxrun --script font --list --file --pattern=*somename*
             list_specifications(fonts.names.collectfiles(string.topattern(pattern,true),reload,all),info)
         elseif filter then
             report("not supported: --list --spec",name)
         elseif given then
-            --~ mtxrun --script font --list --file somename
+            -- mtxrun --script font --list --file somename
             list_specifications(fonts.names.collectfiles(given,reload,all),info)
         else
             report("not supported: --list --file <no specification>",name)
         end
     elseif pattern then
-        --~ mtxrun --script font --list --pattern=*somename*
+        -- mtxrun --script font --list --pattern=*somename*
         list_matches(fonts.names.list(string.topattern(pattern,true),reload,all),info)
     elseif given then
-        --~ mtxrun --script font --list somename
+        -- mtxrun --script font --list somename
         list_matches(fonts.names.list(given,reload,all),info)
     elseif all then
         pattern = "*"
@@ -459,10 +479,22 @@ end
 function scripts.fonts.unpack()
     local name = removesuffix(basename(givenfiles[1] or ""))
     if name and name ~= "" then
-        local cacheid   = getargument("cache") or "otl"
-        local cache     = containers.define("fonts", cacheid, otlversion, true) -- cache is temp
-        local cleanname = containers.cleanname(name)
-        local data = containers.read(cache,cleanname)
+        local cacheid   = false
+        local cache     = false
+        local cleanname = false
+        local data      = false
+        local list = { getargument("cache") or false, "otl", "one" }
+        for i=1,#list do
+            cacheid   = list[i]
+            if cacheid then
+                cache     = containers.define("fonts", cacheid, versions[cacheid], true) -- cache is temp
+                cleanname = containers.cleanname(name)
+                data      = containers.read(cache,cleanname)
+                if data then
+                    break
+                end
+            end
+        end
         if data then
             local savename = addsuffix(cleanname .. "-unpacked","tma")
             report("fontsave, saving data in %s",savename)
@@ -486,11 +518,16 @@ function scripts.fonts.convert() -- new save
             if suffix == 'ttf' or suffix == 'otf' or suffix == 'ttc' then
                 local data = fonts.handlers.otf.readers.loadfont(filename,sub)
                 if data then
+                    local nofsubfonts = data and data.properties and data.properties.nofsubfonts or 0
                     fonts.handlers.otf.readers.compact(data)
                     fonts.handlers.otf.readers.rehash(data,getargument("names") and "names" or "unicodes")
                     local savename = replacesuffix(lower(data.metadata.fullname or filename),"lua")
                     table.save(savename,data)
-                    report("font: %a saved as %a",filename,savename)
+                    if nofsubfonts == 0 then
+                        report("font: %a saved as %a",filename,savename)
+                    else
+                        report("font: %a saved as %a, %i subfonts found, provide number if wanted",filename,savename,nofsubfonts)
+                    end
                 else
                     report("font: %a not loaded",filename)
                 end

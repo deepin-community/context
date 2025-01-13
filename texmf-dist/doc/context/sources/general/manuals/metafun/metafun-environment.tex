@@ -1,6 +1,4 @@
-% language=uk
-%
-% copyright=pragma-ade readme=readme.pdf licence=cc-by-nc-sa
+% language=us runpath=texruns:manuals/metafun
 
 \startenvironment metafun-environment
 
@@ -182,24 +180,50 @@
 
 \defineoverlay[titled][\uniqueMPgraphic{titled}]
 
+% \starttexdefinition unexpanded ChapterCommand #1#2
+%     \ifconditional\headshownumber
+%         \ifdim\leftmarginwidth<\rightmarginwidth
+%           \donetrue
+%         \else
+%           \donefalse
+%         \fi
+%         \hskip-\ifdone\leftmargintotal\else\rightmargintotal\fi
+%         \framed [
+%             background=titled,
+%             frame=off,
+%             offset=0pt
+%         ] {
+%             \hbox to \ifdone\leftmarginwidth\else\rightmarginwidth\fi {
+%                 #1
+%                 \hss
+%             }
+%             \hskip\ifdone\leftmargindistance\else\rightmargindistance\fi
+%             #2
+%         }
+%     \else
+%         \framed [
+%             background=titled,
+%             frame=off,
+%             offset=0pt
+%         ] {
+%             #2
+%         }
+%     \fi
+% \stoptexdefinition
+
 \starttexdefinition unexpanded ChapterCommand #1#2
     \ifconditional\headshownumber
-        \ifdim\leftmarginwidth<\rightmarginwidth
-          \donetrue
-        \else
-          \donefalse
-        \fi
-        \hskip-\ifdone\leftmargintotal\else\rightmargintotal\fi
+        \hskip-\leftmargintotal\relax
         \framed [
             background=titled,
             frame=off,
             offset=0pt
         ] {
-            \hbox to \ifdone\leftmarginwidth\else\rightmarginwidth\fi {
+            \hbox to \leftmarginwidth {
                 #1
                 \hss
             }
-            \hskip\ifdone\leftmargindistance\else\rightmargindistance\fi
+            \hskip\leftmargindistance\relax
             #2
         }
     \else
@@ -316,7 +340,7 @@
 
 \startbuffer[shape-a]
 \startuniqueMPgraphic{meta:hash}{linewidth,linecolor,angle,gap}
-  if unknown context_back : input mp-back ; fi ;
+  loadmodule("back") ;
   some_hash ( OverlayWidth, OverlayHeight ,
               \MPvar{linewidth}, \MPvar{linecolor} ,
               \MPvar{angle}, \MPvar{gap} ) ;
@@ -343,7 +367,7 @@
 
 \startbuffer[symb-a]
 \startuniqueMPgraphic{meta:button}{type,size,linecolor,fillcolor}
-  if unknown context_butt : input mp-butt ; fi ;
+  loadmodule("butt") ;
   some_button ( \MPvar{type},
                 \MPvar{size},
                 \MPvar{linecolor},

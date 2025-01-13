@@ -14,12 +14,12 @@ local helpinfo = [[
  <metadata>
   <entry name="name">mtx-install</entry>
   <entry name="detail">ConTeXt Installer</entry>
-  <entry name="version">2.00</entry>
+  <entry name="version">2.01</entry>
  </metadata>
  <flags>
   <category name="basic">
    <subcategory>
-    <flag name="platform" value="string"><short>platform (windows, linux, linux-64, osx-intel, osx-ppc, linux-ppc)</short></flag>
+    <flag name="platform" value="string"><short>platform</short></flag>
     <flag name="server" value="string"><short>repository url (rsync://contextgarden.net)</short></flag>
     <flag name="modules" value="string"><short>extra modules (can be list or 'all')</short></flag>
     <flag name="fonts" value="string"><short>additional fonts (can be list or 'all')</short></flag>
@@ -28,27 +28,60 @@ local helpinfo = [[
     <flag name="update"><short>update context</short></flag>
     <flag name="erase"><short>wipe the cache</short></flag>
     <flag name="identify"><short>create list of files</short></flag>
+    <flag name="secure"><short>use curl for https</short></flag>
    </subcategory>
   </category>
  </flags>
 </application>
 ]]
 
+local type, tonumber = type, tonumber
 local gsub, find, escapedpattern = string.gsub, string.find, string.escapedpattern
 local round = math.round
 local savetable, loadtable, sortedhash = table.save, table.load, table.sortedhash
 local copyfile, joinfile, filesize, dirname, addsuffix, basename = file.copy, file.join, file.size, file.dirname, file.addsuffix, file.basename
-local isdir, isfile, walkdir, pushdir, popdir, currentdir = lfs.isdir, lfs.isfile, lfs.dir, lfs.chdir, dir.push, dir.pop, currentdir
+local isdir, isfile, walkdir, pushdir, popdir, currentdir = lfs.isdir, lfs.isfile, lfs.dir, dir.push, dir.pop, dir.current
 local mkdirs, globdir = dir.mkdirs, dir.glob
-local osremove, osexecute, ostype = os.remove, os.execute, os.type
-local savedata = io.savedata
+local osremove, osexecute, ostype, resultof = os.remove, os.execute, os.type, os.resultof
+local savedata, loaddata = io.savedata, io.loaddata
 local formatters = string.formatters
+local httprequest = socket.http.request
 
-local fetch = socket.http.request
+local usecurl  = false
+local protocol = "http"
+
+local function checkcurl()
+    local s = resultof("curl --version")
+    return type(s) == "string" and find(s,"libcurl") and find(s,"rotocols")
+end
+
+local function fetch(url)
+    local data   = nil
+    local detail = nil
+    if usecurl and find(url,"^https") then
+        data = resultof("curl " .. url)
+    else
+        data, detail = httprequest(url)
+    end
+    if type(data) ~= "string" then
+        data   = false
+        detail = "download failed"
+    elseif #data == 0 then
+        data   = false
+        detail = "download failed, zero length"
+    elseif #data < 2048 then
+        local n, t = find(data,"<head>%s*<title>%s*(%d+)%s(.-)</title>")
+        if tonumber(n) then
+            data   = false
+            detail = n .. " " .. t
+        end
+    end
+    return data, detail
+end
 
 local application = logs.application {
     name     = "mtx-install",
-    banner   = "ConTeXt Installer 2.00",
+    banner   = "ConTeXt Installer 2.01",
     helpinfo = helpinfo,
 }
 
@@ -72,11 +105,11 @@ local texformats = {
 
 local platforms = {
     ["mswin"]          = "mswin",
-    ["windows"]        = "mswin",
+ -- ["windows"]        = "mswin",
     ["win32"]          = "mswin",
     ["win"]            = "mswin",
     --
-    ["mswin-64"]       = "win64",
+    ["windows"]        = "win64",
     ["windows-64"]     = "win64",
     ["win64"]          = "win64",
     --
@@ -84,19 +117,21 @@ local platforms = {
     ["linux-32"]       = "linux",
     ["linux32"]        = "linux",
     --
+ -- ["linux"]          = "linux-64",
     ["linux-64"]       = "linux-64",
     ["linux64"]        = "linux-64",
     --
+    ["linuxmusl"]      = "linuxmusl",
     ["linuxmusl-64"]   = "linuxmusl-64",
     --
-    ["linux-armhf"]    = "linux-armhf",
+ -- ["linux-armhf"]    = "linux-armhf",
     --
-    ["openbsd"]        = "openbsd6.6",
-    ["openbsd-i386"]   = "openbsd6.6",
-    ["openbsd-amd64"]  = "openbsd6.6-amd64",
+    ["openbsd"]        = "openbsd-amd64",
+ -- ["openbsd-i386"]   = "openbsd7.3",
+    ["openbsd-amd64"]  = "openbsd-amd64",
     --
-    ["freebsd"]        = "freebsd",
-    ["freebsd-i386"]   = "freebsd",
+    ["freebsd"]        = "freebsd-amd64",
+ -- ["freebsd-i386"]   = "freebsd",
     ["freebsd-amd64"]  = "freebsd-amd64",
     --
  -- ["kfreebsd"]       = "kfreebsd-i386",
@@ -118,7 +153,10 @@ local platforms = {
     --
     ["macosx"]         = "osx-64",
     ["osx"]            = "osx-64",
+    ["osx-intel"]      = "osx-64",
     ["osx-64"]         = "osx-64",
+    ["osx-arm"]        = "osx-arm64",
+    ["osx-arm64"]      = "osx-arm64",
     --
  -- ["solaris-intel"]  = "solaris-intel",
     --
@@ -152,11 +190,16 @@ function install.identify()
                 local name  = files[i]
                 local size  = filesize(name)
                 local base  = gsub(name,pattern,"")
-                local stamp = hashdata(io.loaddata(name))
-                details[i]  = { base, size, stamp }
-                total       = total + size
+                local data  = loaddata(name)
+                if data and #data > 0 then
+                    local stamp = hashdata(data)
+                    details[i]  = { base, size, stamp }
+                    total       = total + size
+                else
+                    report("%-24s : bad file %a",tree,name)
+                end
             end
-            report("%-20s : %4i files, %3.0f MB",tree,#files,total/(1000*1000))
+            report("%-24s : %4i files, %3.0f MB",tree,#files,total/(1000*1000))
 
             savetable(path .. ".tma",details)
 
@@ -177,6 +220,8 @@ function install.identify()
         version = "lmtx",
         date    = os.date("%Y-%m-%d"),
     })
+
+    os.exit()
 
 end
 
@@ -205,15 +250,15 @@ function install.update()
         return ok
     end
 
-    local function download(what,url,target,total,done,oldhash)
+    local function download(what,url,target,total,done,hash)
         local data = fetch(url .. "/" .. target)
-        if data then
+        if type(data) == "string" and #data > 0  then
             if total and done then
                 report("%-8s : %3i %% : %8i : %s",what,round(100*done/total),#data,target)
             else
                 report("%-8s : %8i : %s",what,#data,target)
             end
-            if oldhash and oldhash ~= hashdata(data) then
+            if hash and hash ~= hashdata(data) then
                 return "different hash value"
             elseif not validdir(dirname(target)) then
                 return "wrong target directory"
@@ -296,8 +341,9 @@ function install.update()
                 report("fetching %a",zipurl)
                 local zipdata = fetch(zipurl)
                 if zipdata then
-                    io.savedata(zipfile,zipdata)
+                    savedata(zipfile,zipdata)
                 else
+                    osremove(zipfile)
                     zipfile = false
                 end
             end
@@ -313,6 +359,7 @@ function install.update()
                     path    = ".",
                  -- verbose = true,
                     verbose = "steps",
+                    collect = true, -- sort of a check
                 }
 
                 if utilities.zipfiles.unzipdir(specification) then
@@ -321,7 +368,6 @@ function install.update()
                 else
                     osremove(zipfile)
                 end
-
             end
 
             count = #new
@@ -339,7 +385,10 @@ function install.update()
                 local target = joinfile(tree,name)
                 done = done + size
                 if not skiplist or not skiplist[basename(name)] then
-                    download("new",url,target,total,done)
+                    local message = download("new",url,target,total,done)
+                    if message then
+                        report("%s",message)
+                    end
                 else
                     report("skipping %s",target)
                 end
@@ -450,7 +499,7 @@ function install.update()
 
     for i=1,#list do
         local host = list[i]
-        local data, status, detail = fetch("http://" .. host .. "/" .. instance .. "/tex/status.tma")
+        local data, status, detail = fetch(protocol .. "://" .. host .. "/" .. instance .. "/tex/status.tma")
         if status == 200 and type(data) == "string" then
             local t = loadstring(data)
             if type(t) == "function" then
@@ -468,7 +517,7 @@ function install.update()
         return
     end
 
-    local url = "http://" .. server .. "/" .. instance .. "/"
+    local url = protocol .. "://" .. server .. "/" .. instance .. "/"
 
     local texmfplatform = "texmf-" .. platform
 
@@ -498,24 +547,27 @@ function install.update()
     local binpath = joinfile(targetroot,"tex",texmfplatform,"bin")
 
     local luametatex = "luametatex"
+    local luatex     = "luatex"
     local mtxrun     = "mtxrun"
     local context    = "context"
 
     if ostype == "windows" then
         luametatex = addsuffix(luametatex,"exe")
+        luatex     = addsuffix(luatex,"exe")
         mtxrun     = addsuffix(mtxrun,"exe")
         context    = addsuffix(context,"exe")
     end
 
     local luametatexbin = joinfile(binpath,luametatex)
+    local luatexbin     = joinfile(binpath,luatex)
     local mtxrunbin     = joinfile(binpath,mtxrun)
     local contextbin    = joinfile(binpath,context)
 
     local cdir = currentdir()
     local pdir = pushdir(binpath)
 
-    report("current  : %S",cdir)
-    report("target   : %S",pdir)
+    report("current  : %S",cdir or "<unable to check the curent path>")
+    report("target   : %S",pdir or "<unable to change to the binary path>")
 
     if pdir ~= cdir then
 
@@ -552,6 +604,11 @@ function install.update()
     else
      -- report("xbit bad : %s",luametatexbin)
     end
+    if lfs.setexecutable(luatexbin) then
+        report("xbit set : %s",luatexbin)
+    else
+     -- report("xbit bad : %s",luatexbin)
+    end
     if lfs.setexecutable(mtxrunbin) then
         report("xbit set : %s",mtxrunbin)
     else
@@ -570,6 +627,10 @@ function install.update()
     end
     run("%s --make en", contextbin)
 
+    -- in case we also install luatex:
+
+    run("%s --luatex --generate",contextbin)
+    run("%s --luatex --make en", contextbin)
 
     -- in calling script: update mtxrun.exe and mtxrun.lua
 
@@ -582,7 +643,32 @@ function install.update()
     report("")
 
     report("update, done")
+
 end
+
+function install.modules()
+    report("--modules in not yet implemented")
+end
+
+function install.fonts()
+    report("--fonts in not yet implemented")
+end
+
+function install.goodies()
+    report("--goodies in not yet implemented")
+end
+
+if environment.argument("secure") then
+    usecurl = checkcurl()
+    if usecurl then
+        protocol = "https"
+    else
+        report("no curl installed, quitting")
+        os.exit()
+    end
+end
+
+io.output():setvbuf("no")
 
 if environment.argument("identify") then
     install.identify()
@@ -590,6 +676,12 @@ elseif environment.argument("install") then
     install.update()
 elseif environment.argument("update") then
     install.update()
+elseif environment.argument("modules") then
+    install.modules()
+elseif environment.argument("fonts") then
+    install.fonts()
+elseif environment.argument("goodies") then
+    install.goodies()
 elseif environment.argument("exporthelp") then
     application.export(environment.argument("exporthelp"),environment.files[1])
 else
@@ -597,3 +689,4 @@ else
     report("")
     disclaimer()
 end
+

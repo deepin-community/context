@@ -1,15 +1,11 @@
 if not modules then modules = { } end modules ['font-nod'] = {
     version   = 1.001,
+    optimize  = true,
     comment   = "companion to font-ini.mkiv",
     author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
     copyright = "PRAGMA ADE / ConTeXt Development Team",
     license   = "see context related readme files"
 }
-
---[[ldx--
-<p>This is rather experimental. We need more control and some of this
-might become a runtime module instead. This module will be cleaned up!</p>
---ldx]]--
 
 local utfchar = utf.char
 local concat, fastcopy = table.concat, table.fastcopy
@@ -17,7 +13,6 @@ local match, rep = string.match, string.rep
 
 fonts = fonts or { }
 nodes = nodes or { }
-
 
 local fonts            = fonts
 local nodes            = nodes
@@ -39,9 +34,6 @@ local tonode           = nuts.tonode
 local injections       = nodes.injections or { }
 nodes.injections       = injections
 
-local char_tracers     = tracers.characters or { }
-tracers.characters     = char_tracers
-
 local step_tracers     = tracers.steppers or { }
 tracers.steppers       = step_tracers
 
@@ -54,7 +46,7 @@ local disc_code        = nodecodes.disc
 local glue_code        = nodecodes.glue
 local kern_code        = nodecodes.kern
 local dir_code         = nodecodes.dir
-local localpar_code    = nodecodes.localpar
+local par_code         = nodecodes.par
 
 local getnext          = nuts.getnext
 local getprev          = nuts.getprev
@@ -73,11 +65,11 @@ local setbox           = nuts.setbox
 local setchar          = nuts.setchar
 local setsubtype       = nuts.setsubtype
 
-local copy_node_list   = nuts.copy_list
-local hpack_node_list  = nuts.hpack
-local flush_node_list  = nuts.flush_list
-local protect_glyphs   = nuts.protect_glyphs
-local start_of_par     = nuts.start_of_par
+local copy_node_list   = nuts.copylist
+local hpacknodelist    = nuts.hpack
+local flushnodelist    = nuts.flushlist
+local protectglyphs    = nuts.protectglyphs
+local startofpar       = nuts.startofpar
 
 local nextnode         = nuts.traversers.node
 local nextglyph        = nuts.traversers.glyph
@@ -111,134 +103,8 @@ local function freeze(h,where)
     end
 end
 
-function char_tracers.collect(head,list,tag,n)
-    n = n or 0
-    local ok = false
-    local fn = nil
-    while head do
-        local char, id = isglyph(head)
-        if char then
-            local font = id
-            if font ~= fn then
-                ok, fn = false, font
-            end
-            if not ok then
-                ok = true
-                n = n + 1
-                list[n] = list[n] or { }
-                list[n][tag] = { }
-            end
-            local l = list[n][tag]
-         -- l[#l+1] = { char, font, i }
-            l[#l+1] = { char, font }
-        elseif id == disc_code then
-            -- skip
-         -- local pre, post, replace = getdisc(head)
-         -- if replace then
-         --     for n in nextglyph, replace do
-         --         l[#l+1] = { c, f }
-         --     end
-         -- end
-         -- if pre then
-         --     for n in nextglyph, pre do
-         --         l[#l+1] = { c, f }
-         --     end
-         -- end
-         -- if post then
-         --     for n in nextglyph, post do
-         --         l[#l+1] = { c, f }
-         --     end
-         -- end
-        else
-            ok = false
-        end
-        head = getnext(head)
-    end
-end
-
-function char_tracers.equal(ta, tb)
-    if #ta ~= #tb then
-        return false
-    else
-        for i=1,#ta do
-            local a = ta[i]
-            local b = tb[i]
-         -- if a[1] ~= b[1] or a[2] ~= b[2] or a[3] ~= b[3] then
-            if a[1] ~= b[1] or a[2] ~= b[2] then
-                return false
-            end
-        end
-    end
-    return true
-end
-
-function char_tracers.string(t)
-    local tt = { }
-    for i=1,#t do
-        tt[i] = utfchar(t[i][1])
-    end
-    return concat(tt,"")
-end
-
 local f_unicode = formatters["%U"]
 local f_badcode = formatters["{%i}"]
-
-function char_tracers.unicodes(t,decimal)
-    local tt = { }
-    for i=1,#t do
-        local n = t[i][1]
-        if n == 0 then
-            tt[i] = "-"
-        elseif decimal then
-            tt[i] = n
-        else
-            tt[i] = f_unicode(n)
-        end
-    end
-    return concat(tt," ")
-end
-
--- function char_tracers.indices(t,decimal)
---     local tt = { }
---     for i=1,#t do
---         local n = t[i][3]
---         if n == 0 then
---             tt[i] = "-"
---         elseif decimal then
---             tt[i] = n
---         else
---             tt[i] = f_unicode(n)
---         end
---     end
---     return concat(tt," ")
--- end
-
-function char_tracers.start()
-    local npc = handlers.characters -- should accept nuts too
-    local list = { }
-    function handlers.characters(head)
-        local n = #list
-        char_tracers.collect(head,list,'before',n)
-        head = npc(head) -- for the moment tonode
-        char_tracers.collect(head,list,'after',n)
-        if #list > n then
-            list[#list+1] = { }
-        end
-        return head
-    end
-    function char_tracers.stop()
-        tracers.list['characters'] = list
-        local variables = {
-            ['title']                = 'ConTeXt Character Processing Information',
-            ['color-background-one'] = lmx.get('color-background-yellow'),
-            ['color-background-two'] = lmx.get('color-background-purple'),
-        }
-        lmx.show('context-characters.lmx',variables)
-        handlers.characters = npc
-        tasks.restart("processors", "characters")
-    end
-    tasks.restart("processors", "characters")
-end
 
 local stack = { }
 
@@ -273,7 +139,7 @@ function step_tracers.reset()
     for i=1,#collection do
         local c = collection[i]
         if c then
-            flush_node_list(c)
+            flushnodelist(c)
         end
     end
     collection, messages = { }, { }
@@ -287,13 +153,12 @@ function step_tracers.glyphs(n,i)
     local c = collection[i]
     if c then
         local c = copy_node_list(c)
-        local b = hpack_node_list(c) -- multiple arguments
+        local b = hpacknodelist(c) -- multiple arguments
         setbox(n,b)
     end
 end
 
 function step_tracers.features()
-    -- we cannot use first_glyph here as it only finds characters with subtype < 256
     local f = collection[1]
     for n, char, font in nextglyph, f do
         local tfmdata  = fontidentifiers[font]
@@ -396,7 +261,7 @@ function step_tracers.codes(i,command,space)
         local char, id = isglyph(c)
         if char then
             showchar(char,id)
-        elseif id == dir_code or (id == localpar_code and start_of_par(c)) then
+        elseif id == dir_code or (id == par_code and startofpar(c)) then
             context("[%s]",getdirection(c) or "?")
         elseif id == disc_code then
             local pre, post, replace = getdisc(c)
@@ -447,7 +312,7 @@ function step_tracers.check(head)
         if l then -- hm, can be false
             n = l
         end
-        protect_glyphs(n)
+        protectglyphs(n)
         collection[1] = n
     end
 end
@@ -463,7 +328,7 @@ function step_tracers.register(head)
             if l then -- hm, can be false
                 n = l
             end
-            protect_glyphs(n)
+            protectglyphs(n)
             collection[nc] = n
         end
     end

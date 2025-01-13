@@ -1,4 +1,4 @@
-% language=us
+% language=us runpath=texruns:manuals/lowlevel
 
 % \hfil \hss
 % spread
@@ -9,9 +9,7 @@
   [title=boxes,
    color=middlered]
 
-\startsection[title=Preamble]
-
-\startsubsection[title=Introduction]
+\startsectionlevel[title=Introduction]
 
 An average \CONTEXT\ user will not use the low level box primitives but a basic
 understanding of how \TEX\ works doesn't hurt. In fact, occasionally using a box
@@ -25,9 +23,9 @@ about all kind of glues, kerns and penalties, just boxes it is.
 This explanation will be extended when I feel the need (or users have questions
 that can be answered here).
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title=Boxes]
+\startsectionlevel[title=Boxes]
 
 This paragraph of text is made from lines that contain words that themselves
 contain symbolic representations of characters. Each line is wrapped in a so
@@ -68,11 +66,9 @@ other hand wraps a linked list of so called nodes: glyphs, kerns, glue,
 penalties, rules, boxes, etc. It is a container with properties like width,
 height, depth and shift.
 
-\stopsubsection
+\stopsectionlevel
 
-\stopsection
-
-\startsection[title={\TEX\ primitives}]
+\startsectionlevel[title={\TEX\ primitives}]
 
 The box model is reflected in \TEX's user interface but not by that many
 commands, most noticeably \type {\hbox}, \type {\vbox} and \type {\vtop}. Here is
@@ -145,7 +141,28 @@ available space. So, here we force the text to the right or left.
 {\dontcomplain\showboxes\getbuffer}
 \stoplinecorrection
 
-We have three kind of boxes: \type {\hbox}, \type {\vbox} and \type {\vtop}:
+Instead of \type {\raise} you can also provide the shift (up or down) with a
+keyword:
+
+\startbuffer
+\ruledhbox\bgroup
+    x\raise  5pt\ruledhbox            {1}x
+    x\raise-10pt\ruledhbox            {2}x
+    x\raise -5pt\ruledhbox shift -20pt{3}x
+    x\ruledhbox            shift -10pt{4}x
+\egroup
+\stopbuffer
+
+\typebuffer[option=TEX]
+
+\startlinecorrection
+{\dontcomplain\showboxes\getbuffer}
+\stoplinecorrection
+
+
+We have three kind of boxes: \type {\hbox}, \type {\vbox} and \type {\vtop}.
+Actually we have a fourth type \type {\dbox} but that is a variant on \type
+{\vbox} to which we come back later.
 
 \startbuffer
 \hbox{\strut height and depth\strut}
@@ -159,7 +176,6 @@ A \type {\vbox} aligns at the bottom and a \type {\vtop} at the top. I have adde
 some so called struts to enforce a consistent height and depth. A strut is an
 invisible quantity (consider it a black box) that enforces consistent line
 dimensions: height and depth.
-
 
 \startlinecorrection
 {\dontcomplain\hbox{\showstruts\showboxes\getbuffer}}
@@ -220,9 +236,9 @@ we use copy because it serves the examples.
 \box \scratchbox
 \stoptyping
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\ETEX\ primitives}]
+\startsectionlevel[title={\ETEX\ primitives}]
 
 The \ETEX\ extensions don't add something relevant for boxes, apart from that you
 can use the expressions mechanism to mess around with their dimensions. There is
@@ -231,9 +247,9 @@ capabilities and doesn't change much as it's mostly a way to trick the backend
 into outputting a stretch of text in the other direction. This feature is not
 available in \LUATEX\ because it has an alternative direction mechanism.
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\LUATEX\ primitives}]
+\startsectionlevel[title={\LUATEX\ primitives}]
 
 The concept of boxes is the same in \LUATEX\ as in its predecessors but there are
 some aspects to keep in mind. When a box is typeset this happens in \LUATEX:
@@ -291,9 +307,9 @@ but because in \LUAMETATEX\ there are only two. Because this model has been upgr
 it will be discusses in the next section. A \CONTEXT\ user is supposed to use the
 official \CONTEXT\ interfaces in order to be downward compatible.
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\LUAMETATEX\ primitives}]
+\startsectionlevel[title={\LUAMETATEX\ primitives}]
 
 There are two possible directions: left to right (the default) and right to left
 for Hebrew and Arabic. Here is an example that shows how it'd done with low level
@@ -469,10 +485,10 @@ a private attribute we define one.
 \startbuffer
 \newattribute\MyAt
 \setbox\scratchbox\hbox attr \MyAt 123 {whatever}
-[\the\boxattr\scratchbox\MyAt]
-\boxattr\scratchbox\MyAt 456
-[\the\boxattr\scratchbox\MyAt]
-[\ifnum\boxattr\scratchbox\MyAt>400 okay\fi]
+[\the\boxattribute\scratchbox\MyAt]
+\boxattribute\scratchbox\MyAt 456
+[\the\boxattribute\scratchbox\MyAt]
+[\ifnum\boxattribute\scratchbox\MyAt>400 okay\fi]
 \stopbuffer
 
 \typebuffer[option=TEX]
@@ -693,6 +709,202 @@ test\quad
 \ruledhbox{\getbuffer}
 \stoplinecorrection
 
-\stopsection
+Where a \type {\vtop} has the baseline at the top, a \type {\vbox} has it at the
+bottom. In \LUAMETATEX\ we also have a \type {\dbox}, which is a \type {\vbox} with
+that behaves like a \type {\vtop} when it's appended to a vertical list: the height of
+the first box or rule determines the (base)line correction that gets applied. The following
+example demonstrates this:
+
+\startlinecorrection
+\startcombination [nx=3,ny=1,location=top]
+    {\vbox \bgroup \hsize .3\textwidth
+        \small\small \setupalign[tolerant,stretch] \dontcomplain
+        xxxxxxxxxxxxxxxx\par
+        \ruledvbox{\samplefile{tufte}}\par
+        xxxxxxxxxxxxxxxx\par
+     \egroup} {\type {\vbox}}
+    {\vbox \bgroup \hsize .3\textwidth
+        \small\small \setupalign[tolerant,stretch] \dontcomplain
+        xxxxxxxxxxxxxxxx\par
+        \ruledvtop{\samplefile{tufte}}\par
+        xxxxxxxxxxxxxxxx\par
+     \egroup} {\type {\vtop}}
+    {\vbox \bgroup \hsize .3\textwidth
+        \small\small \setupalign[tolerant,stretch] \dontcomplain
+        xxxxxxxxxxxxxxxx\par
+        \ruleddbox{\samplefile{tufte} }\par
+        xxxxxxxxxxxxxxxx\par
+     \egroup} {\type {\dbox}}
+\stopcombination
+\stoplinecorrection
+
+The \type {d} stands for \quote {dual} because we (sort of) have two baselines. The
+regular height and depth are those of a \type {\vbox}.
+
+\stopsectionlevel
+
+\startsectionlevel[title=Splitting]
+
+When you feed \TEX\ a paragraph of text it will accumulate the content in a
+list of nodes. When the paragraphs is finished by \type {\par} or an empty line
+it will be fed into the par builder that will try to break the lines as good
+as possible. Normally that paragraph will be added to the page and at some point
+there can be breaks between lines in order not to overflow the page. When you
+collect the paragraph in a box you can use \type {\vsplit} to emulate this.
+
+\startbuffer[sample]
+\setbox\scratchbox\vbox{\samplefile{tufte}}
+
+\startlinecorrection
+\ruledhbox{\vsplit\scratchbox to 2\lineheight}
+\stoplinecorrection
+\stopbuffer
+
+\typebuffer[sample][option=TEX] \getbuffer[sample]
+
+The split off box is given the specified height, but in \LUAMETATEX\ you can also
+get the natural dimensions:
+
+\startbuffer[sample]
+\setbox\scratchbox\vbox{\samplefile{tufte}}
+
+\startlinecorrection
+\ruledhbox{\vsplit\scratchbox upto 2\lineheight}
+\stoplinecorrection
+\stopbuffer
+
+\typebuffer[sample][option=TEX] \getbuffer[sample]
+
+We can force a resulting box type by using \type {\vsplit}, \type {\tsplit} and
+\type {\dsplit} (here we use the visualized variants):
+
+\startbuffer[sample]
+\setbox\scratchbox\vbox{\samplefile{tufte}}
+
+\startlinecorrection
+\ruledtsplit \scratchbox upto 2\lineheight
+\stoplinecorrection
+\stopbuffer
+
+\typebuffer[sample][option=TEX] \getbuffer[sample]
+
+\startbuffer[sample]
+\setbox\scratchbox\vbox{\samplefile{tufte}}
+
+\startlinecorrection
+\ruledvsplit \scratchbox upto 2\lineheight
+\stoplinecorrection
+\stopbuffer
+
+\typebuffer[sample][option=TEX] \getbuffer[sample]
+
+\startbuffer[sample]
+\setbox\scratchbox\vbox{\samplefile{tufte}}
+
+\startlinecorrection
+\ruleddsplit \scratchbox upto 2\lineheight
+\stoplinecorrection
+\stopbuffer
+
+\typebuffer[sample][option=TEX] \getbuffer[sample]
+
+The engine provides vertical splitters but \CONTEXT\ itself also has
+a horizontal one. \footnote {At some point I might turn that one into
+a native engine primitive.}
+
+\startbuffer
+\starttexdefinition Test #1#2#3
+    \par
+    \dontleavehmode
+    \strut
+    \llap{{\infofont #2}\quad}
+    \blackrule[width=#2,color=darkblue]
+    \par
+    \setbox\scratchbox\hbox{\samplefile{#1}}
+    \hsplit\scratchbox
+        to              #2
+        depth           \strutdp
+        height          \strutht
+        shrinkcriterium #3 % badness
+    \par
+\stoptexdefinition
+
+\dostepwiserecurse {100} {120} {2} {
+    \Test{tufte}{#1mm}{1000}
+    \Test{tufte}{#1mm}{-100}
+}
+\stopbuffer
+
+\typebuffer[option=TEX] \startpacked \getbuffer \stoppacked
+
+A split off box gets packed at its natural size and a badness as well as
+overshoot amount is calculated. When the overshoot is positive and the the
+badness is larger than the stretch criterium, the box gets repacked to the
+natural size. The same happens when the overshoot is negative and the badness
+exceeds the shrink criterium. When the overshoot is zero (basically we have a
+fit) but the badness still exceeds the stretch or shrink we also repack. Indeed
+this is a bit fuzzy, but so is badness.
+
+\startbuffer
+\starttexdefinition Test #1#2#3
+    \par
+    \dontleavehmode
+    \strut
+    \llap{{\infofont #2}\quad}
+    \blackrule[width=#2,color=darkblue]
+    \par
+    \setbox\scratchbox\hbox{\samplefile{#1}}
+    \doloop {
+        \ifvoid\scratchbox
+            \exitloop
+        \else
+            \hsplit\scratchbox
+                to     #2
+                depth  \strutdp
+                height \strutht
+                #3
+            \par
+            \allowbreak
+        \fi
+    }
+\stoptexdefinition
+
+\Test{tufte}{100mm}{shrinkcriterium 1000}
+\Test{tufte}{100mm}{shrinkcriterium 0}
+\Test{tufte}{100mm}{}
+\stopbuffer
+
+\typebuffer[option=TEX] \getbuffer
+
+Watch how the last line get stretched when we set the criterium to zero. I'm sure
+that users will find reasons to abuse this effect.
+
+\stopsectionlevel
 
 \stopdocument
+
+% todo:
+
+% \setbox0\hbox{\strut this is just a\footnote{oeps} test}
+% \setbox2\hbox{\strut this is just a\footnote{oeps} test}
+%
+% \setprelistbox 0\hbox{\strut \quad before: \prelistbox0}
+% \setpostlistbox0\hbox{\strut \quad after: \postlistbox0}
+%
+% \setprelistbox 2\hbox{\strut \quad before}
+% \setpostlistbox2\hbox{\strut \quad after}
+%
+% test \par \box0 \par \box2 \par test
+
+
+\setbox0\vbox
+{
+    \setbox    \scratchbox      \hbox{XXX}
+    \boxvadjust\scratchbox pre       {BBB}
+    \boxvadjust\scratchbox post      {AAA}
+%     \dontleavehmode % needed
+    \box\scratchbox
+%     \unhbox\scratchbox
+}
+
+111111\par \box0 \par 222222\par

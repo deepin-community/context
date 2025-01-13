@@ -1,7 +1,7 @@
-% language=uk
+% language=us runpath=texruns:manuals/units
 
 % author    : Hans Hagen
-% copyright : PRAGMA ADE & ConTeXt Development Team
+% copyright : ConTeXt Development Team
 % license   : Creative Commons Attribution ShareAlike 4.0 International
 % reference : pragma-ade.nl | contextgarden.net | texlive (related) distributions
 % origin    : the ConTeXt distribution
@@ -508,6 +508,40 @@ Which gives:
 
 \stopsection
 
+\startsection[title={Goodies}]
+
+Here are some goodies:
+
+\startbuffer
+\type{1 } : \unit  {30^2            meter per second}
+\type{2a} : \unit  {30    ± 10      meter per second}
+\type{2b} : \unit  {30    – 10      meter per second}
+\type{3a} : \unit  {30^2  ± 10^2    meter per second}
+\type{3b} : \unit  {30^2  – 10^2    meter per second}
+\type{4 } : \unit  {30   (10)       meter per second}
+\type{5a} : \unit  {30   (± 10)     meter per second}
+\type{5b} : \unit  {30^2 (± 10^2)   meter per second}
+\type{6a} : \unit {(30    ± 10)     meter per second}
+\type{6b} : \unit {(30^2  ± 10^2)   meter per second}
+\type{6c} : \unit {(30^2  – 10^2)   meter per second}
+\type{7a} : \unit {(30    ± 10)^2   meter per second}
+\type{7b} : \unit {(30    – 10)^2   meter per second}
+\type{7c} : \unit {(30^2  – 10^3)^5 meter per second}
+\stopbuffer
+
+Instead of \type {±} one can use \type {pm} and \type {to} can be used instead of
+\type {–}.
+
+\typebuffer
+
+Their rendering explains their intention:
+
+\startlines
+\getbuffer
+\stoplines
+
+\stopsection
+
 \startsection[title={Built in keywords}]
 
 A given sequence of keywords is translated in an list of internal
@@ -541,13 +575,15 @@ These are also special:
 
 \showunits[packaged]
 
+\stopsection
+
 \startsection[title={Colofon}]
 
 \starttabulate[|B|p|]
-\NC author    \NC \getvariable{document}{author}, \getvariable{document}{affiliation}, \getvariable{document}{location} \NC \NR
+\NC author    \NC \documentvariable{author}, \documentvariable{affiliation}, \documentvariable{location} \NC \NR
 \NC version   \NC \currentdate \NC \NR
-\NC website   \NC \getvariable{document}{website} \endash\ \getvariable{document}{support} \NC \NR
-\NC copyright \NC \symbol[cc][cc-by-sa-nc] \NC \NR
+\NC website   \NC \documentvariable{website} \endash\ \documentvariable{support} \NC \NR
+\NC copyright \NC \symbol[cc][cc-by-sa] \NC \NR
 \stoptabulate
 
 \stopsection

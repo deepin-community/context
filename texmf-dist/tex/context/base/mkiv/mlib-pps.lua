@@ -13,7 +13,6 @@ local insert, remove, concat = table.insert, table.remove, table.concat
 local Cs, Cf, C, Cg, Ct, P, S, V, Carg = lpeg.Cs, lpeg.Cf, lpeg.C, lpeg.Cg, lpeg.Ct, lpeg.P, lpeg.S, lpeg.V, lpeg.Carg
 local lpegmatch, tsplitat, tsplitter = lpeg.match, lpeg.tsplitat, lpeg.tsplitter
 local formatters = string.formatters
-local exists, savedata = io.exists, io.savedata
 
 local mplib                = mplib
 local metapost             = metapost
@@ -25,8 +24,9 @@ local setmacro             = interfaces.setmacro
 
 local texsetbox            = tex.setbox
 local textakebox           = tex.takebox -- or: nodes.takebox
-local copy_list            = node.copy_list
-local flush_list           = node.flush_list
+local texrunlocal          = tex.runlocal
+local copylist             = nodes.copylist
+local flushlist            = nodes.flushlist
 local setmetatableindex    = table.setmetatableindex
 local sortedhash           = table.sortedhash
 
@@ -250,6 +250,7 @@ local function startjob(plugmode,kind,mpx)
     top = {
         textexts   = { },                          -- all boxes, optionally with a different color
         texstrings = { },
+        texregimes = { },
         mapstrings = { },
         mapindices = { },
         mapmoves   = { },
@@ -269,7 +270,7 @@ local function stopjob()
     if top then
         for slot, content in next, top.textexts do
             if content then
-                flush_list(content)
+                flushlist(content)
                 if trace_textexts then
                     report_textexts("freeing text %s",slot)
                 end
@@ -375,7 +376,7 @@ function models.rgb(cr)
     elseif metapost.reducetogray then
         if n == 1 then
             local s = cr[1]
-            checked_color_pair(f_gray,s,s)
+            return checked_color_pair(f_gray,s,s)
         elseif n == 3 then
             local r = cr[1]
             local g = cr[2]
@@ -499,8 +500,8 @@ implement {
     arguments  = { "dimen", "dimen", "dimen" },
     actions    = function(wd,ht,dp)
         local hd = ht + dp
-        setmacro("sx",wd ~= 0 and factor/wd or 0)
-        setmacro("sy",hd ~= 0 and factor/hd or 0)
+        setmacro("mlib_sx",wd ~= 0 and factor/wd or 0)
+        setmacro("mlib_sy",hd ~= 0 and factor/hd or 0)
     end
 }
 
@@ -811,7 +812,13 @@ local tx_reset, tx_process  do
     local mp_t      = nil
 
     local function processtext()
-        local mp_text = top.texstrings[mp_index]
+        local mp_text   = top.texstrings[mp_index]
+        local mp_regime = top.texregimes[mp_index]
+        if mp_regime and tonumber(mp_regime) >= 0 then
+            mp_text = function()
+                context.sprint(mp_regime,top.texstrings[mp_index] or "")
+            end
+        end
         if not mp_text then
             report_textexts("missing text for index %a",mp_index)
         elseif not mp_c then
@@ -842,14 +849,15 @@ local tx_reset, tx_process  do
 
     local madetext = nil
 
-    function mp.mf_some_text(index,str)
+    function mp.mf_some_text(index,str,regime)
         mp_target = index
         mp_index  = index
         mp_c      = nil
         mp_a      = nil
         mp_t      = nil
         top.texstrings[mp_index] = str
-        tex.runtoks("mptexttoks")
+        top.texregimes[mp_index] = regime or -1
+        texrunlocal("mptexttoks")
         local box = textakebox("mptextbox")
         top.textexts[mp_target] = box
         mp.triplet(bp*box.width,bp*box.height,bp*box.depth)
@@ -857,7 +865,7 @@ local tx_reset, tx_process  do
     end
 
     function mp.mf_made_text(index)
-        mp.mf_some_text(index,madetext)
+        mp.mf_some_text(index,madetext,catcodes.numbers.ctxcatcodes) -- btex/etex ..
     end
 
     -- a label can be anything, also something mp doesn't like in strings
@@ -899,7 +907,7 @@ local tx_reset, tx_process  do
         mp.triplet(top.mapmoves[index])
     end
 
-    function mp.mf_map_text(index,str)
+    function mp.mf_map_text(index,str,regime)
         local map = top.mapindices[tonumber(str)]
         if type(map) == "table" then
             local text     = map.text
@@ -912,14 +920,16 @@ local tx_reset, tx_process  do
             -- the image text
             if overload then
                 top.texstrings[mp_index] = map.template or map.label or "error"
-                tex.runtoks("mptexttoks")
+                top.texregimes[mp_index] = regime or -1
+                texrunlocal("mptexttoks")
                 local box = textakebox("mptextbox") or new_hlist()
                 width = bp * box.width
                 where = overload.where
             end
             -- the real text
             top.texstrings[mp_index] = overload and overload.text or text or "error"
-            tex.runtoks("mptexttoks")
+            top.texregimes[mp_index] = regime or -1
+            texrunlocal("mptexttoks")
             local box = textakebox("mptextbox") or new_hlist()
             local twd = bp * box.width
             local tht = bp * box.height
@@ -953,8 +963,8 @@ local tx_reset, tx_process  do
     -- instance in a macro definition (rawtextext (pass back string)) ... of course one
     -- should use textext so this is just a catch. When not in lmtx it's never immediate.
 
-    local reported  = false
-    local awayswrap = CONTEXTLMTXMODE <= 1
+    local reported   = false
+    local alwayswrap = false -- CONTEXTLMTXMODE <= 1 -- was always nil due to typo
 
     function metapost.maketext(s,mode)
         if not reported then
@@ -1036,7 +1046,7 @@ local tx_reset, tx_process  do
             local mp_hash = prescript.tx_cache
             local box
             if mp_hash == "no" then
-                tex.runtoks("mptexttoks")
+                texrunlocal("mptexttoks")
                 box = textakebox("mptextbox")
             else
                 local cache = data.texhash
@@ -1067,9 +1077,9 @@ local tx_reset, tx_process  do
                 end
                 box = cache[mp_hash]
                 if box then
-                    box = copy_list(box)
+                    box = copylist(box)
                 else
-                    tex.runtoks("mptexttoks")
+                    texrunlocal("mptexttoks")
                     box = textakebox("mptextbox")
                     cache[mp_hash] = box
                 end
@@ -1152,7 +1162,7 @@ local gt_reset, gt_process do
         if not graphics[index] then
             mp_index = index
             mp_str   = str
-            tex.runtoks("mpgraphictexttoks")
+            texrunlocal("mpgraphictexttoks")
         end
     end
 
@@ -1452,6 +1462,8 @@ local function tr_process(object,prescript,before,after)
                 sp_specs = concat(sp_specs,",")
                 definemultitonecolor(sp_name,sp_specs,"","")
                 sp_type = "named"
+            elseif sp_type == "named" then
+                cs = { 1 } -- factor 1
             end
             if sp_type == "named" then
                 -- we might move this to another namespace .. also, named can be a spotcolor
@@ -1573,7 +1585,7 @@ local ot_reset, ot_process do
             mp_index = index
             mp_kind  = kind
             mp_str   = str
-            tex.runtoks("mpoutlinetoks")
+            texrunlocal("mpoutlinetoks")
         end
     end
 

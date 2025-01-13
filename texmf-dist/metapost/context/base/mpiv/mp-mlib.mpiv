@@ -112,12 +112,14 @@ def transparent(expr a, t)(text c) = % use withtransparency instead
     withcolor c
 enddef ;
 
-% def withtransparency(expr a, t) =
-%     withprescript "tr_alternative="  & decimal transparency_alternative_to_number(a)
-%     withprescript "tr_transparency=" & decimal t
-% enddef ;
+def withtransparency(expr a, t) =
+    withprescript "tr_alternative="  & decimal transparency_alternative_to_number(a)
+    withprescript "tr_transparency=" & decimal t
+enddef ;
 
-let transparency = pair ;
+% no, not compatible ... maybe only mpiv .. maybe withopacity
+
+% let opacity = pair ;
 
 % def withtransparency expr t =
 %     withprescript "tr_alternative="  & decimal transparency_alternative_to_number(xpart t)
@@ -126,22 +128,28 @@ let transparency = pair ;
 %
 % withtransparency (1,.5)
 % withtransparency ("normal",.5)
+%
+% withopacity      (1,.5)
+% withopacity      (normaltransparency,.5)
+% withopacity      .5
 
-def withtransparency (expr t) (text rest) =
+def withopacity expr t =
     if pair t :
         withprescript "tr_alternative="  & decimal transparency_alternative_to_number(xpart t)
         withprescript "tr_transparency=" & decimal ypart t
     else :
-        mfun_with_transparency (transparency_alternative_to_number(t))
-    fi rest
+        mfun_with_opacity (transparency_alternative_to_number(t))
+    fi
 enddef ;
 
-def mfun_with_transparency (expr a) expr t =
+def mfun_with_opacity (expr a) expr t =
     withprescript "tr_alternative="  & decimal a
     withprescript "tr_transparency=" & decimal t
 enddef ;
 
-def cmyk(expr c, m, y, k) = % provided for downward compability
+% Provided for downward compability:
+
+def cmyk(expr c, m, y, k) =
     (c,m,y,k)
 enddef ;
 
@@ -198,6 +206,17 @@ enddef ;
 
 rgbcolor mfun_tt_r ;
 
+newinternal inicatcoderegime ; inicatcoderegime := runscript("return catcodes.numbers.ctxcatcodes") ;
+newinternal texcatcoderegime ; texcatcoderegime := runscript("return catcodes.numbers.texcatcodes") ;
+newinternal luacatcoderegime ; luacatcoderegime := runscript("return catcodes.numbers.luacatcodes") ;
+newinternal notcatcoderegime ; notcatcoderegime := runscript("return catcodes.numbers.notcatcodes") ;
+newinternal vrbcatcoderegime ; vrbcatcoderegime := runscript("return catcodes.numbers.vrbcatcodes") ;
+newinternal prtcatcoderegime ; prtcatcoderegime := runscript("return catcodes.numbers.prtcatcodes") ;
+newinternal ctxcatcoderegime ; ctxcatcoderegime := runscript("return catcodes.numbers.ctxcatcodes") ;
+newinternal txtcatcoderegime ; txtcatcoderegime := runscript("return catcodes.numbers.txtcatcodes") ;
+
+newinternal catcoderegime    ; catcoderegime    := ctxcatcoderegime ;
+
 vardef rawtextext(expr s) =
     if s = "" :
         nullpicture
@@ -206,7 +225,7 @@ vardef rawtextext(expr s) =
         mfun_tt_c := nullpicture ;
         mfun_tt_o := nullpicture ;
         addto mfun_tt_o doublepath origin _op_ ; % save drawoptions
-        mfun_tt_r := lua.mp.mf_some_text(mfun_tt_n,s) ;
+        mfun_tt_r := lua.mp.mf_some_text(mfun_tt_n,s,catcoderegime) ;
         addto mfun_tt_c doublepath unitsquare
             xscaled wdpart mfun_tt_r
             yscaled (htpart mfun_tt_r + dppart mfun_tt_r)
@@ -291,7 +310,7 @@ pair mfun_laboff.llft   ; mfun_laboff.llft   := -(.7,.7) ;
 pair mfun_laboff.lrt    ; mfun_laboff.lrt    := (.7,-.7) ;
 
 pair mfun_laboff.d      ; mfun_laboff.d      := mfun_laboff     ;
-pair mfun_laboff.dflt   ; mfun_laboff.dflt   := mfun_laboff.lft ;
+pair mfun_laboff.dlft   ; mfun_laboff.dlft   := mfun_laboff.lft ;
 pair mfun_laboff.drt    ; mfun_laboff.drt    := mfun_laboff.rt  ;
 pair mfun_laboff.origin ; mfun_laboff.origin := mfun_laboff     ;
 pair mfun_laboff.raw    ; mfun_laboff.raw    := mfun_laboff     ;
@@ -320,7 +339,7 @@ mfun_labxf.llft     := mfun_labxf.l_b := mfun_labxf.b_l := 1   ;
 mfun_labxf.lrt      := mfun_labxf.r_b := mfun_labxf.b_r := 0   ;
 
 mfun_labxf.d        := mfun_labxf     ;
-mfun_labxf.dflt     := mfun_labxf.lft ;
+mfun_labxf.dlft     := mfun_labxf.lft ;
 mfun_labxf.drt      := mfun_labxf.rt  ;
 mfun_labxf.origin   := 0              ;
 mfun_labxf.raw      := 0              ;
@@ -336,7 +355,7 @@ mfun_labyf.llft     := mfun_labyf.l_b := mfun_labyf.b_l := 1   ;
 mfun_labyf.lrt      := mfun_labyf.r_b := mfun_labyf.b_r := 1   ;
 
 mfun_labyf.d        := mfun_labyf     ;
-mfun_labyf.dflt     := mfun_labyf.lft ;
+mfun_labyf.dlft     := mfun_labyf.lft ;
 mfun_labyf.drt      := mfun_labyf.rt  ;
 mfun_labyf.origin   := 0              ;
 mfun_labyf.raw      := 0              ;
@@ -351,7 +370,7 @@ mfun_labtype.urt    := mfun_labtype.r_t :=  mfun_labtype.t_r :=  6 ;
 mfun_labtype.llft   := mfun_labtype.l_b :=  mfun_labtype.b_l :=  7 ;
 mfun_labtype.lrt    := mfun_labtype.r_b :=  mfun_labtype.b_r :=  8 ;
 mfun_labtype.d                                               := 10 ;
-mfun_labtype.dflt                                            := 11 ;
+mfun_labtype.dlft                                            := 11 ;
 mfun_labtype.drt                                             := 12 ;
 mfun_labtype.origin                                          :=  0 ;
 mfun_labtype.raw                                             :=  0 ;
@@ -1315,11 +1334,11 @@ vardef properties(text t) =
 enddef ;
 
 def withproperties expr p =
-    if colormodel p = 3 :
+    if colormodel p = graycolormodel :
         withcolor greypart p
-    elseif colormodel p = 5 :
+    elseif colormodel p = rgbcolor :
         withcolor (redpart p,greenpart p,bluepart p)
-    elseif colormodel p = 7 :
+    elseif colormodel p = cmykcolormodel :
         withcolor (cyanpart p,magentapart p,yellowpart p,blackpart p)
     fi
     withpen penpart p

@@ -6,42 +6,23 @@ if not modules then modules = { } end modules ['mlib-run'] = {
     license   = "see context related readme files",
 }
 
--- cmyk       -> done, native
--- spot       -> done, but needs reworking (simpler)
--- multitone  ->
--- shade      -> partly done, todo: cm
--- figure     -> done
--- hyperlink  -> low priority, easy
-
--- new * run
--- or
--- new * execute^1 * finish
-
--- a*[b,c] == b + a * (c-b)
-
---[[ldx--
-<p>The directional helpers and pen analysis are more or less translated from the
-<l n='c'/> code. It really helps that Taco know that source so well. Taco and I spent
-quite some time on speeding up the <l n='lua'/> and <l n='c'/> code. There is not
-much to gain, especially if one keeps in mind that when integrated in <l n='tex'/>
-only a part of the time is spent in <l n='metapost'/>. Of course an integrated
-approach is way faster than an external <l n='metapost'/> and processing time
-nears zero.</p>
---ldx]]--
+-- The directional helpers and pen analysis are more or less translated from the C
+-- code. It really helps that Taco know that source so well. Taco and I spent quite
+-- some time on speeding up the Lua and C code. There is not much to gain,
+-- especially if one keeps in mind that when integrated in TeX only a part of the
+-- time is spent in MetaPost. Of course an integrated approach is way faster than an
+-- external MetaPost and processing time nears zero.
 
 local type, tostring, tonumber, next = type, tostring, tonumber, next
 local find, striplines = string.find, utilities.strings.striplines
 local concat, insert, remove = table.concat, table.insert, table.remove
 
 local emptystring = string.is_empty
-local P = lpeg.P
 
 local trace_graphics   = false  trackers.register("metapost.graphics",   function(v) trace_graphics   = v end)
 local trace_tracingall = false  trackers.register("metapost.tracingall", function(v) trace_tracingall = v end)
-local trace_terminal   = false  trackers.register("metapost.terminal",   function(v) trace_terminal   = v end)
 
 local report_metapost = logs.reporter("metapost")
-local report_terminal = logs.reporter("metapost","terminal")
 local texerrormessage = logs.texerrormessage
 
 local starttiming     = statistics.starttiming
@@ -60,9 +41,9 @@ metapost.exectime     = metapost.exectime or { } -- hack
 metapost.nofruns      = 0
 
 local mpxformats      = { }
-local mpxterminals    = { }
 local nofformats      = 0
 local mpxpreambles    = { }
+local mpxterminals    = { }
 local mpxextradata    = { }
 
 -- The flatten hack is needed because the library currently barks on \n\n and the
@@ -112,225 +93,6 @@ function metapost.resetlastlog()
     metapost.lastlog = ""
 end
 
------ mpbasepath = lpeg.instringchecker(lpeg.append { "/metapost/context/", "/metapost/base/" })
-local mpbasepath = lpeg.instringchecker(P("/metapost/") * (P("context") + P("base")) * P("/"))
-
--- mplib has no real io interface so we have a different mechanism than
--- tex (as soon as we have more control, we will use the normal code)
---
--- for some reason mp sometimes calls this function twice which is inefficient
--- but we cannot catch this
-
-local realtimelogging  do
-
-    local finders = { }
-    mplib.finders = finders -- also used in meta-lua.lua
-
-    local new_instance = mplib.new
-
-    local function validftype(ftype)
-        if ftype == "mp" then
-            return "mp"
-        else
-            return nil
-        end
-    end
-
-    finders.file = function(specification,name,mode,ftype)
-        return resolvers.findfile(name,validftype(ftype))
-    end
-
-    -- this will be redone in lmtx
-
-    local function i_finder(name,mode,ftype) -- fake message for mpost.map and metafun.mpvi
-        local specification = url.hashed(name)
-        local finder = finders[specification.scheme] or finders.file
-        local found = finder(specification,name,mode,validftype(ftype))
-        return found
-    end
-
-    local function o_finder(name,mode,ftype)
-        return name
-    end
-
-    o_finder = sandbox.register(o_finder,sandbox.filehandlerone,"mplib output finder")
-
-    local function finder(name,mode,ftype)
-        return (mode == "w" and o_finder or i_finder)(name,mode,validftype(ftype))
-    end
-
-    local report_logger = logs.reporter("metapost log")
-    local report_error  = logs.reporter("metapost error")
-
-    local l, nl, dl = { }, 0, false
-    local t, nt, dt = { }, 0, false
-    local e, ne, de = { }, 0, false
-
-    local function logger(target,str)
-        if target == 1 then
-            -- log
-        elseif target == 2 or target == 3 then
-            -- term
-            if str == "\n" then
-                realtimelogging = true
-                if nl > 0 then
-                    report_logger(concat(l,"",1,nl))
-                    nl, dl = 0, false
-                elseif not dl then
-                    report_logger("")
-                    dl = true
-                end
-            else
-                nl = nl + 1
-                l[nl] = str
-            end
-        elseif target == 4 then
-            report_error(str)
-        end
-    end
-
-    -- experiment, todo: per instance, just a push / pop ?
-
-    local findtexfile = resolvers.findtexfile
-    local opentexfile = resolvers.opentexfile
-    local splitlines  = string.splitlines
-
-    local function writetoterminal(terminaldata,maxterm,d)
-        local t = type(d)
-        local n = 0
-        if t == "string" then
-            d = splitlines(d)
-            n = #d
-            for i=1,#d do
-                maxterm = maxterm + 1
-                terminaldata[maxterm] = d[i]
-            end
-        elseif t == "table" then
-            for i=1,#d do
-                local l = d[i]
-                if find(l,"[\n\r]") then
-                    local s = splitlines(l)
-                    local m = #s
-                    for i=1,m do
-                        maxterm = maxterm + 1
-                        terminaldata[maxterm] = s[i]
-                    end
-                    n = n + m
-                else
-                    maxterm = maxterm + 1
-                    terminaldata[maxterm] = d[i]
-                    n = 1
-                end
-            end
-        end
-        if trace_terminal then
-            report_metapost("writing %i lines, in cache %s",n,maxterm)
-        end
-        return maxterm
-    end
-
-    local function readfromterminal(terminaldata,maxterm,nowterm)
-        if nowterm >= maxterm then
-            terminaldata[nowterm] = false
-            maxterm = 0
-            nowterm = 0
-            if trace_terminal then
-                report_metapost("resetting, maxcache %i",#terminaldata)
-            end
-            return maxterm, nowterm, nil
-        else
-            if nowterm > 0 then
-                terminaldata[nowterm] = false
-            end
-            nowterm = nowterm + 1
-            local s = terminaldata[nowterm]
-            if trace_terminal then
-                report_metapost("reading line %i: %s",nowterm,s)
-            end
-            return maxterm, nowterm, s
-        end
-    end
-
-    local function fileopener()
-
-        -- these can go into the table itself
-
-        local terminaldata = { }
-        local maxterm      = 0
-        local nowterm      = 0
-
-        local terminal = {
-            name   = "terminal",
-            close  = function()
-             -- terminal = { }
-             -- maxterm  = 0
-             -- nowterm  = 0
-            end,
-            reader = function()
-                local line
-                maxterm, nowterm, line = readfromterminal(terminaldata,maxterm,nowterm)
-                return line
-            end,
-            writer = function(d)
-                maxterm = writetoterminal(terminaldata,maxterm,d)
-            end,
-        }
-
-        return function(name,mode,kind)
-            if name == "terminal" then
-             -- report_metapost("opening terminal")
-                return terminal
-            elseif mode == "w" then
-                local f = io.open(name,"wb")
-                if f then
-                 -- report_metapost("opening file %a for writing",full)
-                    return {
-                        name   = full,
-                        writer = function(s) return f:write(s) end, -- io.write(f,s)
-                        close  = function()  f:close() end,
-                    }
-                end
-            else
-                local full = findtexfile(name,validftype(ftype))
-                if full then
-                 -- report_metapost("opening file %a for reading",full)
-                    return opentexfile(full)
-                end
-            end
-        end
-
-    end
-
-    -- end of experiment
-
-    if CONTEXTLMTXMODE > 0 then
-
-        function mplib.new(specification)
-            local openfile = fileopener()
-            specification.find_file     = finder
-            specification.run_logger    = logger
-            specification.open_file     = openfile
-            specification.interaction   = "silent"
-            specification.halt_on_error = true
-            local instance = new_instance(specification)
-            mpxterminals[instance] = openfile("terminal")
-            return instance
-        end
-
-    else
-
-        function mplib.new(specification)
-            specification.find_file  = finder
-            specification.run_logger = logger
-            return new_instance(specification)
-        end
-
-    end
-
-    mplib.finder = finder
-
-end
-
 local new_instance = mplib.new
 local find_file    = mplib.finder
 
@@ -340,7 +102,7 @@ function metapost.reporterror(result)
         return true
     elseif result.status == 0 then
         return false
-    elseif realtimelogging then
+    elseif mplib.realtimelogging then
         return false -- we already reported
     else
         local t = result.term
@@ -405,7 +167,7 @@ function metapost.load(name,method)
         end
     end
     method = method and methods[method] or "scaled"
-    local mpx = new_instance {
+    local mpx, terminal = new_instance {
         ini_version  = true,
         math_mode    = method,
         run_script   = metapost.runscript,
@@ -414,12 +176,14 @@ function metapost.load(name,method)
         extensions   = 1,
      -- random_seed  = seed,
         utf8_mode    = true,
+        text_mode    = true,
     }
     report_metapost("initializing number mode %a",method)
     local result
     if not mpx then
         result = { status = 99, error = "out of memory"}
     else
+        mpxterminals[mpx] = terminal
         -- pushing permits advanced features
         metapost.pushscriptrunner(mpx)
         result = executempx(mpx,f_preamble(file.addsuffix(name,"mp"),seed))
@@ -557,17 +321,17 @@ function metapost.reset(mpx)
         if mpxformats[mpx] then
             local instance = mpxformats[mpx]
             instance:finish()
-            mpxterminals[instance] = nil
-            mpxextradata[mpx]      = nil
-            mpxformats  [mpx]      = nil
+            mpxterminals[mpx] = nil
+            mpxextradata[mpx] = nil
+            mpxformats  [mpx] = nil
         end
     else
         for name, instance in next, mpxformats do
             if instance == mpx then
                 mpx:finish()
+                mpxterminals[mpx] = nil
                 mpxextradata[mpx] = nil
                 mpxformats  [mpx] = nil
-                mpxterminals[mpx] = nil
                 break
             end
         end
@@ -881,20 +645,21 @@ do
 
 end
 
+local getstatistics = mplib.getstatistics or mplib.statistics
+
 function metapost.getstatistics(memonly)
     if memonly then
         local n, m = 0, 0
         for name, mpx in next, mpxformats do
             n = n + 1
-            m = m + mpx:statistics().memory
+            m = m + getstatistics(mpx).memory
         end
         return n, m
     else
         local t = { }
         for name, mpx in next, mpxformats do
-            t[name] = mpx:statistics()
+            t[name] = getstatistics(mpx)
         end
         return t
     end
 end
-

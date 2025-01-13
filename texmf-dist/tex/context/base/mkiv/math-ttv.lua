@@ -61,8 +61,16 @@ mathencodings["large-to-small"] = {
     [0x02044] = 0x0E, -- /
 }
 
+mathencodings["large-to-small-private"] = {
+    [0xFE07A] = 0x7A, -- bracehtipdownleft
+    [0xFE07B] = 0x7B, -- bracehtipdownright
+    [0xFE07C] = 0x7C, -- bracehtipupleft
+    [0xFE07D] = 0x7D, -- bracehtipupright
+
+}
+
 -- Beware: these are (in cm/lm) below the baseline due to limitations
--- in the tfm format bu the engien (combined with the mathclass) takes
+-- in the tfm format but the engine (combined with the mathclass) takes
 -- care of it. If we need them in textmode, we should make them virtual
 -- and move them up but we're in no hurry with that.
 
@@ -429,7 +437,7 @@ mathencodings["tex-sy"] = {
     [0x027E9] = 0x69, -- >, rangle
     [0x0007C] = 0x6A, -- |, mid, lvert, rvert
     [0x02225] = 0x6B, -- parallel
- -- [0x0 ] = 0x00, -- Vert, lVert, rVert, arrowvert, Arrowvert
+ -- [0x0    ] = 0x00, -- Vert, lVert, rVert, arrowvert, Arrowvert
     [0x02195] = 0x6C, -- updownarrow
     [0x021D5] = 0x6D, -- Updownarrow
     [0x0005C] = 0x6E, -- \, backslash, setminus

@@ -90,31 +90,16 @@ if environment.initex then
         storage.max = max
     end
 
-    lua.registerfinalizer(dump,"dump storage")
+    lua.registerinitexfinalizer(dump,"dump storage")
 
-end
-
--- to be tested with otf caching:
-
-function lua.collectgarbage(threshold)
-    local current = collectgarbage("count")
-    local threshold = threshold or 256 * 1024
-    while true do
-        collectgarbage("collect")
-        local previous = collectgarbage("count")
-        if current - previous < threshold then
-            break
-        else
-            current = previous
-        end
-    end
 end
 
 statistics.register("stored bytecode data", function()
-    local nofmodules = (storage.nofmodules > 0 and storage.nofmodules) or (status.luabytecodes - lua.firstbytecode - 1)
-    local nofdumps   = (storage.noftables  > 0 and storage.noftables ) or storage.max-storage.min + 1
-    local tofmodules = storage.tofmodules or 0
-    local tofdumps   = storage.toftables  or 0
+    local nofbytecodes = CONTEXTLMTXMODE > 0 and status.luastate.bytecodes or status.luabytecodes
+    local nofmodules   = (storage.nofmodules > 0 and storage.nofmodules) or (nofbytecodes - lua.firstbytecode - 1)
+    local nofdumps     = (storage.noftables  > 0 and storage.noftables ) or storage.max-storage.min + 1
+    local tofmodules   = storage.tofmodules or 0
+    local tofdumps     = storage.toftables  or 0
     if environment.initex then
         local luautilities = utilities.lua
         return format("%s modules, %s tables, %s chunks, %s chunks stripped (%s bytes)",

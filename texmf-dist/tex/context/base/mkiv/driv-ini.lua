@@ -6,6 +6,10 @@ if not modules then modules = { } end modules ['driv-ini'] = {
     license   = "see context related readme files"
 }
 
+-- This file is a bit overkill because it was meant for both luatex and luametatex
+-- but after the splti I decided not to simplify this one. It can only introduce
+-- issues.
+
 local type = type
 local addsuffix = file.addsuffix
 

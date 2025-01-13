@@ -1,4 +1,4 @@
-.TH "mtx-interface" "1" "01-01-2020" "version 0.13" "ConTeXt Interface Related Goodies"
+.TH "mtx-interface" "1" "01-01-2024" "version 0.13" "ConTeXt Interface Related Goodies"
 .SH NAME
  mtx-interface - ConTeXt Interface Related Goodies
 .SH SYNOPSIS
@@ -29,6 +29,9 @@ generate jedit interface files
 .B --textpad
 generate textpad interface files
 .TP
+.B --vim
+generate vim interface files
+.TP
 .B --text
 create text files for commands and environments
 .TP
@@ -40,6 +43,9 @@ generate check file
 .TP
 .B --meaning
 report the mening of commands
+.TP
+.B --tokens
+show the internal representation of commands
 .TP
 .B --toutf
 replace named characters by utf

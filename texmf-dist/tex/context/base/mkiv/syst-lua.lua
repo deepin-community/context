@@ -6,13 +6,40 @@ if not modules then modules = { } end modules ['syst-lua'] = {
     license   = "see context related readme files"
 }
 
+local load, type, tonumber = load, type, tonumber
+local concat = table.concat
+local utfchar = utf.char
 local find = string.find
 local S, C, P, lpegmatch, lpegtsplitat = lpeg.S, lpeg.C, lpeg.P, lpeg.match, lpeg.tsplitat
 
-commands        = commands or { }
-local commands  = commands
-local context   = context
-local implement = interfaces.implement
+local xmath        = xmath    or math
+local xcomplex     = xcomplex or { }
+
+local cmd          = tokens.commands
+
+local scannext     = token.scan_next or token.get_next
+
+local getcommand   = token.get_command
+local getmode      = token.get_mode
+local getindex     = token.get_index
+local getcsname    = token.get_csname
+local getmacro     = token.get_macro
+local putnext      = token.put_next
+local scantoken    = token.scan_token or token.get_token
+
+local getdimen     = tex.getdimen
+local getglue      = tex.getglue
+local getcount     = tex.getcount
+local gettoks      = tex.gettoks
+local gettex       = tex.get
+
+local context      = context
+local dimenfactors = number.dimenfactors
+
+commands           = commands or { }
+local commands     = commands
+local context      = context
+local implement    = interfaces.implement
 
 local ctx_protected_cs         = context.protected.cs -- more efficient
 local ctx_firstoftwoarguments  = context.firstoftwoarguments
@@ -20,11 +47,9 @@ local ctx_secondoftwoarguments = context.secondoftwoarguments
 local ctx_firstofoneargument   = context.firstofoneargument
 local ctx_gobbleoneargument    = context.gobbleoneargument
 
-local two_strings = interfaces.strings[2]
-
 implement { -- will be overloaded later
     name      = "writestatus",
-    arguments = two_strings,
+    arguments = "2 strings",
     actions   = logs.status,
 }
 
@@ -123,7 +148,7 @@ implement {
 
 implement {
     name      = "doifelsesame",
-    arguments = two_strings,
+    arguments = "2 strings",
     actions   = function(a,b)
         if a == b then
             ctx_firstoftwoarguments()
@@ -135,7 +160,7 @@ implement {
 
 implement {
     name      = "doifsame",
-    arguments = two_strings,
+    arguments = "2 strings",
     actions   = function(a,b)
         if a == b then
             ctx_firstofoneargument()
@@ -147,7 +172,7 @@ implement {
 
 implement {
     name      = "doifnotsame",
-    arguments = two_strings,
+    arguments = "2 strings",
     actions   = function(a,b)
         if a == b then
             ctx_gobbleoneargument()
@@ -164,237 +189,109 @@ implement {
 -- stick to the next gimmick. It looks inefficient but performance is actually quite
 -- efficient.
 
-local concat = table.concat
-local utfchar = utf.char
-local load, type, tonumber = load, type, tonumber
+do
 
-local xmath    = xmath    or math
-local xcomplex = xcomplex or { }
+    local result = CONTEXTLMTXMODE > 0 and
+        { "local xmath = xmath local xcomplex = xcomplex return " }
+     or { "local xmath =  math local xcomplex = { }      return " }
+    local word   = { }
+    local r      = 1
+    local w      = 0
 
-local cmd          = tokens.commands
+    local report = logs.reporter("system","expression")
 
-local get_next     = token.get_next
-local get_command  = token.get_command
-local get_mode     = token.get_mode
-local get_index    = token.get_index
-local get_csname   = token.get_csname
-local get_macro    = token.get_macro
+    local function unexpected(c)
+        report("unexpected token %a",c)
+    end
 
-local put_next     = token.put_next
-
-local scan_token   = token.scan_token
-
-local getdimen     = tex.getdimen
-local getglue      = tex.getglue
-local getcount     = tex.getcount
-local gettoks      = tex.gettoks
-local gettex       = tex.get
-
-local context      = context
-local dimenfactors = number.dimenfactors
-
-local result = { "return " }
-local word   = { }
-local r      = 1
-local w      = 0
-
-local report = logs.reporter("system","expression")
-
-local function unexpected(c)
-    report("unexpected token %a",c)
-end
-
-local function expression()
-    local w = 0
-    local r = 1
-    while true do
-        local t = get_next()
-        local n = get_command(t)
-        local c = cmd[n]
-        -- todo, helper: returns number
-        if c == "letter"  then
-            w = w + 1 ; word[w] = utfchar(get_mode(t))
-        else
-            if w > 0 then
-                local s = concat(word,"",1,w)
-                local d = dimenfactors[s]
-                if d then
-                    r = r + 1 ; result[r] = "*"
-                    r = r + 1 ; result[r] = 1/d
-                else
-                    if xmath[s] then
-                        r = r + 1 ; result[r] = "xmath."
-                    elseif xcomplex[s] then
-                        r = r + 1 ; result[r] = "xcomplex."
-                    end
-                    r = r + 1 ; result[r] = s
-                end
-                w = 0
-            end
-            if     c == "other_char" then
-                r = r + 1 ; result[r] = utfchar(get_mode(t))
-            elseif c == "spacer" then
-             -- r = r + 1 ; result[r] = " "
-            elseif c == "relax" then
-                break
-            elseif c == "assign_int" then
-                r = r + 1 ; result[r] = getcount(get_index(t))
-            elseif c == "assign_dimen" then
-                r = r + 1 ; result[r] = getdimen(get_index(t))
-            elseif c == "assign_glue" then
-                r = r + 1 ; result[r] = getglue(get_index(t))
-            elseif c == "assign_toks" then
-                r = r + 1 ; result[r] = gettoks(get_index(t))
-            elseif c == "char_given" or c == "math_given" or c == "xmath_given" then
-                r = r + 1 ; result[r] = get_mode(t)
-            elseif c == "last_item" then
-                local n = get_csname(t)
-                if n then
-                    local s = gettex(n)
-                    if s then
-                        r = r + 1 ; result[r] = s
-                    else
-                        unexpected(c)
-                    end
-                else
-                    unexpected(c)
-                end
-            elseif c == "call" then
-                local n = get_csname(t)
-                if n then
-                    local s = get_macro(n)
-                    if s then
-                        r = r + 1 ; result[r] = s
-                    else
-                        unexpected(c)
-                    end
-                else
-                    unexpected(c)
-                end
-            elseif c == "the" or c == "convert" or c == "lua_expandable_call" then
-                put_next(t)
-                scan_token() -- expands
+    local function expression()
+        local w = 0
+        local r = 1
+        while true do
+            local t = scannext()
+            local n = getcommand(t)
+            local c = cmd[n]
+            -- todo, helper: returns number
+            if c == "letter"  then
+                w = w + 1 ; word[w] = utfchar(getmode(t))
             else
-                unexpected(c)
+                if w > 0 then
+                    local s = concat(word,"",1,w)
+                    local d = dimenfactors[s]
+                    if d then
+                        r = r + 1 ; result[r] = "*"
+                        r = r + 1 ; result[r] = 1/d
+                    else
+                        if xmath[s] then
+                            r = r + 1 ; result[r] = "xmath."
+                        elseif xcomplex[s] then
+                            r = r + 1 ; result[r] = "xcomplex."
+                        end
+                        r = r + 1 ; result[r] = s
+                    end
+                    w = 0
+                end
+                if     c == "other_char" then
+                    r = r + 1 ; result[r] = utfchar(getmode(t))
+                elseif c == "spacer" then
+                 -- r = r + 1 ; result[r] = " "
+                elseif c == "relax" then
+                    break
+                elseif c == "assign_int" then
+                    r = r + 1 ; result[r] = getcount(getindex(t))
+                elseif c == "assign_dimen" then
+                    r = r + 1 ; result[r] = getdimen(getindex(t))
+                elseif c == "assign_glue" then
+                    r = r + 1 ; result[r] = getglue(getindex(t))
+                elseif c == "assign_toks" then
+                    r = r + 1 ; result[r] = gettoks(getindex(t))
+                elseif c == "char_given" or c == "math_given" or c == "xmath_given" then
+                    r = r + 1 ; result[r] = getmode(t)
+                elseif c == "last_item" then
+                    local n = getcsname(t)
+                    if n then
+                        local s = gettex(n)
+                        if s then
+                            r = r + 1 ; result[r] = s
+                        else
+                            unexpected(c)
+                        end
+                    else
+                        unexpected(c)
+                    end
+                elseif c == "call" then
+                    local n = getcsname(t)
+                    if n then
+                        local s = getmacro(n)
+                        if s then
+                            r = r + 1 ; result[r] = s
+                        else
+                            unexpected(c)
+                        end
+                    else
+                        unexpected(c)
+                    end
+                elseif c == "the" or c == "convert" or c == "lua_expandable_call" then
+                    putnext(t)
+                    scantoken() -- expands
+                else
+                    unexpected(c)
+                end
             end
         end
+        local code = concat(result,"",1,r)
+        local func = load(code)
+        if type(func) == "function" then
+            context(func())
+        else
+            report("invalid lua %a",code)
+        end
     end
-    local code = concat(result,"",1,r)
-    local func = load(code)
-    if type(func) == "function" then
-        context(func())
-    else
-        report("invalid lua %a",code)
-    end
+
+    implement {
+        public  = true,
+        name    = "expression",
+        actions = expression,
+    }
+
 end
-
--- local letter_code              <const> = cmd.letter
--- local other_char_code          <const> = cmd.other_char
--- local spacer_code              <const> = cmd.spacer
--- local other_char_code          <const> = cmd.other_char
--- local relax_code               <const> = cmd.relax
--- local assign_int_code          <const> = cmd.assign_int
--- local assign_dimen_code        <const> = cmd.assign_dimen
--- local assign_glue_code         <const> = cmd.assign_glue
--- local assign_toks_code         <const> = cmd.assign_toks
--- local char_given_code          <const> = cmd.char_given
--- local math_given_code          <const> = cmd.math_given
--- local xmath_given_code         <const> = cmd.xmath_given
--- local last_item_code           <const> = cmd.last_item
--- local call_code                <const> = cmd.call
--- local the_code                 <const> = cmd.the
--- local convert_code             <const> = cmd.convert
--- local lua_expandable_call_code <const> = cmd.lua_expandable_call
---
--- local function unexpected(c)
---     report("unexpected token %a",c)
--- end
---
--- local function expression()
---     local w = 0
---     local r = 1
---     while true do
---         local t = get_next()
---         local n = get_command(t)
---         if n == letter_code  then
---             w = w + 1 ; word[w] = utfchar(get_mode(t))
---         else
---             if w > 0 then
---                 -- we could use a metatable for all math, complex and factors
---                 local s = concat(word,"",1,w)
---                 local d = dimenfactors[s]
---                 if d then
---                     r = r + 1 ; result[r] = "*"
---                     r = r + 1 ; result[r] = 1/d
---                 else
---                     if xmath[s] then
---                         r = r + 1 ; result[r] = "xmath."
---                     elseif xcomplex[s] then
---                         r = r + 1 ; result[r] = "xcomplex."
---                     end
---                     r = r + 1 ; result[r] = s
---                 end
---                 w = 0
---             end
---             if     n == other_char_code then
---                 r = r + 1 ; result[r] = utfchar(get_mode(t))
---             elseif n == spacer_code then
---              -- r = r + 1 ; result[r] = " "
---             elseif n == relax_code then
---                 break
---             elseif n == assign_int_code then
---                 r = r + 1 ; result[r] = getcount(get_index(t))
---             elseif n == assign_dimen_code then
---                 r = r + 1 ; result[r] = getdimen(get_index(t))
---             elseif n == assign_glue_code then
---                 r = r + 1 ; result[r] = getglue(get_index(t))
---             elseif n == assign_toks_code then
---                 r = r + 1 ; result[r] = gettoks(get_index(t))
---             elseif n == char_given_code or n == math_given_code or n == xmath_given_code then
---                 r = r + 1 ; result[r] = get_mode(t)
---             elseif n == last_item_code then
---                 local n = get_csname(t)
---                 if n then
---                     local s = gettex(n)
---                     if s then
---                         r = r + 1 ; result[r] = s
---                     else
---                         unexpected(c)
---                     end
---                 else
---                     unexpected(c)
---                 end
---             elseif n == call_code then
---                 local n = get_csname(t)
---                 if n then
---                     local s = get_macro(n)
---                     if s then
---                         r = r + 1 ; result[r] = s
---                     else
---                         unexpected(c)
---                     end
---                 else
---                     unexpected(c)
---                 end
---             elseif n == the_code or n == convert_code or n == lua_expandable_call_code then
---                 put_next(t)
---                 scan_token() -- expands
---             else
---                 unexpected(c)
---             end
---         end
---     end
---     local code = concat(result,"",1,r)
---     local func = load(code)
---     if type(func) == "function" then
---         context(func())
---     else
---         report("invalid lua %a",code)
---     end
--- end
-
-implement {
-    public  = true,
-    name    = "expression",
-    actions = expression,
-}

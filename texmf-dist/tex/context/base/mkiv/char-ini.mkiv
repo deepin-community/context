@@ -17,6 +17,7 @@
 \registerctxluafile{char-map}{} % maybe we will load this someplace else
 \registerctxluafile{char-tex}{}
 \registerctxluafile{char-ent}{}
+\registerctxluafile{char-scr}{}
 
 \unprotect
 
@@ -124,6 +125,8 @@
 \clf_setactivecatcodes\ctxcatcodes
 \clf_setactivecatcodes\notcatcodes
 \clf_setactivecatcodes\prtcatcodes
+
+\clf_setcharacternames\ctxcatcodes
 
 \def\chardescription#1{\clf_chardescription#1\relax}
 

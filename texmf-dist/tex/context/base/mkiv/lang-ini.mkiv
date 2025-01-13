@@ -287,6 +287,8 @@
    \s!righthyphenmin=2,
    \s!lefthyphenchar=-1,
    \s!righthyphenchar=45,
+   \s!explicitlefthyphenchar=\languageparameter\s!lefthyphenchar,
+   \s!explicitrighthyphenchar=\languageparameter\s!righthyphenchar,
    % used in compound i.e. interfaced with c! and can be anything so no numbers
    \c!lefthyphen=,
    \c!righthyphen=-,
@@ -311,7 +313,7 @@
    \c!time={h,:,m},
    \c!date={\v!year,\ ,\v!month,\ ,\v!day},
    \c!text=Ag,
-   \s!font=] % \v!auto : experimental !
+   \c!font=] % \v!auto : experimental !
 
 % to be tested:
 %
@@ -430,14 +432,22 @@
 
 \let\dohyphens\relax
 
+\unexpanded\def\usehyphensparameter#1%
+  {\edef\p_hyphens{#1\c!hyphens}%
+   \ifx\p_hyhens\v!no
+     \nohyphens
+   \fi}
+
 \unexpanded\def\lang_basics_synchronize_min_max % maybe store this at the lua end
   {% these values are stored along with glyph nodes
    \lefthyphenmin \numexpr0\languageparameter\s!lefthyphenmin +\hyphenminoffset\relax
    \righthyphenmin\numexpr0\languageparameter\s!righthyphenmin+\hyphenminoffset\relax
    \hyphenationmin\numexpr0\languageparameter\s!hyphenmin\relax
    % these values are stored with the language (global!)
-   \prehyphenchar \languageparameter\s!righthyphenchar\relax
-   \posthyphenchar\languageparameter\s!lefthyphenchar \relax}
+   \prehyphenchar   \languageparameter\s!righthyphenchar\relax
+   \posthyphenchar  \languageparameter\s!lefthyphenchar \relax
+   \preexhyphenchar \languageparameter\s!explicitrighthyphenchar\relax
+   \postexhyphenchar\languageparameter\s!explicitlefthyphenchar \relax}
 
 \appendtoks
     \lang_basics_synchronize_min_max
@@ -486,12 +496,12 @@
 \unexpanded\def\setuplanguages
   {\setuplanguage[\s!default]}
 
-% \setuplanguages[\s!font=\v!auto]
-% \setuplanguage[\s!default][\s!font=\v!auto]
-% \setuplanguage[nl][\s!font=\v!auto]
+% \setuplanguages[\c!font=\v!auto]
+% \setuplanguage[\s!default][\c!font=\v!auto]
+% \setuplanguage[nl][\c!font=\v!auto]
 
 \appendtoks
-    \edef\p_language_font{\languageparameter\s!font}%
+    \edef\p_language_font{\languageparameter\c!font}%
     \ifx\p_language_font\empty\else
       \ifx\p_language_font\v!auto
         \doaddfeature\currentlanguage
@@ -717,16 +727,21 @@
 
 %D New:
 
-\unexpanded\def\traceddiscretionary#1#2#3%
-  {\dontleavehmode
-   \discretionary{\darkred#1}{\darkgreen#2}{\darkblue#3}}
+\unexpanded\def\traceddiscretionary#1#%
+  {\dontleavehmode\lang_basics_traced_discretionary{#1}}
+
+\unexpanded\def\lang_basics_traced_discretionary#1#2#3#4%
+  {\normaldiscretionary#1{\darkred#2}{\darkgreen#3}{\darkblue#4}}
+
+\installtextracker
+  {discretionaries}
+  {\let\discretionary\traceddiscretionary}
+  {\let\discretionary\normaldiscretionary}
 
 \unexpanded\def\samplediscretionary
   {\traceddiscretionary
      {pre\clf_currentprehyphenchar}%
      {\clf_currentposthyphenchar post}%
      {replace}}
-
-% todo: make this configurable
 
 \protect \endinput

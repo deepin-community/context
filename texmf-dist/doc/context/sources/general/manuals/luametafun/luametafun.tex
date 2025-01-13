@@ -1,3 +1,8 @@
+% language=us runpath=texruns:manuals/luametafun
+
+% This file takes a while to process because we render some complex graphics. It
+% can be sped up by enabling caching, but for some images that has been disabled.
+
 \setupfootertexts[{\tttf uncorrected draft}]
 
 \environment luametafun-style
@@ -12,6 +17,7 @@
     \stopfrontmatter
 
     \startbodymatter
+        \component luametafun-technology
         \component luametafun-text
       % \component luametafun-grid
         \component luametafun-axis
@@ -26,8 +32,11 @@
         \component luametafun-function
         \component luametafun-chart
         \component luametafun-svg
+        \component luametafun-poisson
         \component luametafun-fonts
+        \component luametafun-color
         \component luametafun-groups
+        \component luametafun-extensions
         \component luametafun-interface
     \stopbodymatter
 

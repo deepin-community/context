@@ -17,15 +17,11 @@ local allocate = utilities.storage.allocate
 
 local context     = context
 local nodes       = nodes
-local node        = node
 
-local traverse    = nodes.traverse
-local is_node     = nodes.is_node
-
+local isnode      = nodes.isnode
 local nodecodes   = nodes.nodecodes
 local subtcodes   = nodes.codes
 local getfields   = nodes.fields
-
 local tonode      = nodes.tonode
 local tonut       = nodes.tonut
 
@@ -131,13 +127,13 @@ end
 
 nodes.astable = astable
 
-setinspector("node",function(v) if is_node(v) then printtable(astable(v),tostring(v)) return true end end)
+setinspector("node",function(v) if isnode(v) then printtable(astable(v),tostring(v)) return true end end)
 
 -- under construction:
 
 local function totable(n,flat,verbose,noattributes) -- nicest: n,true,true,true
     local function to_table(n,flat,verbose,noattributes) -- no need to pass
-        local f  = getfields(n)
+        local f  = getfields(n.id)
         local tt = { }
         for k=1,#f do
             local v = f[k]

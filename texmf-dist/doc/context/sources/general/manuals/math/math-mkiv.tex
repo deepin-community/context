@@ -1,7 +1,9 @@
-% language=uk
+% language=us runpath=texruns:manuals/math
+
+% language=us
 
 % author    : Hans Hagen
-% copyright : PRAGMA ADE & ConTeXt Development Team
+% copyright : ConTeXt Development Team
 % license   : Creative Commons Attribution ShareAlike 4.0 International
 % reference : pragma-ade.nl | contextgarden.net | texlive (related) distributions
 % origin    : the ConTeXt distribution
@@ -42,6 +44,11 @@
     \component math-suboptimal
     \component math-tricks
     \component math-oddities
+    \component math-grouping
+    \ifcase \contextlmtxmode \else
+        \component math-fun
+      % \component math-notdone
+    \fi
 \stopbodymatter
 
 \stopdocument

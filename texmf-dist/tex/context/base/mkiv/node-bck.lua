@@ -1,5 +1,6 @@
 if not modules then modules = { } end modules ['node-bck'] = {
     version   = 1.001,
+    optimize  = true,
     comment   = "companion to node-bck.mkiv",
     author    = "Hans Hagen, PRAGMA-ADE, Hasselt NL",
     copyright = "PRAGMA ADE / ConTeXt Development Team",
@@ -51,7 +52,7 @@ local nextnode           = nuts.traversers.node
 local nexthlist          = nuts.traversers.hlist
 local nextlist           = nuts.traversers.list
 
-local flush_node_list    = nuts.flush_list
+local flushnodelist      = nuts.flushlist
 
 local new_rule           = nodepool.rule
 local new_kern           = nodepool.kern
@@ -62,9 +63,6 @@ local unsetvalue         = attributes.unsetvalue
 
 local linefillers        = nodes.linefillers
 
-local a_color            = privateattributes("color")
-local a_transparency     = privateattributes("transparency")
-local a_colormodel       = privateattributes("colormodel")
 local a_background       = privateattributes("background")
 local a_alignbackground  = privateattributes("alignbackground")
 local a_linefiller       = privateattributes("linefiller")
@@ -162,7 +160,7 @@ local function add_alignbackgrounds(head,list)
     local template = getprop(head,"alignmentchecked")
     if template then
         list = colored_b(head,list,template[1],hlist_code,template[2])
-        flush_node_list(template)
+        flushnodelist(template)
         templates[currentrow] = false
         return list
     end
@@ -239,15 +237,6 @@ function nodes.handlers.backgroundsvbox(head,where)
     end
     return head
 end
-
--- interfaces.implement {
---     name      = "enablebackgroundboxes",
---     onlyonce  = true,
---     actions   = enableaction,
---     arguments = { "'shipouts'", "'nodes.handlers.backgrounds'" }
--- }
---
--- doing it in the shipout works as well but this is nicer
 
 local function enable(alignmentstoo)
     if not enabled then

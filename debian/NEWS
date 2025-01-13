@@ -1,26 +1,26 @@
 context (2016.05.14.20160516-1) unstable; urgency=medium
 
-  * The ICC profiles normally shipped with context in
-    texmf-dist/tex/context/colors/icc/profiles/
-    named
-      ecirgb_v2.icc
-      ecirgb_v2_iccv4.icc
-      isocoated_v2_300_eci.icc
-      isocoated_v2_eci.icc
-      srgb.icc
-      srgb_v4_icc_preference.icc
-    have been removed from the distribution as they fall
-    under non-free licenses. This means, pdf/x and pdf/a
-    creation (and probably some other operations) will
-    fail. If one needs these files, please obtain them from
-    some other sources and put them into the above directory:
+  The ICC profiles normally shipped with context in
+  texmf-dist/tex/context/colors/icc/profiles/
+  named:
+  - ecirgb_v2.icc
+  - ecirgb_v2_iccv4.icc
+  - isocoated_v2_300_eci.icc
+  - isocoated_v2_eci.icc
+  - srgb.icc
+  - srgb_v4_icc_preference.icc
+  have been removed from the distribution as they fall
+  under non-free licenses. This means, pdf/x and pdf/a
+  creation (and probably some other operations) will
+  fail. If one needs these files, please obtain them from
+  some other sources and put them into the above directory:
 
  -- Norbert Preining <preining@debian.org>  Mon, 16 May 2016 22:19:50 +0900
 
 context (2014.05.18.20140520-1) experimental; urgency=low
 
-  * the context module "gnuplot" is not shipped in the main context
-    package anymore, but in context-modules. If needed, please install
-    the (recommended) context-modules package.
+  The context module "gnuplot" is not shipped in the main context
+  package anymore, but in context-modules. If needed, please install
+  the (recommended) context-modules package.
 
  -- Norbert Preining <preining@debian.org>  Tue, 20 May 2014 09:46:35 +0900

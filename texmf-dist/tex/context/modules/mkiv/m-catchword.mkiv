@@ -27,7 +27,7 @@ local hlist_code    = nodecodes.hlist
 local fontkern_code = kerncodes.fontkern
 
 local function set_catchword(t)
-    local nextpage = tex.lists.contrib_head
+    local nextpage = tex.lists.contribute_head or tex.lists.contrib_head
     if not nextpage then
         return
     end
@@ -60,19 +60,19 @@ local function set_catchword(t)
     end
     local page = tex.getbox(t.box)
     local head = nodes.copy_list(first,last.next)
-          head = nodes.insert_before(head,head,nodes.pool.glue(1,1,1))
+          head = nodes.insertbefore(head,head,nodes.pool.glue(1,1,1))
     local line = nodes.hpack(head,page.width,"exactly")
     if CONTEXTLMTXMODE > 0 then
         line.yoffset = -t.voffset
         line.xoffset = t.hoffset
     else
         line.shift = t.hoffset
-        line = nodes.insert_before(line,line,nodes.pool.kern(t.voffset-line.height))
+        line = nodes.insertbefore(line,line,nodes.pool.kern(t.voffset-line.height))
         line = nodes.vpack(line)
     end
     line.height  = 0
     line.depth   = 0
-    node.insert_after(page.list,nodes.tail(page.list),line)
+    nodes.insertafter(page.list,nodes.tail(page.list),line)
     logs.report("catchword","appending %a on page %i",nodes.toutf(head),tex.getcount("realpageno"))
 end
 

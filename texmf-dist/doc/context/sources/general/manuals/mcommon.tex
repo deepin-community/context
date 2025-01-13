@@ -1,7 +1,3 @@
-% content=tex
-%
-% copyright=pragma-ade readme=readme.pdf licence=cc-by-nc-sa
-
 \startenvironment mcommon
 
 % modules
@@ -167,7 +163,7 @@
             [rotation=90]
             {\color
                 [lightgray]
-                {\getvariable{document}{title}}}
+                {\documentvariable{title}}}
         \par
    \stopstandardmakeup
    \setupbackgrounds
@@ -179,9 +175,9 @@
     \blank[2*big]
     \testpage[3]
     \startpacked
-        \getvariable{document}{author}\par
-        \getvariable{document}{affiliation}\par
-        \getvariable{document}{location}\par
+        \documentvariable{author}\par
+        \documentvariable{affiliation}\par
+        \documentvariable{location}\par
     \stoppacked
 \stopsetups
 

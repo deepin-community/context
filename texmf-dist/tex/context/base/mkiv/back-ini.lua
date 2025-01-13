@@ -62,17 +62,6 @@ backends.tables         = { }  setmetatableindex(backends.tables,         tables
 
 backends.current = "unknown"
 
-local lmtx_mode  = nil
-
-local function lmtxmode()
-    if lmtx_mode == nil then
-        lmtx_mode = CONTEXTLMTXMODE > 0 and drivers and drivers.lmtxversion
-    end
-    return lmtx_mode
-end
-
-codeinjections.lmtxmode = lmtxmode
-
 function backends.install(what)
     if type(what) == "string" then
         local backend = backends[what]
@@ -100,13 +89,7 @@ end
 statistics.register("used backend", function()
     local bc = backends.current
     if bc ~= "unknown" then
-        local lmtx = lmtxmode()
-        local cmnt = backends[bc].comment or "no comment"
-        if lmtx then
-            return format("lmtx version %0.2f, %s (%s)",lmtx,bc,cmnt)
-        else
-            return format("%s (%s)",bc,cmnt)
-        end
+        return format("%s (%s)",bc,backends[bc].comment or "no comment")
     else
         return nil
     end
@@ -149,7 +132,7 @@ end)
 backends.included = included
 
 function backends.timestamp()
-    return os.date("%Y-%m-%dT%X") .. os.timezone(true)
+    return os.date("%Y-%m-%dT%X") .. os.timezone()
 end
 
 -- Also here:
@@ -164,10 +147,8 @@ function codeinjections.setpagedimensions(paperwidth,paperheight)
     if paperheight then
         paper_height = paperheight
     end
-    if not lmtxmode() then
-        texset("global","pageheight",paper_height)
-        texset("global","pagewidth", paper_width)
-    end
+    texset("global","pageheight",paper_height)
+    texset("global","pagewidth", paper_width)
     return paper_width, paper_height
 end
 
@@ -178,10 +159,9 @@ end
 implement {
     name    = "shipoutoffset",
     actions = function()
-        context(lmtxmode() and "0pt" or "-1in") -- the old tex offset
+        context("-1in") -- the old tex offset
     end
 }
-
 
 local page_x_origin = 0
 local page_y_origin = 0
@@ -207,6 +187,6 @@ implement {
 
 -- could also be codeinjections
 
-function backends.noflatelua()
-    return status.late_callbacks or 0
+function backends.getcallbackstate()
+    return { count = status.late_callbacks or 0 }
 end

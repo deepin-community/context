@@ -1,4 +1,4 @@
-% language=us
+% language=us runpath=texruns:manuals/lowlevel
 
 \environment lowlevel-style
 
@@ -6,9 +6,11 @@
   [title=conditionals,
    color=middleblue]
 
-\startsection[title=Preamble]
+\pushoverloadmode
 
-\startsubsection[title=Introduction]
+\startsectionlevel[title=Preamble]
+
+\startsectionlevel[title=Introduction]
 
 You seldom need the low level conditionals because there are quite some so called
 support macros available in \CONTEXT . For instance, when you want to compare two
@@ -51,9 +53,9 @@ The others are often wrapped into support macros that are more convenient.
 In due time I might add more examples and explanations. Also, maybe some more
 tests will show up as part of the \LUAMETATEX\ project.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={Number and dimensions}]
+\startsectionlevel[title={Number and dimensions}]
 
 Numbers and dimensions are basic data types in \TEX. When you enter one, a number
 is just that but a dimension gets a unit. Compare:
@@ -287,13 +289,13 @@ assuming that the fraction is within the maximum permitted) so these numbers the
 are the same. Anyway, this is not different in other programming languages and
 just something you need to be aware of.
 
-\stopsubsection
+\stopsectionlevel
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\TEX\ primitives}]
+\startsectionlevel[title={\TEX\ primitives}]
 
-\startsubsection[title={\tex{if}}]
+\startsectionlevel[title={\tex{if}}]
 
 I seldom use this one. Internally \TEX\ stores (and thinks) in terms of tokens.
 If you see for instance \type {\def} or \type {\dimen} or \type {\hbox} these all
@@ -328,9 +330,9 @@ We get: \inlinebuffer .
 
 % protected macros
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifcat}}]
+\startsectionlevel[title={\tex{ifcat}}]
 
 In \TEX\ characters (in the input) get interpreted according to their so called
 catcodes. The most common are letters (alphabetic) and and other (symbols) but
@@ -375,9 +377,9 @@ You can use \type {\noexpand} to prevent expansion:
 We get: \inlinebuffer, so who still thinks that \TEX\ is easy to understand for a
 novice user?
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifnum}}]
+\startsectionlevel[title={\tex{ifnum}}]
 
 This condition compares its argument with another one, separated by an \type {<},
 \type {=} or \type {>} character.
@@ -408,9 +410,9 @@ case the dimension is in scaled points.
 Of course this equal treatment of a dimension and number is only true when the
 dimension is a register or box property.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsection[title={\tex{ifdim}}]
+\startsectionlevel[title={\tex{ifdim}}]
 
 This condition compares one dimension with another one, separated by an \type {<},
 \type {=} or \type {>} sign.
@@ -428,9 +430,9 @@ This condition compares one dimension with another one, separated by an \type {<
 While when comparing numbers a dimension is a valid quantity but here you cannot
 mix them: something with a unit is expected.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifodd}}]
+\startsectionlevel[title={\tex{ifodd}}]
 
 This one can come in handy, although in \CONTEXT\ it is only used in checking for
 an odd of even page number.
@@ -452,9 +454,9 @@ too, which is then interpreted as representing scaled points. Here we get:
 \getbuffer
 \stoplines
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifvmode}}]
+\startsectionlevel[title={\tex{ifvmode}}]
 
 This is a rather trivial check. It takes no arguments and just is true when we're
 in vertical mode. Here is an example:
@@ -468,9 +470,9 @@ in vertical mode. Here is an example:
 We're always in horizontal mode and issuing a \type {\par} inside a horizontal
 box doesn't change that, so we get: \ruledhbox{\inlinebuffer}.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifhmode}}]
+\startsectionlevel[title={\tex{ifhmode}}]
 
 As with \type {\ifvmode} this one has no argument and just tells if we're in
 vertical mode.
@@ -492,9 +494,9 @@ content (or command) is done more than once:
 \ruledhbox{\inlinebuffer}
 \stoplinecorrection
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifmmode}}]
+\startsectionlevel[title={\tex{ifmmode}}]
 
 Math is something very \TEX\ so naturally you can check if you're in math mode.
 here is an example of using this test:
@@ -505,9 +507,9 @@ here is an example of using this test:
 
 Of course in reality macros that do such things are more advanced than this one.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifinner}}]
+\startsectionlevel[title={\tex{ifinner}}]
 
 \startbuffer
 \def\ShowMode
@@ -547,9 +549,9 @@ By the way, moving the \type {\ifinner} test outside the branches (to the top of
 the macro) won't work because once the word \type {inner} is typeset we're no
 longer in vertical mode, if we were at all.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifvoid}}]
+\startsectionlevel[title={\tex{ifvoid}}]
 
 A box is one of the basic concepts in \TEX. In order to understand this primitive
 we present four cases:
@@ -599,15 +601,15 @@ Setting a dimension of a void voix (empty) box doesn't make it less void:
 \getbuffer
 \stoplines
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifhbox}}]
+\startsectionlevel[title={\tex{ifhbox}}]
 
 This test takes a box number and gives true when it is an hbox.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifvbox}}]
+\startsectionlevel[title={\tex{ifvbox}}]
 
 This test takes a box number and gives true when it is an vbox. Both a \type
 {\vbox} and \type {\vtop} are vboxes, the difference is in the height and depth
@@ -625,9 +627,9 @@ And in  a \type {\vtop} the first line takes control:
 
 but, once wrapped, both internally are just vlists.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifx}}]
+\startsectionlevel[title={\tex{ifx}}]
 
 This test is actually used a lot in \CONTEXT: it compares two token(list)s:
 
@@ -649,29 +651,29 @@ that get compared, like in:
 \edef\TempA{...}\edef\TempB{...}\ifx\TempA\TempB ...\else ...\fi
 \stoptyping
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifeof}}]
+\startsectionlevel[title={\tex{ifeof}}]
 
 This test checks if a the pointer in a given input channel has reached its end.
 It is also true when the file is not present. The argument is a number which
 relates to the \type {\openin} primitive that is used to open files for reading.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{iftrue}}]
+\startsectionlevel[title={\tex{iftrue}}]
 
 It does what it says: always true.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{iffalse}}]
+\startsectionlevel[title={\tex{iffalse}}]
 
 It does what it says: always false.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifcase}}]
+\startsectionlevel[title={\tex{ifcase}}]
 
 The general layout of an \type {\ifcase} tests is as follows:
 
@@ -691,13 +693,13 @@ The general layout of an \type {\ifcase} tests is as follows:
 
 As in other places a number is a sequence of signs followed by one of more digits
 
-\stopsubsection
+\stopsectionlevel
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\ETEX\ primitives}]
+\startsectionlevel[title={\ETEX\ primitives}]
 
-\startsubsection[title={\tex{ifdefined}}]
+\startsectionlevel[title={\tex{ifdefined}}]
 
 This primitive was introduced for checking the existence of a macro (or primitive)
 and with good reason. Say that you want to know if \type {\MyMacro} is defined? One
@@ -734,9 +736,9 @@ In order to catch the last problem there is the option to test directly:
 This (or course) results in: \inlinebuffer, but the macro is still sort of
 defined (with no meaning). The next section shows how to get around this.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifcsname}}]
+\startsectionlevel[title={\tex{ifcsname}}]
 
 A macro is often defined using a ready made name, as in:
 
@@ -793,9 +795,9 @@ during this test, and in \LUAMETATEX\ that is default. This means that tests can
 be made quite robust as it is pretty safe to assume that names that make sense
 are constructed from regular characters and not boxes, font switches, etc.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{iffontchar}}]
+\startsectionlevel[title={\tex{iffontchar}}]
 
 This test was also part of the \ETEX\ extensions and it can be used to see if
 a font has a character.
@@ -822,9 +824,9 @@ In the perspective of \LUAMETATEX\ I considered also supporting \type {\fontid}
 but it got a bit messy due to the fact that this primitive expands in a different
 way so this extension was rejected.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{unless}}]
+\startsectionlevel[title={\tex{unless}}]
 
 You can negate the results of a test by using the \type {\unless} prefix, so for
 instance you can replace:
@@ -845,41 +847,41 @@ by:
 \fi
 \stoptyping
 
-\stopsubsection
+\stopsectionlevel
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\LUATEX\ primitives}]
+\startsectionlevel[title={\LUATEX\ primitives}]
 
-\startsubsection[title={\tex{ifincsname}}]
+\startsectionlevel[title={\tex{ifincsname}}]
 
 As it had no real practical usage uit might get dropped in \LUAMETATEX, so it
 will not be discussed here.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifprimitive}}]
+\startsectionlevel[title={\tex{ifprimitive}}]
 
 As it had no real practical usage due to limitations, this one is not available
 in \LUAMETATEX\ so it will not be discussed here.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifabsnum}}]
+\startsectionlevel[title={\tex{ifabsnum}}]
 
 This test is inherited from \PDFTEX\ and behaves like \type {\ifnum} but first
 turns a negative number into a positive one.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifabsdim}}]
+\startsectionlevel[title={\tex{ifabsdim}}]
 
 This test is inherited from \PDFTEX\ and behaves like \type {\ifdim} but first
 turns a negative dimension into a positive one.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifcondition}}]
+\startsectionlevel[title={\tex{ifcondition}}]
 
 This is not really a test but in order to unstand that you need to know how
 \TEX\ internally deals with tests.
@@ -1059,13 +1061,13 @@ permits more complex arguments, like:
 Another trick is that we use an integer division (the \type {:}) which is an
 operator supported by \LUAMETATEX .
 
-\stopsubsection
+\stopsectionlevel
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\LUAMETATEX\ primitives}]
+\startsectionlevel[title={\LUAMETATEX\ primitives}]
 
-\startsubsection[title={\tex{ifcmpnum}}]
+\startsectionlevel[title={\tex{ifcmpnum}}]
 
 This one is part of s set of three tests that all are a variant of a \type
 {\ifcase} test. A simple example of the first test is this:
@@ -1078,9 +1080,9 @@ The test scans for two numbers, which of course can be registers or expressions,
 and sets the case value to 0, 1 or 2, which means that you then use the normal
 \type {\or} and \type {\else} primitives for follow up on the test.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifchknum}}]
+\startsectionlevel[title={\tex{ifchknum}}]
 
 This test scans a number and when it's okay sets the case value to 1, and otherwise
 to 2. So you can do the next:
@@ -1095,9 +1097,9 @@ recovery token, although in fact we just use the fast scanner mode that comes
 with the \type {\ifcase}: because the result is 1 or 2, we never see invalid
 tokens.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifnumval}}]
+\startsectionlevel[title={\tex{ifnumval}}]
 
 A sort of combination of the previous two is \type {\ifnumval} which checks a
 number but also if it's less, equal or more than zero:
@@ -1111,27 +1113,29 @@ You can decide to ignore the bad number or do something that makes more sense.
 Often the to be checked value will be the content of a macro or an argument like
 \type {#1}.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifcmpdim}}]
+\startsectionlevel[title={\tex{ifcmpdim}}]
 
 This test is like \type {\ifcmpnum} but for dimensions.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifchkdim}}]
+\startsectionlevel[title={\tex{ifchkdim}}]
 
-This test is like \type {\ifchknum} but for dimensions.
+This test is like \type {\ifchknum} but for dimensions. The last checked value is
+available as \type {\lastchknum}.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifdimval}}]
+\startsectionlevel[title={\tex{ifdimval}}]
 
-This test is like \type {\ifnumval} but for dimensions.
+This test is like \type {\ifnumval} but for dimensions. The last checked value is
+available as \type {\lastchkdim}
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{iftok}}]
+\startsectionlevel[title={\tex{iftok}}]
 
 Although this test is still experimental it can be used. What happens is that
 two to be compared \quote {things} get scanned for. For each we first gobble
@@ -1191,40 +1195,49 @@ Case one and four mixed:
 The last case is more a catch: it will issue an error when no number is given.
 Eventually that might become a bit more clever (depending on our needs.)
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifcstok}}]
+\startsectionlevel[title={\tex{ifcstok}}]
 
 There is a subtle difference between this one and \type {iftok}: spaces
 and \type {\relax} tokens are skipped but nothing gets expanded. So, when
 we arrive at the to be compared \quote {things} we look at what is there,
 as|-|is.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{iffrozen}}]
+\startsectionlevel[title={\tex{iffrozen}}]
 
 {\em This is an experimental test.} Commands can be defined with the \type
 {\frozen} prefix and this test can be used to check if that has been the case.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifprotected}}]
+\startsectionlevel[title={\tex{ifprotected}}]
 
 Commands can be defined with the \type {\protected} prefix (or in \CONTEXT, for
 historic reasons, with \type {\unexpanded}) and this test can be used to check if
 that has been the case.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{ifusercmd}}]
+\startsectionlevel[title={\tex{ifusercmd}}]
 
 {\em This is an experimental test.} It can be used to see if the command is
 defined at the user level or is a build in one. This one might evolve.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={\tex{orelse}}]
+\startsectionlevel[title={\tex{ifarguments}}]
+
+This conditional can be used to check how many arguments were matched. It only
+makes sense when used with macros defined with the \type {\tolerant} prefix
+and|/|or when the sentinel \type {\ignorearguments} after the arguments is used.
+More details can be found in the lowlevel macros manual.
+
+\stopsectionlevel
+
+\startsectionlevel[title={\tex{orelse}}]
 
 This it not really a test primitive but it does act that way. Say that we have this:
 
@@ -1254,13 +1267,16 @@ A bit nicer looks this:
 \fi
 \stoptyping
 
-We stay at the same level and the only test that cannot be used this way is \type
-{\ifcondition} but that is no real problem. Sometimes a more flat test tree had
-advantages but if you think that it gives better performance then you will be
-disappointed. The fact that we stay at the same level is compensated by a bit
-more parsing, so unless you have millions such cases (or expansions) it might
-make a bit of a difference. As mentioned, I'm a bit sensitive for how code looks so
-that was the main motivation for introducing it.
+% We stay at the same level and the only test that cannot be used this way is \type
+% {\ifcondition} but that is no real problem. Sometimes a more flat test tree had
+
+We stay at the same level. Sometimes a more flat test tree had advantages but if
+you think that it gives better performance then you will be disappointed. The
+fact that we stay at the same level is compensated by a bit more parsing, so
+unless you have millions such cases (or expansions) it might make a bit of a
+difference. As mentioned, I'm a bit sensitive for how code looks so that was the
+main motivation for introducing it. There is a companion \type {\orunless}
+continuation primitive.
 
 A rather neat trick is the definition of \type {\quitcondition}:
 
@@ -1281,31 +1297,36 @@ This permits:
 where, of course, the quitting normally is the result of some intermediate extra
 test. But let me play safe here: beware of side effects.
 
-\stopsubsection
+\stopsectionlevel
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={For the brave}]
+\startsectionlevel[title={For the brave}]
 
-\startsubsection[title={Full expansion}]
+\startsectionlevel[title={Full expansion}]
 
 If you don't understand the following code, don't worry. There is seldom much
 reason to go this complex but obscure \TEX\ code attracts some users so \unknown
 
 When you have a macro that has for instance assignments, and when you expand that
 macro inside an \type {\edef}, these assignments are not actually expanded but
-tokenized. In \LUATEX\ there is a way to immediately apply these assignments and
-that feature can be used to write a fully expandable user test. For instance:
+tokenized. In \LUAMETATEX\ there is a way to apply these assignments without side
+effects and that feature can be used to write a fully expandable user test. For
+instance:
 
 \startbuffer
 \def\truecondition {\iftrue}
 \def\falsecondition{\iffalse}
 
 \def\fontwithidhaschar#1#2%
-  {\immediateassignment\scratchcounter\numexpr\fontid\font\relax
-   \immediateassignment\setfontid\numexpr#1\relax
+  {\beginlocalcontrol
+   \scratchcounter\numexpr\fontid\font\relax
+   \setfontid\numexpr#1\relax
+   \endlocalcontrol
    \iffontchar\font\numexpr#2\relax
-      \immediateassignment\setfontid\scratchcounter
+      \beginlocalcontrol
+      \setfontid\scratchcounter
+      \endlocalcontrol
       \expandafter\truecondition
    \else
       \expandafter\falsecondition
@@ -1340,9 +1361,9 @@ different: they contain the assignments and the test for the character is
 actually done when constructing the content of the \type {\edef}, but for the
 current font. So, basically that test is now useless.
 
-\stopsubsection
+\stopsectionlevel
 
-\startsubsection[title={User defined if's}]
+\startsectionlevel[title={User defined if's}]
 
 There is a \type {\newif} macro that defines three other macros:
 
@@ -1390,20 +1411,141 @@ This one is cheaper on the hash and doesn't need the two extra macros per test.
 The price is the use of \type {\ifconditional}, which is {\em not} to confused
 with \type {\ifcondition} (it has bitten me already a few times).
 
-\stopsubsection
+\stopsectionlevel
 
-\stopsection
+\stopsectionlevel
 
-\startsubject[title=Colofon]
+\startsectionlevel[title=Relaxing]
 
-\starttabulate
-\NC Author      \NC Hans Hagen         \NC \NR
-\NC \CONTEXT    \NC \contextversion    \NC \NR
-\NC \LUAMETATEX \NC \texengineversion  \NC \NR
-\NC Support     \NC www.pragma-ade.com \NC \NR
-\NC             \NC contextgarden.net  \NC \NR
+When \TEX\ scans for a number or dimension it has to check tokens one by one. On
+the case of a number, the scanning stops when there is no digit, in the case of a
+dimension the unit determine the end of scanning. In the case of a number, when a
+token is not a digit that token gets pushed back. When digits are scanned a
+trailing space or \type {\relax} is pushed back. Instead of a number of dimension
+made from digits, periods and units, the scanner also accepts registers, both the
+direct accessors like \type {\count} and \type {\dimen} and those represented by
+one token. Take these definitions:
+
+\startbuffer
+\newdimen\MyDimenA \MyDimenA=1pt  \dimen0=\MyDimenA
+\newdimen\MyDimenB \MyDimenB=2pt  \dimen2=\MyDimenB
+\stopbuffer
+
+\typebuffer \getbuffer
+
+I will use these to illustrate the side effects of scanning. Watch the spaces
+in the result.
+
+% \startbuffer[a]
+% \testfeatureonce{1000000}{
+%     \whatever{1pt}{2pt}%
+%     \whatever{1pt}{1pt}%
+%     \whatever{\dimen0}{\dimen2}%
+%     \whatever{\dimen0}{\dimen0}%
+%     \whatever\MyDimenA\MyDimenB
+%     \whatever\MyDimenA\MyDimenB
+% } \elapsedtime
+% \stopbuffer
+
+\startbuffer[b]
+\starttabulate[|T|T|]
+\NC \type {\whatever{1pt}{2pt}}         \NC \edef\temp{\whatever        {1pt}{2pt}}[\meaning\temp] \NC \NR
+\NC \type {\whatever{1pt}{1pt}}         \NC \edef\temp{\whatever        {1pt}{1pt}}[\meaning\temp] \NC \NR
+\NC \type {\whatever{\dimen0}{\dimen2}} \NC \edef\temp{\whatever{\dimen0}{\dimen2}}[\meaning\temp] \NC \NR
+\NC \type {\whatever{\dimen0}{\dimen0}} \NC \edef\temp{\whatever{\dimen0}{\dimen0}}[\meaning\temp] \NC \NR
+\NC \type {\whatever\MyDimenA\MyDimenB} \NC \edef\temp{\whatever\MyDimenA\MyDimenB}[\meaning\temp] \NC \NR
+\NC \type {\whatever\MyDimenA\MyDimenB} \NC \edef\temp{\whatever\MyDimenA\MyDimenB}[\meaning\temp] \NC \NR
 \stoptabulate
+\stopbuffer
 
-\stopsubject
+First I show what effect we want to avoid. When second argument contains a number
+(digits) the zero will become part of it so we actually check \type {\dimen00}
+here.
+
+\startbuffer[c]
+\def\whatever#1#2%
+  {\ifdim#1=#20\else1\fi}
+\stopbuffer
+
+\typebuffer[c] \getbuffer[c,b]
+
+The solution is to add a space but watch how that one can end up in the result:
+
+\startbuffer[c]
+\def\whatever#1#2%
+  {\ifdim#1=#2 0\else1\fi}
+\stopbuffer
+
+\typebuffer[c] \getbuffer[c,b]
+
+A variant is using \type {\relax} and this time we get this token retained in
+the output.
+
+\startbuffer[c]
+\def\whatever#1#2%
+  {\ifdim#1=#2\relax0\else1\fi}
+\stopbuffer
+
+\typebuffer[c] \getbuffer[c,b]
+
+A solution that doesn't have side effects of forcing the end of a number (using a
+space or \type {\relax} is one where we use expressions. The added overhead of
+scanning expressions is taken for granted because the effect is what we like:
+
+\startbuffer[c]
+\def\whatever#1#2%
+  {\ifdim\dimexpr#1\relax=\dimexpr#2\relax0\else1\fi}
+\stopbuffer
+
+\typebuffer[c] \getbuffer[c,b]
+
+Just for completeness we show a more obscure trick: this one hides assignments to
+temporary variables. Although performance is okay, it is the least efficient
+one so far.
+
+\ifdefined\beginlocalcontrol
+
+\startbuffer[c]
+\def\whatever#1#2%
+  {\beginlocalcontrol
+   \MyDimenA#1\relax
+   \MyDimenB#2\relax
+   \endlocalcontrol
+   \ifdim\MyDimenA=\MyDimenB0\else1\fi}
+\stopbuffer
+
+\typebuffer[c] \getbuffer[c,b]
+
+\fi
+
+It is kind of a game to come up with alternatives but for sure those involve
+dirty tricks and more tokens (and runtime). The next can be considered a dirty
+trick too: we use a special variant of \type {\relax}. When a number is scanned
+it acts as relax, but otherwise it just is ignored and disappears.
+
+\ifdefined\norelax\else\let\norelax\relax\fi
+
+\startbuffer[c]
+\def\whatever#1#2%
+  {\ifdim#1=#2\norelax0\else1\fi}
+\stopbuffer
+
+\typebuffer[c] \getbuffer[c,b]
+
+\stopsectionlevel
+
+\popoverloadmode
 
 \stopdocument
+
+% \def\foo{foo=bar}
+% \def\oof{foo!bar}
+% \scratchtoks{=}
+
+% \ifhasxtoks\scratchtoks{foo!bar} YES\else NOP\fi\par
+% \ifhasxtoks\scratchtoks{foo=bar} YES\else NOP\fi\par
+
+% \showluatokens\foo
+
+% \ifhastoks\scratchtoks\oof YES\else NOP\fi\par
+% \ifhastoks\scratchtoks\foo YES\else NOP\fi\par

@@ -33,7 +33,7 @@ local vlist_code          = nodecodes.vlist
 local kern_code           = nodecodes.kern
 local glue_code           = nodecodes.glue
 local penalty_code        = nodecodes.penalty
-local insert_code         = nodecodes.ins
+local insert_code         = nodecodes.insert
 local mark_code           = nodecodes.mark
 local rule_code           = nodecodes.rule
 
@@ -59,9 +59,9 @@ local getnext             = nuts.getnext
 local getprev             = nuts.getprev
 local getid               = nuts.getid
 local getlist             = nuts.getlist
-local getsubtype          = nuts.getsubtype
+local getindex            = nuts.getindex or nuts.getsubtype -- luatex catch
 local getbox              = nuts.getbox
-local getattribute        = nuts.getattribute
+local getattr             = nuts.getattr
 local getwhd              = nuts.getwhd
 local getkern             = nuts.getkern
 local getpenalty          = nuts.getpenalty
@@ -78,6 +78,8 @@ local new_vlist           = nodepool.vlist
 local new_glue            = nodepool.glue
 
 local points              = number.points
+
+local setinsertcontent    = tex.setinsertcontent or tex.setbox
 
 local settings_to_hash    = utilities.parsers.settings_to_hash
 
@@ -121,7 +123,7 @@ local function collectinserts(result,nxt,nxtid)
             i = i + 1
             result.i = i
             inserttotal = inserttotal + getheight(nxt) -- height includes depth (hm, still? needs checking)
-            local s = getsubtype(nxt)
+            local s = getindex(nxt)
             local c = inserts[s]
             if trace_details then
                 report_state("insert of class %s found",s)
@@ -249,12 +251,19 @@ local function preparesplit(specification) -- a rather large function
         report_state("fatal error, no list")
         return
     end
-    local head = getlist(list) or specification.originalhead
+    local head = nil
+    if getid(list) == hlist_code then
+        head = list
+    else
+        head = getlist(list) or specification.originalhead
+    end
     if not head then
         report_state("fatal error, no head")
         return
     end
+
     slidenodes(head) -- we can have set prev's to nil to prevent backtracking
+
     local discarded      = { }
     local originalhead   = head
     local originalwidth  = specification.originalwidth  or getwidth(list)
@@ -439,6 +448,7 @@ local function preparesplit(specification) -- a rather large function
         if column == nofcolumns then
             column = 0 -- nicer in trace
             rest   = head
+-- rest   = nil
             return false, 0
         else
             local skipped
@@ -589,7 +599,7 @@ local function preparesplit(specification) -- a rather large function
         if penalty == 0 then
             unlock(2,penalty)
         elseif penalty == forcedbreak then
-            local needed  = getattribute(current,a_checkedbreak)
+            local needed  = getattr(current,a_checkedbreak)
             local proceed = not needed or needed == 0
             if not proceed then
                 local available = target - height
@@ -770,7 +780,6 @@ local function preparesplit(specification) -- a rather large function
     specification.rest           = rest
     specification.overflow       = overflow
     specification.discarded      = discarded
-
     setlist(getbox(specification.box))
 
     return specification
@@ -897,6 +906,7 @@ local function getsplit(result,n)
     end
 
     setprev(h) -- move up
+
     local strutht    = result.strutht
     local strutdp    = result.strutdp
     local lineheight = strutht + strutdp
@@ -904,6 +914,19 @@ local function getsplit(result,n)
 
     local v = new_vlist()
     setlist(v,h)
+
+    -- safeguard ... i need to figure this out some day
+
+    local c = r.head
+    while c do
+        if c == result.rest then
+            report_state("flush, column %s, %s",n,"suspicous rest")
+            result.rest = nil
+            break
+        else
+            c = getnext(c)
+        end
+    end
 
  -- local v = vpack(h,"exactly",height)
 
@@ -985,8 +1008,8 @@ local function getsplit(result,n)
         for i=1,#list-1 do
             setdepth(list[i],0)
         end
-        local b = vpack(l)    -- multiple arguments, todo: fastvpack
-        setbox("global",c,b)  -- when we wrap in a box
+        local b = vpack(l)            -- multiple arguments, todo: fastvpack
+        setinsertcontent(c,tonode(b)) -- when we wrap in a box
         r.inserts[c] = nil
     end
 
@@ -1064,7 +1087,10 @@ implement {
     arguments = "integer",
     actions   = function(n)
         if result then
-            context(tonode(getsplit(result,n)))
+            local list = getsplit(result,n)
+            if list then
+                context(tonode(list))
+            end
         end
     end,
 }
@@ -1082,7 +1108,10 @@ implement {
     name    = "mixflushrest",
     actions = function()
         if result then
-            context(tonode(getrest(result)))
+            local rest = getrest(result)
+            if rest then
+                context(tonode(rest))
+            end
         end
     end
 }
@@ -1091,7 +1120,10 @@ implement {
     name = "mixflushlist",
     actions = function()
         if result then
-            context(tonode(getlist(result)))
+            local list = getlist(result)
+            if list then
+                context(tonode(list))
+            end
         end
     end
 }

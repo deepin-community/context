@@ -138,12 +138,6 @@ enddef ;
 
 %D Colors:
 
-newinternal nocolormodel   ; nocolormodel   := 1 ;
-newinternal greycolormodel ; greycolormodel := 3 ;
-newinternal graycolormodel ; graycolormodel := 3 ;
-newinternal rgbcolormodel  ; rgbcolormodel  := 5 ;
-newinternal cmykcolormodel ; cmykcolormodel := 7 ;
-
 let grayscale = graycolor ;
 let greyscale = greycolor ;
 
@@ -554,7 +548,7 @@ def mfun_tool_striped_set_options(expr option) =
 enddef ;
 
 vardef mfun_tool_striped_number(expr option, p, s_n, s_slot) text extra =
-    image (
+%     image (
         begingroup ;
         save pattern, shape, bounds, penwidth, used_n, used_slot ;
         picture pattern, shape ; path bounds ; numeric used_s, used_slot ;
@@ -591,7 +585,7 @@ vardef mfun_tool_striped_number(expr option, p, s_n, s_slot) text extra =
             addto currentpicture also shape ;
         fi ;
         endgroup ;
-    )
+%     )
 enddef ;
 
 def mfun_tool_striped_angle_action text extra =
@@ -602,7 +596,7 @@ def mfun_tool_striped_angle_action text extra =
 enddef ;
 
 vardef mfun_tool_striped_angle(expr option, p, s_angle, s_gap) text extra =
-    image (
+%     image (
         begingroup ;
         save pattern, shape, mask, maximum, minimum, centrum, used_angle, used_gap ;
         picture pattern, shape, mask ; numeric maximum, minimum ; pair centrum ; numeric used_angle, used_gap ;
@@ -643,7 +637,7 @@ vardef mfun_tool_striped_angle(expr option, p, s_angle, s_gap) text extra =
         fi ;
         currentpicture := currentpicture shifted centrum ;
         endgroup ;
-    )
+%     )
 enddef;
 
 newinternal striped_normal_inner  ; striped_normal_inner  := 1 ;
@@ -652,11 +646,13 @@ newinternal striped_normal_outer  ; striped_normal_outer  := 3 ;
 newinternal striped_reverse_outer ; striped_reverse_outer := 4 ;
 
 secondarydef p anglestriped s =
-    mfun_tool_striped_angle(redpart s,p,greenpart s,bluepart s)
+  % mfun_tool_striped_angle(redpart s,p,greenpart s,bluepart s)
+    image(mfun_tool_striped_angle(redpart s,p,greenpart s,bluepart s)) % for 'withcolor'
 enddef ;
 
 secondarydef p numberstriped s =
-    mfun_tool_striped_number(redpart s,p,greenpart s,bluepart s)
+  % mfun_tool_striped_number(redpart s,p,greenpart s,bluepart s)
+    image(mfun_tool_striped_number(redpart s,p,greenpart s,bluepart s)) % for 'withcolor'
 enddef ;
 
 % for old times sake:
@@ -1164,7 +1160,7 @@ primarydef p randomized s = (
     elseif pair p :
         p randomshifted s
     elseif cmykcolor p :
-        if color s :
+        if cmykcolor s :
            ((uniformdeviate cyanpart    s) * cyanpart    p,
             (uniformdeviate magentapart s) * magentapart p,
             (uniformdeviate yellowpart  s) * yellowpart  p,
@@ -1175,7 +1171,7 @@ primarydef p randomized s = (
             ((uniformdeviate s) * p)
         fi
     elseif rgbcolor p :
-        if color s :
+        if rgbcolor s :
            ((uniformdeviate redpart   s) * redpart   p,
             (uniformdeviate greenpart s) * greenpart p,
             (uniformdeviate bluepart  s) * bluepart  p)
@@ -2205,7 +2201,9 @@ enddef ;
 
 primarydef p enlonged len =
     begingroup
-    if pair p :
+    if len == 0 :
+        p
+    elseif pair p :
         save q ; path q ; q := origin -- p ;
         save al ; al := arclength(q) ;
         if al > 0 :
@@ -2228,8 +2226,12 @@ enddef ;
 % drawarrow p withcolor red ;
 % drawarrow p shortened 1cm withcolor green ;
 
+% primarydef p shortened d =
+%     reverse ( ( reverse (p enlonged -d) ) enlonged -d )
+% enddef ;
+
 primarydef p shortened d =
-    reverse ( ( reverse (p enlonged -d) ) enlonged -d )
+    reverse ( ( reverse (p enlonged -xpart paired(d)) ) enlonged -ypart paired(d) )
 enddef ;
 
 % yes or no, untested -)
@@ -2466,6 +2468,23 @@ primarydef p cornered c =
         (point i   of p) shifted (c*(unitvector(point i-1 of p - point i   of p))) ..
         controls point i of p ..
     endfor cycle)
+enddef ;
+
+% Mikael Sundqvist came up with this one. We made it robust for points being too close
+% for smoothing.
+
+primarydef p smoothcornered c =
+    ( begingroup ;
+        save cc ;
+        if not cycle p: (point 0 of p) -- fi
+        for i=1 upto length(p) :
+            hide (cc := min(c,arclength (subpath(i-1,i) of p)/2);)
+            (point i-1 of p) shifted (cc*(unitvector(point i   of p - point i-1 of p))) --
+            (point i   of p) shifted (cc*(unitvector(point i-1 of p - point i   of p))) ..
+            controls point i of p ..
+        endfor
+        if cycle p : cycle else : point 1 along p fi
+    endgroup )
 enddef ;
 
 % cmyk color support
@@ -3153,6 +3172,15 @@ def endglyph =
     endfig ;
 enddef ;
 
+def beginfont(expr name) =
+    begingroup;
+    passvariable("fontname",name) ;
+enddef ;
+
+def endfont =
+    endgroup;
+enddef ;
+
 %D Dimensions have never been an issue as traditional MP can't make that large
 %D pictures, but with double mode we need a catch:
 
@@ -3341,7 +3369,7 @@ let dump = relax ;
 
 def loadmodule expr name = % no vardef
     % input can't be used directly in a macro
-    if unknown scantokens("context_" & name) :
+    if (unknown scantokens("context_" & name)) and (unknown scantokens("metafun_loaded_" & name)) :
         save s ; string s ;
       % s := "mp-" & name & ".mpiv" ;
       % message("loading module",s) ;
@@ -3673,4 +3701,68 @@ def yslanted primary s =
             xpart  t = 0 ; ypart  t = 0 ;
             t
         endgroup
+enddef ;
+
+% By Bogluslaw Jackowski (public domain):
+%
+% draw hatched (fullcircle scaled 10cm) (45, 4, 1) withcolor "red" ;
+
+newinternal hatch_match; hatch_match := 1;
+
+vardef hatched(expr o) primary c =
+    save a_, b_, d_, l_, i_, r_, za_, zb_, zc_, zd_;
+    path b_; picture r_; pair za_, zb_, zc_, zd_;
+    r_ := image (
+        a_ := redpart(c) mod 180 ;
+        l_ := greenpart(c) ;
+        d_ := -bluepart(c) ;
+        b_ := o rotated -a_ ;
+        b_ :=
+            if a_ >= 90 :
+                (lrcorner b_ -- llcorner b_ -- ulcorner b_ -- urcorner b_ -- cycle)
+            else :
+                (llcorner b_ -- lrcorner b_ -- urcorner b_ -- ulcorner b_ -- cycle)
+            fi
+            rotated a_ ;
+        za_ := point 0 of b_ ;
+        zb_ := point 1 of b_ ;
+        zc_ := point 2 of b_ ;
+        zd_ := point 3 of b_ ;
+        if hatch_match > 0 :
+            n_ := round(length(zd_-za_) / l_) ;
+            if n_ < 2:
+                n_ := 2 ;
+            fi ;
+            l_ := length(zd_-za_) / n_ ;
+        else :
+            n_ := length(zd_-za_) / l_ ;
+        fi
+        save currentpen; pen currentpen ; pickup pencircle scaled d_;
+        % we use a single path instead:
+        for i_ := if hatch_match > 0 : 1 else : 0 fi upto ceiling n_ - 1 :
+            nodraw (i_/n_)[zd_,za_] -- (i_/n_)[zc_,zb_] ;
+        endfor
+        dodraw origin ;
+    ) ;
+    clip r_ to o;
+    r_
+enddef;
+
+% By Mikael Sundqvist, with a little evolution:
+
+numeric mfun_dash_on, mfun_dash_off ;
+
+primarydef p withdashes len =
+    hide (
+        save l, t, n, m, don, doff; pair t ;
+        l := arclength p ;
+        t := paired (len) ;
+        m := xpart t + ypart t ;
+        n := (l if not cycle p : - xpart t fi) div m ;
+        (n if not cycle p : + 1 fi) * don + n * doff = l ;
+        don*(ypart t) = doff*(xpart t) ;
+        mfun_dash_on := don ;
+        mfun_dash_off := doff ;
+    )
+    p dashed dashpattern (on mfun_dash_on off mfun_dash_off)
 enddef ;

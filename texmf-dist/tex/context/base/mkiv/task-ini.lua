@@ -53,7 +53,7 @@ appendaction("processors",   "fonts",       "typesetters.fontkerns.handler",    
 appendaction("processors",   "fonts",       "nodes.handlers.protectglyphs",                     nil, "nonut",  "enabled"   )
 appendaction("processors",   "fonts",       "builders.kernel.ligaturing",                       nil, "nut",    "disabled"  )
 appendaction("processors",   "fonts",       "builders.kernel.kerning",                          nil, "nut",    "disabled"  )
-appendaction("processors",   "fonts",       "builders.kernel.cleanup",                          nil, "nut",    "enabled"   )
+appendaction("processors",   "fonts",       "nodes.handlers.show",                              nil, "nut",    "disabled"  )
 appendaction("processors",   "fonts",       "nodes.handlers.stripping",                         nil, "nut",    "disabled"  )
 appendaction("processors",   "fonts",       "nodes.handlers.flatten",                           nil, "nut",    "disabled"  )
 appendaction("processors",   "fonts",       "fonts.goodies.colorschemes.coloring",              nil, "nut",    "disabled"  )
@@ -65,12 +65,13 @@ appendaction("processors",   "lists",       "typesetters.kerns.handler",        
 appendaction("processors",   "lists",       "typesetters.digits.handler",                       nil, "nut",    "disabled"  )
 appendaction("processors",   "lists",       "typesetters.italics.handler",                      nil, "nut",    "disabled"  )
 appendaction("processors",   "lists",       "languages.visualizediscretionaries",               nil, "nut",    "disabled"  )
+appendaction("processors",   "lists",       "nodes.handlers.migrate",                           nil, "nut",    "disabled"  )
 
 appendaction("processors",   "after",       "typesetters.marksuspects",                         nil, "nut",    "disabled"  )
 
+appendaction("shipouts",     "normalizers", "nodes.handlers.cleanuppage",                       nil, "nut",    "production")
 appendaction("shipouts",     "normalizers", "typesetters.showsuspects",                         nil, "nut",    "disabled"  )
 appendaction("shipouts",     "normalizers", "typesetters.margins.finalhandler",                 nil, "nut",    "disabled"  )
-------------("shipouts",     "normalizers", "nodes.handlers.cleanuppage",                       nil, "nut",    "disabled"  )
 appendaction("shipouts",     "normalizers", "builders.paragraphs.expansion.trace",              nil, "nut",    "disabled"  )
 appendaction("shipouts",     "normalizers", "typesetters.alignments.handler",                   nil, "nut",    "disabled"  )
 appendaction("shipouts",     "normalizers", "nodes.references.handler",                         nil, "nut",    "production")
@@ -89,6 +90,7 @@ appendaction("shipouts",     "finishers",   "attributes.transparencies.handler",
 appendaction("shipouts",     "finishers",   "attributes.colorintents.handler",                  nil, "nut",    "disabled"  )
 appendaction("shipouts",     "finishers",   "attributes.negatives.handler",                     nil, "nut",    "disabled"  )
 appendaction("shipouts",     "finishers",   "attributes.effects.handler",                       nil, "nut",    "disabled"  )
+appendaction("shipouts",     "finishers",   "attributes.alternates.handler",                    nil, "nut",    "disabled"  )
 appendaction("shipouts",     "finishers",   "attributes.viewerlayers.handler",                  nil, "nut",    "disabled"  )
 
 appendaction("shipouts",     "wrapup",      "nodes.handlers.export",                            nil, "nut",    "disabled"  )  -- always last
@@ -113,20 +115,25 @@ appendaction("math",         "normalizers", "noads.handlers.italics",           
 appendaction("math",         "normalizers", "noads.handlers.kernpairs",                         nil, "nonut",  "disabled"  )
 appendaction("math",         "normalizers", "noads.handlers.classes",                           nil, "nonut",  "disabled"  )
 
-appendaction("math",         "builders",    "builders.kernel.mlist_to_hlist",                   nil, "nut",    "enabled"   )  -- mandate
+appendaction("math",         "builders",    "builders.kernel.mlisttohlist",                     nil, "nut",    "enabled"   )  -- mandate
 appendaction("math",         "builders",    "typesetters.directions.processmath",               nil, "nut",    "disabled"  )
 appendaction("math",         "builders",    "noads.handlers.makeup",                            nil, "nonut",  "disabled"  )
 appendaction("math",         "builders",    "noads.handlers.align",                             nil, "nonut",  "enabled"   )
 
 appendaction("finalizers",   "lists",       "typesetters.paragraphs.normalize",                 nil, "nut",    "enabled"   ) -- "disabled"
+appendaction("finalizers",   "lists",       "nodes.handlers.showhyphenation",                   nil, "nut",    "disabled"  )
+appendaction("finalizers",   "lists",       "nodes.handlers.visualizehyphenation",              nil, "nut",    "disabled"  )
+
 appendaction("finalizers",   "lists",       "typesetters.margins.localhandler",                 nil, "nut",    "disabled"  )
 appendaction("finalizers",   "lists",       "builders.paragraphs.keeptogether",                 nil, "nut",    "disabled"  )
 appendaction("finalizers",   "fonts",       "builders.paragraphs.solutions.splitters.optimize", nil, "nonut",  "disabled"  )
 appendaction("finalizers",   "lists",       "builders.paragraphs.tag",                          nil, "nut",    "disabled"  )
 appendaction("finalizers",   "lists",       "nodes.linefillers.handler",                        nil, "nut",    "disabled"  )
 
+
 appendaction("contributers", "normalizers", "nodes.handlers.flattenline",                       nil, "nut",    "disabled"  )
 appendaction("contributers", "normalizers", "nodes.handlers.textbackgrounds",                   nil, "nut",    "disabled"  )
+
 
 appendaction("vboxbuilders", "normalizers", "nodes.handlers.backgroundsvbox",                   nil, "nut",    "disabled"  )
 ------------("vboxbuilders", "normalizers", "typesetters.margins.localhandler",                 nil, "nut",    "disabled"  )

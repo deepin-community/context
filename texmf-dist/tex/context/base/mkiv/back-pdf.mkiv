@@ -21,6 +21,7 @@
 \registerctxluafile{lpdf-nod}{}
 \registerctxluafile{lpdf-eng}{optimize}
 \registerctxluafile{lpdf-col}{}
+\registerctxluafile{lpdf-vfc}{}
 \registerctxluafile{lpdf-xmp}{}
 \registerctxluafile{lpdf-ano}{}
 \registerctxluafile{lpdf-res}{}
@@ -65,9 +66,9 @@
 \unexpanded\def\pdflastobj  {\numexpr\clf_pdflastobj\relax}
 \unexpanded\def\pdfrefobj   {\clf_pdfrefobj }
 
-\unexpanded\def\pdfrestore  {\clf_restore}
-\unexpanded\def\pdfsave     {\clf_save}
-\unexpanded\def\pdfsetmatrix{\clf_setmatrix}
+\unexpanded\def\pdfrestore  {\pdfextension restore}
+\unexpanded\def\pdfsave     {\pdfextension save}
+\unexpanded\def\pdfsetmatrix{\pdfextension setmatrix}
 
            \let\pdfxform     \saveboxresource
            \let\pdflastxform \lastsavedboxresourceindex
@@ -88,7 +89,7 @@
 
 \appendtoks
     \edef\p_file{\backendparameter{xmpfile}}%
-    \ifx\p_file\empty\else
+    \ifx\empty\p_file\else
       \clf_setxmpfile{\p_file}%
     \fi
 \to \everysetupbackend

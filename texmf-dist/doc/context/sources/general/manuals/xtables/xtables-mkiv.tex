@@ -1,7 +1,7 @@
-% language=uk
+% language=us runpath=texruns:manuals/xtables
 
 % author    : Hans Hagen
-% copyright : PRAGMA ADE & ConTeXt Development Team
+% copyright : ConTeXt Development Team
 % license   : Creative Commons Attribution ShareAlike 4.0 International
 % reference : pragma-ade.nl | contextgarden.net | texlive (related) distributions
 % origin    : the ConTeXt distribution
@@ -131,7 +131,7 @@ pages.
           \startxcell[settings] ... \stopxcell
         \stopxcellgroup
       \stopxrow
-    \startxrowgroup
+    \stopxrowgroup
   \stopxtablehead|next|body|foot
 \stopxtable
 \stoptyping
@@ -954,7 +954,7 @@ The setups themselves are rather simple as we don't capture any attributes.
 We now process the example. Of course it will also work for files.
 
 \startbuffer
-  \xmlprocessbuffer{main}{test}{}
+\xmlprocessbuffer{main}{test}{}
 \stopbuffer
 
 \typebuffer
@@ -989,7 +989,6 @@ After that:
     \bTD[background=color,backgroundcolor=yellow] beta \eTD
   \eTR
 \eTABLE
-\stopbuffer
 \stopbuffer
 
 \typebuffer
@@ -1614,6 +1613,8 @@ in the distribution.
 
 \typebuffer \getbuffer
 
+\stopsection
+
 \page
 
 % \ruledhbox{\getbuffer[normal,demo]}
@@ -1621,10 +1622,10 @@ in the distribution.
 \startsection[title={Colofon}]
 
 \starttabulate[|B|p|]
-\NC author    \NC \getvariable{document}{author}, \getvariable{document}{affiliation}, \getvariable{document}{location} \NC \NR
+\NC author    \NC \documentvariable{author}, \documentvariable{affiliation}, \documentvariable{location} \NC \NR
 \NC version   \NC \currentdate \NC \NR
-\NC website   \NC \getvariable{document}{website} \endash\ \getvariable{document}{support} \NC \NR
-\NC copyright \NC \symbol[cc][cc-by-sa-nc] \NC \NR
+\NC website   \NC \documentvariable{website} \endash\ \documentvariable{support} \NC \NR
+\NC copyright \NC \symbol[cc][cc-by-sa] \NC \NR
 \stoptabulate
 
 \stopsection

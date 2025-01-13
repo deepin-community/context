@@ -13,12 +13,10 @@
 
 \writestatus{loading}{ConTeXt Tracing Macros / Debugger}
 
-\unprotect
-
 %registerctxluafile{trac-lmx}{}
-\registerctxluafile{trac-deb}{}
+\registerctxluafile{trac-deb}{autosuffix}
 
-\unexpanded\def\breakpoint            {\showdebuginfo\wait}
+\unprotect
 
 \unexpanded\def\showtrackers          {\clf_showtrackers}
 \unexpanded\def\enabletrackers    [#1]{\clf_enabletrackers{#1}}
@@ -33,7 +31,6 @@
 \unexpanded\def\enableexperiments [#1]{\clf_enableexperiments{#1}}
 \unexpanded\def\disableexperiments[#1]{\clf_disableexperiments{#1}}
 
-\unexpanded\def\showdebuginfo         {\clf_showdebuginfo}
 \unexpanded\def\overloaderror         {\clf_overloaderror}
 
 \unexpanded\def\showlogcategories     {\clf_showlogcategories}

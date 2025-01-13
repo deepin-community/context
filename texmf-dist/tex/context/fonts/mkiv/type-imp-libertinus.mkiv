@@ -21,12 +21,14 @@
 
 \starttypescriptcollection[libertinus]
 
+    \doifunknownfontfeature {libertinus-math-bold} {\definefontfeature[libertinus-math-bold][boldened]}
+
     \starttypescript [\s!serif] [libertinus]
-        \definefontsynonym [LibertinusSerif-Regular]     [\s!file:libertinusserif-regular]
-        \definefontsynonym [LibertinusSerif-Italic]      [\s!file:libertinusserif-italic]
+        \definefontsynonym [LibertinusSerif-Regular]     [\s!file:libertinusserif-regular][\s!goodies=libertinus-text]
+        \definefontsynonym [LibertinusSerif-Italic]      [\s!file:libertinusserif-italic][\s!goodies=libertinus-text]
         \definefontsynonym [LibertinusSerif-Slanted]     [\s!file:libertinusserif-italic]
-        \definefontsynonym [LibertinusSerif-Bold]        [\s!file:libertinusserif-bold]
-        \definefontsynonym [LibertinusSerif-BoldItalic]  [\s!file:libertinusserif-bolditalic]
+        \definefontsynonym [LibertinusSerif-Bold]        [\s!file:libertinusserif-bold][\s!goodies=libertinus-text]
+        \definefontsynonym [LibertinusSerif-BoldItalic]  [\s!file:libertinusserif-bolditalic][\s!goodies=libertinus-text]
         \definefontsynonym [LibertinusSerif-BoldSlanted] [\s!file:libertinusserif-bolditalic]
     \stoptypescript
 
@@ -63,24 +65,36 @@
 
     \starttypescript [\s!mono] [libertinus]
         \setups[\s!font:\s!fallback:\s!mono]
-        \definefontsynonym [LibertinusMono-Regular]     [\s!file:libertinusmono-regular]
+        \definefontsynonym [LibertinusMono-Regular] [\s!file:libertinusmono-regular]
     \stoptypescript
 
     \starttypescript [\s!mono] [libertinus] [\s!name]
         \setups[\s!font:\s!fallback:\s!mono]
-        \definefontsynonym [\s!Mono]           [LibertinusMono-Regular]     [\s!features=\s!default]
+        \definefontsynonym [\s!Mono] [LibertinusMono-Regular] [\s!features=\s!none]
+    \stoptypescript
+
+    \starttypescript [\s!math] [libertinus,libertinus-nt]
+        \checkedmapfontsize[\typescripttwo][\s!script]      [.80]
+        \checkedmapfontsize[\typescripttwo][\s!scriptscript][.60]
     \stoptypescript
 
     \starttypescript [\s!math] [libertinus] [\s!name]
-        \definefontsynonym[\s!MathRoman    ] [\s!file:libertinusmath-regular.otf] [\s!features={\s!math\mathsizesuffix,mathextra}]
-        \definefontsynonym[\s!MathRomanBold] [\s!file:libertinusmath-regular.otf] [\s!features={\s!math\mathsizesuffix,mathextra}]
+        \loadfontgoodies[libertinus-math]
+        \definefontsynonym[\s!MathRoman    ] [\s!file:libertinusmath-regular.otf] [\s!features={\s!math\mathsizesuffix,libertinus:mathextra,mathextra},\s!goodies=libertinus-math.lfg]
+        \definefontsynonym[\s!MathRomanBold] [\s!file:libertinusmath-regular.otf] [\s!features={\s!math\mathsizesuffix,libertinus-math-bold,libertinus:mathextra,mathextra},\s!goodies=libertinus-math.lfg]
     \stoptypescript
 
-    \starttypescript [libertinus]
-        \definetypeface [libertinus] [\s!rm] [\s!serif] [libertinus] [\s!default]
-        \definetypeface [libertinus] [\s!ss] [\s!sans]  [libertinus] [\s!default]
-        \definetypeface [libertinus] [\s!tt] [\s!mono]  [libertinus] [\s!default]
-        \definetypeface [libertinus] [\s!mm] [\s!math]  [libertinus] [\s!default]
+    \starttypescript [\s!math] [libertinus-nt] [\s!name]
+        \loadfontgoodies[libertinus-math]
+        \definefontsynonym[\s!MathRoman    ] [\s!file:libertinusmath-regular.otf] [\s!features={\s!math\mathsizesuffix,libertinus:mathextra,mathextra}]
+        \definefontsynonym[\s!MathRomanBold] [\s!file:libertinusmath-regular.otf] [\s!features={\s!math\mathsizesuffix,libertinus-math-bold,libertinus:mathextra,mathextra}]
+    \stoptypescript
+
+    \starttypescript [libertinus,libertinus-nt]
+        \definetypeface [\typescriptone] [\s!rm] [\s!serif] [libertinus]     [\s!default]
+        \definetypeface [\typescriptone] [\s!ss] [\s!sans]  [libertinus]     [\s!default]
+        \definetypeface [\typescriptone] [\s!tt] [\s!mono]  [libertinus]     [\s!default]
+        \definetypeface [\typescriptone] [\s!mm] [\s!math]  [\typescriptone] [\s!default]
         \quittypescriptscanning
     \stoptypescript
 

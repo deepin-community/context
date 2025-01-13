@@ -14,11 +14,11 @@ In addition these source files contains the documentation.
 Debian adaptations for this Package are licensed under the GNU General
 Public License, version 2, and are under Copyright by:
 
-	Norbert Preining <preining@debian.org> 
+	Norbert Preining <preining@debian.org>
 	(2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014)
 
 All the files contained in the generated orig.tar.gz are licensed under
-the GNU General Public License, but the files of t-letterine, which 
+the GNU General Public License, but the files of t-letterine, which
 are licensed under Public Domain.
 
 Following are excerpts from an email by Taco Hoekwater <taco@elvenkind.com>
@@ -38,7 +38,7 @@ were generated using the texfont program, which does not use source
 files. The afms were created using ttf2afm, which uses ttfs as source.
 
 >Anyway, there is no accompanying readme or whatsoever besides the one
->for lucida. 
+>for lucida.
 
 All the files in cont-fnt are GPLv2.
 
@@ -47,7 +47,7 @@ All the files in cont-fnt are GPLv2.
 
 Yes, it does. Top of file. PD. Perhaps you missed another then?
 
->       t-urwgaramond, type-urwgaramond, 
+>       t-urwgaramond, type-urwgaramond,
 
 Peter, can you add the license statement and re-upload? (it is GPL,
 according to Peter's own license statement on the contextgarden page
@@ -60,12 +60,12 @@ for this module)
 The files from cont-tmf.zip are distributed under GPL as stated in the
 including mreadme.tex/pdf file:
 
-   The program code (i.e. anything not under the /doc subtree) is distributed 
+   The program code (i.e. anything not under the /doc subtree) is distributed
    under the Creative Commons GNU GPL
 
    For practical purposes distributers may also choose the LaTeX project
-   licence, which is considered to be a bit more TeX friendly. 
-   (BSD alike licences, the Ruby Licence and the Apache are all licences 
+   licence, which is considered to be a bit more TeX friendly.
+   (BSD alike licences, the Ruby Licence and the Apache are all licences
    that apply well for ConTeXt.)
 
 
@@ -81,7 +81,7 @@ are under GFDL:
 
 
 On Debian systems the text of the GNU General Public License can be found
-in /usr/share/common-licenses/GPL (and GPL-2), and the GNU Free Documentation
+in /usr/share/common-licenses/GPL-2, and the GNU Free Documentation
 License, Version 1.2, in /usr/share/common-licenses/GFDL-1.2
 
 
@@ -103,8 +103,8 @@ which the the LaTeX kernel and the base LaTeX packages are distributed.
 
 You may use this license for any work of which you hold the copyright
 and which you wish to distribute.  This license may be particularly
-suitable if your work is TeX-related (such as a LaTeX package), but 
-it is written in such a way that you can use it even if your work is 
+suitable if your work is TeX-related (such as a LaTeX package), but
+it is written in such a way that you can use it even if your work is
 unrelated to TeX.
 
 The section `WHETHER AND HOW TO DISTRIBUTE WORKS UNDER THIS LICENSE',
@@ -131,11 +131,11 @@ In this license document the following terms are used:
 
    `Work'
     Any work being distributed under this License.
-    
+
    `Derived Work'
     Any work that under any applicable law is derived from the Work.
 
-   `Modification' 
+   `Modification'
     Any procedure that produces a Derived Work under any applicable
     law -- for example, the production of a file containing an
     original file associated with the Work or a significant portion of
@@ -145,7 +145,7 @@ In this license document the following terms are used:
    `Modify'
     To apply any procedure that produces a Derived Work under any
     applicable law.
-    
+
    `Distribution'
     Making copies of the Work available from one person to another, in
     whole or in part.  Distribution includes (but is not limited to)
@@ -166,16 +166,16 @@ In this license document the following terms are used:
     no such explicit nomination then it is the `Copyright Holder' under
     any applicable law.
 
-   `Base Interpreter' 
+   `Base Interpreter'
     A program or process that is normally needed for running or
-    interpreting a part or the whole of the Work.    
+    interpreting a part or the whole of the Work.
 
     A Base Interpreter may depend on external components but these
     are not considered part of the Base Interpreter provided that each
     external component clearly identifies itself whenever it is used
     interactively.  Unless explicitly specified when applying the
     license to the Work, the only applicable Base Interpreter is a
-    `LaTeX-Format' or in the case of files belonging to the 
+    `LaTeX-Format' or in the case of files belonging to the
     `LaTeX-format' a program implementing the `TeX language'.
 
 
@@ -216,8 +216,8 @@ the Derived Work.
 distribute a Derived Work provided the following conditions are met
 for every component of the Work unless that component clearly states
 in the copyright notice that it is exempt from that condition.  Only
-the Current Maintainer is allowed to add such statements of exemption 
-to a component of the Work. 
+the Current Maintainer is allowed to add such statements of exemption
+to a component of the Work.
 
   a. If a component of this Derived Work can be a direct replacement
      for a component of the Work when that component is used with the
@@ -227,13 +227,13 @@ to a component of the Work.
      clearly and unambiguously identifies itself as a modified version
      of this component to the user when used interactively with that
      Base Interpreter.
-     
+
   b. Every component of the Derived Work contains prominent notices
      detailing the nature of the changes to that component, or a
      prominent reference to another file that is distributed as part
      of the Derived Work and that contains a complete and accurate log
      of the changes.
-  
+
   c. No information in the Derived Work implies that any persons,
      including (but not limited to) the authors of the original version
      of the Work, provide any support, including (but not limited to)
@@ -243,7 +243,7 @@ to a component of the Work.
 
   d. You distribute at least one of the following with the Derived Work:
 
-       1. A complete, unmodified copy of the Work; 
+       1. A complete, unmodified copy of the Work;
           if your distribution of a modified component is made by
           offering access to copy the modified component from a
           designated place, then offering equivalent access to copy
@@ -270,15 +270,15 @@ format, where the Work or that Derived Work (in whole or in part) is
 then produced by applying some process to that format, does not relax or
 nullify any sections of this license as they pertain to the results of
 applying that process.
-     
+
 10. a. A Derived Work may be distributed under a different license
        provided that license itself honors the conditions listed in
        Clause 6 above, in regard to the Work, though it does not have
        to honor the rest of the conditions in this license.
-      
+
     b. If a Derived Work is distributed under a different license, that
        Derived Work must provide sufficient documentation as part of
-       itself to allow each recipient of that Derived Work to honor the 
+       itself to allow each recipient of that Derived Work to honor the
        restrictions in Clause 6 above, concerning changes from the Work.
 
 11. This license places no restrictions on works that are unrelated to
@@ -347,7 +347,7 @@ the Work through the following steps:
 
   a. If it is being maintained, then ask the Current Maintainer
      to update their communication data within one month.
-     
+
   b. If the search is unsuccessful or no action to resume active
      maintenance is taken by the Current Maintainer, then announce
      within the pertinent community your intention to take over
@@ -357,17 +357,17 @@ the Work through the following steps:
  3a. If the Current Maintainer is reachable and agrees to pass
      maintenance of the Work to you, then this takes effect
      immediately upon announcement.
-     
+
   b. If the Current Maintainer is not reachable and the Copyright
      Holder agrees that maintenance of the Work be passed to you,
-     then this takes effect immediately upon announcement.  
-    
+     then this takes effect immediately upon announcement.
+
  4.  If you make an `intention announcement' as described in 2b. above
      and after three months your intention is challenged neither by
      the Current Maintainer nor by the Copyright Holder nor by other
      people, then you may arrange for the Work to be changed so as
      to name you as the (new) Current Maintainer.
-     
+
  5.  If the previously unreachable Current Maintainer becomes
      reachable once more within three months of a change completed
      under the terms of 3b) or 4), then that Current Maintainer must
@@ -450,7 +450,7 @@ Here is an example of such a notice and statement:
   % version 2005/12/01 or later.
   %
   % This work has the LPPL maintenance status `maintained'.
-  % 
+  %
   % The Current Maintainer of this work is M. Y. Name.
   %
   % This work consists of the files pig.dtx and pig.ins
@@ -464,7 +464,7 @@ referring to any `LaTeX-Format', and both `Copyright Holder' and
 `Current Maintainer' referring to the person `M. Y. Name'.
 
 If you do not want the Maintenance section of LPPL to apply to your
-Work, change `maintained' above into `author-maintained'.  
+Work, change `maintained' above into `author-maintained'.
 However, we recommend that you use `maintained', as the Maintenance
 section was added in order to ensure that your Work remains useful to
 the community even when you can no longer maintain and support it
@@ -494,7 +494,7 @@ Important Recommendations
    using a line such as:
 
     % This work consists of all files listed in manifest.txt.
-   
+
    in that place.  In the absence of an unequivocal list it might be
    impossible for the licensee to determine what is considered by you
    to comprise the Work and, in such a case, the licensee would be

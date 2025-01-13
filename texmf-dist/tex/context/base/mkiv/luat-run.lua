@@ -45,6 +45,7 @@ local function start_run()
     if logs.start_run then
         logs.start_run()
     end
+ -- logs.report("engine","%s version %s, format id %s",LUATEXENGINE,LUATEXVERSION,LUATEXFORMATID)
     for i=1,#startactions do
         startactions[i]()
     end
@@ -61,7 +62,9 @@ local function stop_run()
     if trace_tex_status then
         logs.newline()
         for k, v in table.sortedhash(status.list()) do
-            report_tex("%S=%S",k,v)
+            if type(v) ~= "table" then
+                report_tex("%S=%S",k,v)
+            end
         end
     end
     if quit then
@@ -99,18 +102,11 @@ end
 local function report_output_log()
 end
 
--- local function show_open()
--- end
-
--- local function show_close()
--- end
-
 local function pre_dump_actions()
     for i=1,#dumpactions do
         dumpactions[i]()
     end
-    lua.finalize(trace_lua_dump and report_lua or nil)
- -- statistics.savefmtstatus("\jobname","\contextversion","context.tex")
+    lua.finalizeinitex(trace_lua_dump and report_lua or nil)
 end
 
 local function wrapup_synctex()
@@ -131,10 +127,10 @@ appendgroup(wrapupactions,"user")
 appendgroup(cleanupactions,"system")
 appendgroup(cleanupactions,"user")
 
-local function wrapup_run()
+local function wrapup_run(someerror)
     local runner = wrapupactions.runner
     if runner then
-        runner()
+        runner(someerror) -- we could use the error flag in lmtx
     end
 end
 
@@ -297,3 +293,36 @@ end)
 --     end
 -- end)
 
+local report   = logs.reporter("csname overload")
+local reported = { }
+
+callback.register("handle_overload", function(fatal,overload,csname,flags)
+    if not reported[csname] then
+        logs.newline()
+        local readstate  = status.readstate
+        local filename   = readstate.filename
+        local linenumber = readstate.linenumber
+        local flags      = tokens.flags and tokens.flags(csname) or { }
+        if filename and linenumber then
+            report("%s, protection level %i, control sequence %a, properties '% t', file %a, line %i",
+                fatal and "fatal error" or "warning",overload,csname,flags,filename,linenumber)
+        else
+            report("%s, protection level %i, control sequence %a, properties '% t'",
+                fatal and "fatal error" or "warning",overload,csname,flags)
+        end
+        reported[csname] = true
+        logs.newline()
+        if fatal then
+            cleanup_run()
+            osexit(1)
+        end
+    end
+end)
+
+-- bonus
+
+if environment.initex then
+
+    luatex.registerdumpactions(statistics.showmemory)
+
+end

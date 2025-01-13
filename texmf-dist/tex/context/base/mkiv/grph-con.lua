@@ -9,6 +9,7 @@ if not modules then modules = { } end modules ['grph-con'] = {
 local P, R, S, Cc, C, Cs, Ct, lpegmatch = lpeg.P, lpeg.R, lpeg.S, lpeg.Cc, lpeg.C, lpeg.Cs, lpeg.Ct, lpeg.match
 
 local tonumber          = tonumber
+local find              = string.find
 local longtostring      = string.longtostring
 local formatters        = string.formatters
 local expandfilename    = dir.expandname
@@ -28,6 +29,7 @@ local variables         = interfaces.variables
 local v_high            = variables.high
 local v_low             = variables.low
 local v_medium          = variables.medium
+local v_yes             = variables.yes
 
 local figures           = figures
 
@@ -46,6 +48,10 @@ do -- eps | ps
 
     local epsconverter = converters.eps
     converters.ps      = epsconverter
+
+    local function gscrop(specification)
+        return (specification and specification.crop == v_yes) and "-dEPSCrop" or ""
+    end
 
     local resolutions = {
         [v_low]    = "screen",
@@ -67,7 +73,7 @@ do -- eps | ps
             -dBATCH
             -dAutoRotatePages=/None
             -dPDFSETTINGS=/%presets%
-            -dEPSCrop
+            %crop%
             -dCompatibilityLevel=%level%
             -sOutputFile=%newname%
             %colorspace%
@@ -80,6 +86,7 @@ do -- eps | ps
             presets    = "string",
             level      = "string",
             colorspace = "string",
+         -- crop       = "string",
         },
     }
 
@@ -118,7 +125,7 @@ do -- eps | ps
         return tmpname
     end
 
-    function epsconverter.pdf(oldname,newname,resolution,colorspace) -- the resolution interface might change
+    function epsconverter.pdf(oldname,newname,resolution,colorspace,specification) -- the resolution interface might change
         local presets  = resolutions[resolution or "high"] or resolutions.high
         local level    = codeinjections.getformatoption("pdf_level") or "1.3"
         local tmpname  = oldname
@@ -140,13 +147,14 @@ do -- eps | ps
             presets    = presets,
             level      = tostring(level),
             colorspace = colorspace,
+            crop       = gscrop(specification),
         }
         if tmpname ~= oldname then
             os.remove(tmpname)
         end
     end
 
-    epsconverter["gray.pdf"] = function(oldname,newname,resolution) -- the resolution interface might change
+    epsconverter["gray.pdf"] = function(oldname,newname,resolution,_,specification) -- the resolution interface might change
         epsconverter.pdf(oldname,newname,resolution,"gray")
     end
 
@@ -194,11 +202,32 @@ do -- svg
     -- arguments change again? Ok, it's weirder, with -A then it's a name only when
     -- not . (current)
 
+    -- Beware: the order of printed output lines is a bit random depending on the
+    -- method of calling (bin or pipe) because part of the message prints to stdout
+    -- and part to stderr. Also, on Windows, a second call to the old binaries
+    -- doesn't return anything at all, so that is also a signal of it being old.
+    -- This test will be dropped in 2021 anyway.
+
+    local new = nil
+
+    local function inkscapeformat(suffix)
+        if new == nil then
+            new = os.resultof("inkscape --version") or ""
+            new = new == "" or not find(new,"Inkscape%s*0")
+        end
+        return new and "filename" or suffix
+    end
+
+    local function inkscapecrop(specification)
+        return (specification and specification.crop == v_yes) and "--export-area-drawing" or ""
+    end
+
     local runner = sandbox.registerrunner {
         name     = "svg to something",
         program  = "inkscape",
         template = longtostring [[
             %oldname%
+            %crop%
             --export-dpi=%resolution%
             --export-%format%=%newname%
         ]],
@@ -218,10 +247,11 @@ do -- svg
         runner = runner,
     }
 
-    function svgconverter.pdf(oldname,newname)
+    function svgconverter.pdf(oldname,newname,resolution,arguments,specification)
         runner {
-            format     = "pdf",
+            format     = inkscapeformat("pdf"),
             resolution = "600",
+            crop       = inkscapecrop(specification),
             newname    = expandfilename(newname),
             oldname    = expandfilename(oldname),
         }
@@ -229,8 +259,9 @@ do -- svg
 
     function svgconverter.png(oldname,newname)
         runner {
-            format     = "png",
+            format     = inkscapeformat("png"),
             resolution = "600",
+            crop       = inkscapecrop(specification),
             newname    = expandfilename(newname),
             oldname    = expandfilename(oldname),
         }
@@ -281,7 +312,7 @@ do -- png | jpg | profiles
     -- [[convert %?colorspace: -colorspace "%colorspace%" ?%]]
 
     local rgbprofile  = "srgb_v4_icc_preference.icc" -- srgb.icc
-    local cmykprofile = "isocoated_v2_300_eci.icc"   -- isocoated_v2_eci.icc
+    local cmykprofile = "isocoated_v2_eci.icc"       -- isocoated_v2_300_eci.icc
 
     directives.register("graphics.conversion.rgbprofile", function(v) rgbprofile  = type(v) == "string" and v or rgbprofile  end)
     directives.register("graphics.conversion.cmykprofile",function(v) cmykprofile = type(v) == "string" and v or cmykprofile end)
@@ -289,9 +320,14 @@ do -- png | jpg | profiles
     local jpgconverters = converters.jpg
     local pngconverters = converters.png
 
+    local findfile = resolvers.findfile
+
     local function profiles()
         if not isfile(rgbprofile) then
-            local found = resolvers.findfile(rgbprofile)
+            local found = findfile(rgbprofile)
+            if not found or found == "" then
+                found = findfile("colo-imp-"..rgbprofile)
+            end
             if found and found ~= "" then
                 rgbprofile = found
             else
@@ -300,6 +336,9 @@ do -- png | jpg | profiles
         end
         if not isfile(cmykprofile) then
             local found = resolvers.findfile(cmykprofile)
+            if not found or found == "" then
+                found = findfile("colo-imp-"..cmykprofile)
+            end
             if found and found ~= "" then
                 cmykprofile = found
             else

@@ -1,8 +1,8 @@
 %D \module
-%D   [       file=cldf-ini,
-%D        version=2010.10.19,,
-%D          title=\CONTEXT\ \LUA\ Document Functions,
-%D       subtitle=Initialization,
+%D   [       file=cldf-int,
+%D        version=2019.01.01,
+%D          title=\CONTEXT\ Data Macros,
+%D       subtitle=Integer,
 %D         author=Hans Hagen,
 %D           date=\currentdate,
 %D      copyright={PRAGMA ADE \& \CONTEXT\ Development Team}]
@@ -15,10 +15,9 @@
 
 \newcount\trialtypesettingstate % gets aliased at the Lua end
 
-\registerctxluafile{cldf-ini}{}
+\registerctxluafile{cldf-ini}{autosuffix}
 
-%D With each new update of \MKIV\ we can join Within Temptation in
-%D singing:
+%D With each new update of \MKIV\ we can join Within Temptation in singing:
 %D
 %D \startbuffer
 %D \startluacode
@@ -50,11 +49,11 @@
 % \catcodetable\ctxcatcodes \catcode`^=\superscriptcatcode\catcode1=\activecatcode \glet^^A=\cldf
 % \catcodetable\ctxcatcodes \catcode`^=\superscriptcatcode\catcode2=\activecatcode \glet^^B=\cldn
 
-\normalprotected\def\cldprocessfile#1{\directlua{context.runfile("#1")}}
-                \def\cldloadfile   #1{\directlua{context.loadfile("#1")}}
-                \def\cldloadviafile#1{\directlua{context.loadviafile("#1")}}
-                \def\cldcontext    #1{\directlua{context(#1)}}
-                \def\cldcommand    #1{\directlua{context.#1}}
-              % \def\cldverbatim   #1{\directlua{context.verbatim.#1}} % maybe make verbatim global
+\protected\def\cldprocessfile#1{\directlua{context.runfile("#1")}}
+          \def\cldloadfile   #1{\directlua{context.loadfile("#1")}}
+          \def\cldloadviafile#1{\directlua{context.loadviafile("#1")}}
+          \def\cldcontext    #1{\directlua{context(#1)}}
+          \def\cldcommand    #1{\directlua{context.#1}}
+        % \def\cldverbatim   #1{\directlua{context.verbatim.#1}} % maybe make verbatim global
 
 \endinput

@@ -266,10 +266,10 @@ function metapost.getclippath(specification) -- why not a special instance for t
             result = metapost.filterclippath(result)
         end
         stoptiming(metapost)
-        metapost.pushformat()
+        metapost.popformat()
         return result
     else
-        metapost.pushformat()
+        metapost.popformat()
     end
 end
 
@@ -335,12 +335,13 @@ statistics.register("metapost", function()
     if n and n > 0 then
         local elapsedtime = statistics.elapsedtime
         local elapsed     = statistics.elapsed
+        local runs, stats = metapost.nofscriptruns()
         local instances,
               memory      = metapost.getstatistics(true)
-        return format("%s seconds, loading: %s, execution: %s, n: %s, average: %s, instances: %i, luacalls: %i, memory: %0.3f M",
+        return format("%s seconds, loading: %s, execution: %s, n: %s, average: %s, instances: %i, luacalls: %s, memory: %0.3f M",
             elapsedtime(metapost), elapsedtime(mplib), elapsedtime(metapost.exectime), n,
             elapsedtime((elapsed(metapost) + elapsed(mplib) + elapsed(metapost.exectime)) / n),
-            instances, metapost.nofscriptruns(),memory/(1024*1024))
+            instances, stats and stats or runs, memory/(1024*1024))
     else
         return nil
     end
@@ -400,3 +401,31 @@ implement {
     name      = "mptexreset",
     actions   = mptex.reset
 }
+
+-- moved from mlib-lua:
+
+mp = mp or {  -- system namespace
+    set    = { },
+    get    = { },
+    aux    = { },
+    scan   = { },
+    skip   = { },
+    inject = { },
+}
+
+MP = MP or { } -- user namespace
+
+-- We had this:
+--
+--   table.setmetatablecall(mp,function(t,k) mpprint(k) end)
+--
+-- but the next one is more interesting because we cannot use calls like:
+--
+--   lua.mp.somedefdname("foo")
+--
+-- which is due to expansion of somedefdname during suffix creation. So:
+--
+--   lua.mp("somedefdname","foo")
+
+table.setmetatablecall(mp,function(t,k,...) return t[k](...) end)
+table.setmetatablecall(MP,function(t,k,...) return t[k](...) end)

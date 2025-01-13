@@ -24,8 +24,8 @@ local mpnumeric         = mp.numeric
 local mppoints          = mp.points
 local texgetdimen       = tex.getdimen
 
-local p_number = patterns.cardinal/tonumber
-local p_space  = patterns.whitespace^0
+local p_number = lpegpatterns.cardinal/tonumber
+local p_space  = lpegpatterns.whitespace^0
 local p_tag    = P("syncpos:") * p_number * P(":") * p_number
 local p_option = p_number * ((P(",") * p_space * P("reset") * Cc(true)) + Cc(false)) -- for now
 

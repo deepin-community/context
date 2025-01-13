@@ -32,7 +32,7 @@ local sortedkeys, sortedhash = table.sortedkeys, table.sortedhash
 local setmetatableindex = table.setmetatableindex
 local lpegmatch = lpeg.match
 local P, S, C, Ct, Cs, R, Carg = lpeg.P, lpeg.S, lpeg.C, lpeg.Ct, lpeg.Cs, lpeg.R, lpeg.Carg
-local upper = characters.upper
+local upper, lower = characters.upper, characters.lower
 
 local report             = logs.reporter("publications")
 local report_cite        = logs.reporter("publications","cite")
@@ -53,6 +53,8 @@ local casters            = publications.casters
 local detailed           = publications.detailed
 local enhancer           = publications.enhancer
 local enhancers          = publications.enhancers
+
+if not publications.btx then publications.btx = { } end -- user space
 
 local tracers            = publications.tracers or { }
 publications.tracers     = tracers
@@ -294,7 +296,8 @@ do
             local checksum = nil
             local username = file.addsuffix(file.robustname(formatters["%s-btx-%s"](prefix,name)),"lua")
             if userdata and next(userdata) then
-                if job.passes.first then
+                if environment.currentrun == 1 then
+             -- if job.passes.first then
                     local newdata = serialize(userdata)
                     checksum = md5.HEX(newdata)
                     io.savedata(username,newdata)
@@ -688,6 +691,49 @@ local findallused do
                 end
             end
             secondoftwoarguments()
+        end
+    }
+
+    implement {
+        name      = "btxmissing",
+        arguments = "2 strings",
+        actions   = function(dataset,tag)
+            local dataset = datasets[dataset]
+            if dataset then
+                local missing = dataset.missing
+                local message = missing[tag]
+                if message == nil then
+                    local luadata = dataset.luadata
+                    local entry   = luadata[tag]
+                    if not entry then
+                        local t = lower(tag)
+                        if luadata[t] then
+                            message = t
+                        else
+                            t = upper(tag)
+                            if luadata[t] then
+                                message = t
+                            else
+                                for k, v in next, luadata do
+                                    if t == upper(k) then
+                                        message = k
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    if not message then
+                        message = false
+                    end
+                    missing[tag] = message
+                end
+                if message then
+                    context("%s vs %s",tag,message)
+                    return
+                end
+            end
+            context(tag)
         end
     }
 
@@ -1758,10 +1804,14 @@ do
 
     -- todo: names = { "btx" }
 
+    local function collectresult(rendering)
+        return structures.lists.filter(rendering.specifications) or { }
+    end
+
     methods[v_force] = function (dataset,rendering,keyword)
         -- only for checking, can have duplicates, todo: collapse page numbers, although
         -- we then also needs deferred writes
-        local result  = structures.lists.filter(rendering.specifications) or { }
+        local result  = collectresult(rendering)
         local list    = rendering.list
         local current = datasets[dataset]
         local luadata = current.luadata
@@ -1786,7 +1836,7 @@ do
     -- global : if tag and not alldone[tag] and done[tag] ~= section then ...
 
     methods[v_local] = function(dataset,rendering,keyword)
-        local result    = structures.lists.filter(rendering.specifications) or { }
+        local result    = collectresult(rendering)
         local section   = sections.currentid()
         local list      = rendering.list
         local repeated  = rendering.repeated == v_yes
@@ -1858,7 +1908,7 @@ do
         if not dataset then
             return
         end
-        local rendering  = renderings[dataset]
+        local rendering = renderings[dataset]
         if not rendering then
             return
         end
@@ -1874,6 +1924,7 @@ do
         rendering.repeated       = specification.repeated or v_no
         rendering.group          = specification.group or ""
         rendering.specifications = specification
+        rendering.collected      = false
         local filtermethod       = methods[method]
         if not filtermethod then
             report_list("invalid method %a",method or "")
@@ -1886,6 +1937,16 @@ do
             keyword = settings_to_set(keyword)
         else
             keyword = nil
+        end
+        local filename = specification.filename
+        if filename and filename ~= "" then
+            local utilitydata = job.loadother(filename)
+            local lists = utilitydata and utilitydata.structures.lists
+            if lists then
+                rendering.collected = lists.collected
+            else
+                return
+            end
         end
         filtermethod(dataset,rendering,keyword)
         local list = rendering.list
@@ -2049,15 +2110,20 @@ do
             flush()
         end
         local nofranges = #ranges
+local interactive = not rendering.collected
         for i=1,nofranges do
             local r = ranges[i]
             ctx_btxsetconcat(concatstate(i,nofranges))
             local first = r[1]
             local last  = r[2]
+if interactive then
             ctx_btxsetfirstinternal(first[2].internal)
+end
             ctx_btxsetfirstpage(first[1])
             if last then
+if interactive then
                 ctx_btxsetlastinternal(last[2].internal)
+end
                 ctx_btxsetlastpage(last[1])
             end
             if trace_details then
@@ -2166,18 +2232,18 @@ do
 
     function lists.combiinlist(dataset,tag)
         local rendering = renderings[dataset]
-        local list      = rendering.list
+     -- local list      = rendering.list
         local toindex   = rendering.tagtolistindex
         return toindex and toindex[tag]
     end
 
     function lists.flushcombi(dataset,tag)
         local rendering = renderings[dataset]
-        local list      = rendering.list
         local toindex   = rendering.tagtolistindex
         local listindex = toindex and toindex[tag]
         if listindex then
-            local li = list[listindex]
+            local list = rendering.list
+            local li   = list[listindex]
             if li then
                 local data      = datasets[dataset]
                 local luadata   = data.luadata
@@ -2216,14 +2282,16 @@ do
         local list      = rendering.list
         local li        = list[i]
         if li then
-            local data      = datasets[dataset]
-            local luadata   = data.luadata
-            local details   = data.details
-            local tag       = li[1]
-            local listindex = li[2]
-            local n         = li[3]
-            local entry     = luadata[tag]
-            local detail    = details[tag]
+            local data        = datasets[dataset]
+            local luadata     = data.luadata
+            local details     = data.details
+            local tag         = li[1]
+            local listindex   = li[2]
+            local n           = li[3]
+            local entry       = luadata[tag]
+            local detail      = details[tag]
+            --
+            local interactive = not rendering.collected
             --
             ctx_btxstartlistentry()
             ctx_btxsetcurrentlistentry(i) -- redundant
@@ -2237,6 +2305,7 @@ do
             ctx_btxsettag(tag)
             ctx_btxsetnumber(n)
             --
+if interactive then
             local citation = citetolist[n]
             if citation then
                 local references = citation.references
@@ -2246,6 +2315,7 @@ do
                         ctx_btxsetinternal(internal)
                     end
                 end
+end
             end
             --
             if language then
@@ -2339,6 +2409,7 @@ do
                 { "ignored" },
                 { "group" },
                 { "filter" },
+                { "filename" },
             }
         }
     }
@@ -2405,6 +2476,10 @@ do
             for k, v in sortedhash(s) do
                 s = k
                 break
+            end
+            -- weird
+            if type(s) == "table" then
+                return citevariants.default
             end
         end
         if s then
@@ -2650,6 +2725,8 @@ do
 
     -- a bit redundant access to datasets
 
+    local creported = setmetatableindex("table")
+
     local function processcite(presets,specification)
         --
         if specification then
@@ -2676,9 +2753,15 @@ do
         --
         if not found or #found == 0 then
 --         if not list or #list == 0 then
-            report("no entry %a found in dataset %a",reference,dataset)
+            if not creported[dataset][reference] then
+                report("no entry %a found in dataset %a",reference,dataset)
+                creported[dataset][reference] = true
+            end
         elseif not setup then
-            report("invalid reference for %a",reference)
+            if not creported[""][reference] then
+                report("invalid reference for %a",reference)
+                creported[""][reference] = true
+            end
         else
             if trace_cite then
                 report("processing reference %a",reference)
@@ -2748,6 +2831,7 @@ do
                         -- we refer to a previous list entry
                         bl = entry.internal
                     end
+                    -- no check for external (yet)
                     ctx_btxsetinternal(bl and bl > 0 and bl or "")
                 end
                 local language = entry.language
@@ -3198,7 +3282,7 @@ do
                     ctx_btxsettag(tag)
                     ctx_btxsetbacklink(currentcitation)
                     local bl = listtocite[currentcitation]
-                    ctx_btxsetinternal(bl and bl.references.internal or "")
+--                     ctx_btxsetinternal(bl and bl.references.internal or "")
                     if first then
                         ctx_btxsetfirst(first[key] or "") -- f_missing(first.tag))
                         local suffix = entry.suffix
@@ -3500,8 +3584,39 @@ do
 
     function publications.prerollcmdstring(str)
         btxstring = str or ""
-        tex.runtoks("t_btx_cmd")
+        tex.runlocal("t_btx_cmd")
         return nodes.toutf(tex.getbox("b_btx_cmd").list) or str
     end
+
+end
+
+do
+
+    -- no caching for now
+
+    interfaces.implement { -- shared with mkiv so no public
+        name      = "btxdoifelsecitedone",
+        protected = true,
+     -- public    = true,
+     -- arguments = "2 arguments",
+        arguments = "2 strings",
+        actions   = function(dataset,tag)
+            -- dataset ignored
+            local list = structures.lists.tobesaved
+            local done = false
+            for i=1,#list do
+                local l = list[i]
+                local m = l.metadata
+                if m and m.kind == "btx" then
+                    local u = l.userdata
+                    if u and u.btxref == tag then
+                        done = true
+                        break
+                    end
+                end
+            end
+            ctx_doifelse(done)
+        end
+    }
 
 end

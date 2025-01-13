@@ -93,7 +93,7 @@ scripts.patterns.list = {
  -- { "ar",  "hyph-ar",            "arabic" },
  -- { "as",  "hyph-as",            "assamese" },
     { "bg",  "hyph-bg",            "bulgarian" },
- -- { "bn",  "hyph-bn",            "bengali" },
+    { "bn",  "hyph-bn",            "bengali" },
     { "ca",  "hyph-ca",            "catalan" },
  -- { "??",  "hyph-cop",           "coptic" },
     { "cs",  "hyph-cs",            "czech" },
@@ -102,12 +102,12 @@ scripts.patterns.list = {
     { "deo", "hyph-de-1901",       "german, old spelling" },
     { "de",  "hyph-de-1996",       "german, new spelling" },
  -- { "??",  "hyph-de-ch-1901",    "swiss german" },
- -- { "??",  "hyph-el-monoton",    "greek" },
- -- { "gr",  "hyph-el-polyton",    "greek" },
+ -- { "??",  "hyph-el-polyton",    "greek" },
+    { "gr",  "hyph-el-monoton",    "greek" },
     { "agr", "hyph-grc",           "ancient greek", ignored_ancient_greek },
     { "gb",  "hyph-en-gb",         "british english" },
     { "us",  "hyph-en-us",         "american english" },
- -- { "eo",  "hyph-eo",            "esperanto" },
+    { "eo",  "hyph-eo",            "esperanto" },
     { "es",  "hyph-es",            "spanish" },
     { "et",  "hyph-et",            "estonian" },
     { "eu",  "hyph-eu",            "basque" },
@@ -116,18 +116,18 @@ scripts.patterns.list = {
     { "fr",  "hyph-fr",            "french", ignored_french },
  -- { "??",  "hyph-ga",            "irish" },
  -- { "??",  "hyph-gl",            "galician" },
- -- { "gu",  "hyph-gu",            "gujarati" },
- -- { "hi",  "hyph-hi",            "hindi" },
+    { "gu",  "hyph-gu",            "gujarati" },
+    { "hi",  "hyph-hi",            "hindi" },
     { "hr",  "hyph-hr",            "croatian" },
  -- { "??",  "hyph-hsb",           "upper sorbian" },
     { "hu",  "hyph-hu",            "hungarian" },
- -- { "hy",  "hyph-hy",            "armenian" },
+    { "hy",  "hyph-hy",            "armenian" },
  -- { "??",  "hyph-ia",            "interlingua" },
- -- { "??",  "hyph-id",            "indonesian" },
+    { "id",  "hyph-id",            "indonesian" },
     { "is",  "hyph-is",            "icelandic" },
     { "it",  "hyph-it",            "italian" },
  -- { "??",  "hyph-kmr",           "kurmanji" },
- -- { "kn",  "hyph-kn",            "kannada" },
+    { "kn",  "hyph-kn",            "kannada" },
     { "la",  "hyph-la",            "latin" },
     { "ala", "hyph-la-x-classic",  "ancient latin" },
  -- { "lo",  "hyph-lo",            "lao" },
@@ -147,14 +147,16 @@ scripts.patterns.list = {
     { "pt",  "hyph-pt",            "portuguese" },
     { "ro",  "hyph-ro",            "romanian" },
     { "ru",  "hyph-ru",            "russian" },
- -- { "sa",  "hyph-sa",            "sanskrit" },
+    { "sa",  "hyph-sa",            "sanskrit" },
     { "sk",  "hyph-sk",            "slovak" },
     { "sl",  "hyph-sl",            "slovenian" },
-    { "sr",  "hyph-sr-cyrl",       "serbian" },
+    { "sq",  "hyph-sq",            "albanian" },
+    { "sr",  "hyph-sr",            "serbian", false, { "hyph-sh-cyrl", "hyph-sh-latn" }, },
+ -- { "sr",  "hyph-sr-cyrl",       "serbian", false },
  -- { "sr",  "hyph-sr-latn",       "serbian" },
     { "sv",  "hyph-sv",            "swedish" },
- -- { "ta",  "hyph-ta",            "tamil" },
- -- { "te",  "hyph-te",            "telugu" },
+    { "ta",  "hyph-ta",            "tamil" },
+    { "te",  "hyph-te",            "telugu" },
     { "th",  "hyph-th",            "thai" },
     { "tk",  "hyph-tk",            "turkmen" },
     { "tr",  "hyph-tr",            "turkish" },
@@ -171,24 +173,36 @@ end
 -- *.tex
 -- *.hyp.txt *.pat.txt *.lic.txt *.chr.txt
 
-function scripts.patterns.load(path,name,mnemonic,ignored)
-    local basename = name
+function scripts.patterns.load(path,name,mnemonic,ignored, merged)
     local fullname = file.join(path,name)
-    local texfile = addsuffix(fullname,"tex")
-    local hypfile = addsuffix(fullname,"hyp.txt")
-    local patfile = addsuffix(fullname,"pat.txt")
-    local licfile = addsuffix(fullname,"lic.txt")
- -- local chrfile = addsuffix(fullname,"chr.txt")
+    local basename = name
+    local texfile  = addsuffix(fullname,"tex")
+    local hypfile  = addsuffix(fullname,"hyp.txt")
+    local patfile  = addsuffix(fullname,"pat.txt")
+    local licfile  = addsuffix(fullname,"lic.txt")
+ -- local chrfile  = addsuffix(fullname,"chr.txt")
     local okay = true
     local hyphenations, patterns, comment, stripset = "", "", "", ""
     local splitpatternsnew, splithyphenationsnew = { }, { }
     local splitpatternsold, splithyphenationsold = { }, { }
     local usedpatterncharactersnew, usedhyphenationcharactersnew = { }, { }
-    if lfs.isfile(patfile) then
+    if merged then
+        -- no version info
+        report("using merged txt files %s.[hyp|pat|lic].txt",name)
+        for i=1,#merged do
+            local fullname = file.join(path,merged[i])
+            comment      = comment       .. (io.loaddata(addsuffix(fullname,"lic.txt")) or "") .. "\n\n"
+            patterns     = patterns      .. (io.loaddata(addsuffix(fullname,"pat.txt")) or "") .. "\n\n"
+            hyphenations = hyphenations  .. (io.loaddata(addsuffix(fullname,"hyp.txt")) or "") .. "\n\n"
+        end
+    elseif lfs.isfile(patfile) then
+        -- no version info
         report("using txt files %s.[hyp|pat|lic].txt",name)
-        comment, patterns, hyphenations = io.loaddata(licfile) or "", io.loaddata(patfile) or "", io.loaddata(hypfile) or ""
-        hypfile, patfile, licfile = hypfile, patfile, licfile
+        comment      = io.loaddata(licfile) or ""
+        patterns     = io.loaddata(patfile) or ""
+        hyphenations = io.loaddata(hypfile) or ""
     elseif lfs.isfile(texfile) then
+        -- version info in comment blob
         report("using tex file %s.txt",name)
         local data = io.loaddata(texfile) or ""
         if data ~= "" then
@@ -203,9 +217,9 @@ function scripts.patterns.load(path,name,mnemonic,ignored)
             end)
             data = gsub(data,"%%.-[\n\r]","")
             data = gsub(data," *[\n\r]+","\n")
-            patterns = match(data,"\\patterns[%s]*{[%s]*(.-)[%s]*}") or ""
+            patterns     = match(data,"\\patterns[%s]*{[%s]*(.-)[%s]*}") or ""
             hyphenations = match(data,"\\hyphenation[%s]*{[%s]*(.-)[%s]*}") or ""
-            comment = match(data,"^(.-)[\n\r]\\patterns") or ""
+            comment      = match(data,"^(.-)[\n\r]\\patterns") or ""
         else
             okay = false
         end
@@ -514,10 +528,10 @@ function scripts.patterns.check()
         only = table.tohash(files)
     end
     for k, v in next, scripts.patterns.list do
-        local mnemonic, name, ignored = v[1], v[2], v[4]
+        local mnemonic, name, ignored, merged = v[1], v[2], v[4], v[5]
         if not only or only[mnemonic] then
             report("checking language %s, file %s", mnemonic, name)
-            local okay = scripts.patterns.load(path,name,mnemonic,ignored)
+            local okay = scripts.patterns.load(path,name,mnemonic,ignored, merged)
             if not okay then
                 report("there are errors that need to be fixed")
             end
@@ -541,11 +555,11 @@ function scripts.patterns.convert()
                 only = table.tohash(files)
             end
             for k, v in next, scripts.patterns.list do
-                local mnemonic, name, ignored = v[1], v[2], v[4]
+                local mnemonic, name, ignored, merged = v[1], v[2], v[4], v[5]
                 if not only or only[mnemonic] then
                     report("converting language %s, file %s", mnemonic, name)
                     local okay, patternsnew, hyphenationsnew, patternsold, hyphenationsold, comment, stripped,
-                        pusednew, husednew, pusedold, husedold = scripts.patterns.load(path,name,mnemonic,ignored)
+                        pusednew, husednew, pusedold, husedold = scripts.patterns.load(path,name,mnemonic,ignored,merged)
                     if okay then
                         scripts.patterns.save(destination,mnemonic,name,patternsnew,hyphenationsnew,patternsold,hyphenationsold,comment,stripped,
                             pusednew,husednew,pusedold,husedold,ignored)
@@ -689,8 +703,8 @@ end
 
 -- mtxrun --script pattern --check   hyph-*.tex
 -- mtxrun --script pattern --check   --path=c:/data/develop/svn-hyphen/trunk/hyph-utf8/tex/generic/hyph-utf8/patterns
--- mtxrun --script pattern --convert --path=c:/data/develop/svn-hyphen/trunk/hyph-utf8/tex/generic/hyph-utf8/patterns/tex --destination=e:/tmp/patterns
--- mtxrun --script pattern --convert --path=c:/data/repositories/tex-hyphen/hyph-utf8/tex/generic/hyph-utf8/patterns/tex --destination=e:/tmp/patterns
+-- mtxrun --script pattern --convert --path=c:/data/develop/svn-hyphen/trunk/hyph-utf8/tex/generic/hyph-utf8/patterns/txt --destination=e:/tmp/patterns
+-- mtxrun --script pattern --convert --path=c:/data/repositories/tex-hyphen/hyph-utf8/tex/generic/hyph-utf8/patterns/txt --destination=e:/tmp/patterns
 --
 -- use this call:
 --

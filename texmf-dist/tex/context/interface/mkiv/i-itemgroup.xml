@@ -163,6 +163,8 @@
             <cd:parameter name="placestopper">
                 <cd:constant type="yes" default="yes"/>
                 <cd:constant type="no"/>
+                <cd:constant type="display"/>
+                <cd:constant type="inline"/>
             </cd:parameter>
             <cd:parameter name="style">
                 <cd:resolve name="value-style"/>
@@ -194,7 +196,7 @@
             <cd:parameter name="packcriterium">
                 <cd:constant type="cd:number"/>
             </cd:parameter>
-             <cd:inherit name="setupcounter"/>
+            <cd:inherit name="setupcounter"/>
         </cd:assignments>
     </cd:define>
 
@@ -254,6 +256,7 @@
                 <cd:constant type="inmargin"/>
                 <cd:constant type="atmargin"/>
                 <cd:constant type="intext"/>
+                <cd:constant type="headintext"/>
                 <cd:constant type="loose"/>
                 <cd:constant type="fit"/>
                 <cd:constant type="nofit"/>
@@ -352,6 +355,8 @@
             <cd:parameter name="placestopper">
                 <cd:constant type="yes" default="yes"/>
                 <cd:constant type="no"/>
+                <cd:constant type="display"/>
+                <cd:constant type="inline"/>
             </cd:parameter>
             <cd:parameter name="style">
                 <cd:resolve name="value-style"/>
@@ -380,7 +385,10 @@
             <cd:parameter name="grid">
                 <cd:inherit name="definegridsnapping"/>
             </cd:parameter>
-             <cd:inherit name="setupcounter"/>
+            <cd:parameter name="packcriterium">
+                <cd:constant type="cd:number"/>
+            </cd:parameter>
+            <cd:inherit name="setupcounter"/>
         </cd:assignments>
     </cd:define>
 
@@ -394,7 +402,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setupitemgroup" level="style" category="structure counter" file="strc-itm.mkvi">
+    <cd:command name="setupitemgroup" level="style" category="structure" keywords="counter" file="strc-itm.mkvi">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
             <cd:keywords list="yes" optional="yes">
@@ -406,7 +414,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setupitemgroup" variant="assignment" level="style" category="structure counter" file="strc-itm.mkvi">
+    <cd:command name="setupitemgroup" variant="assignment" level="style" category="structure" keywords="counter" file="strc-itm.mkvi">
         <cd:arguments>
             <cd:keywords list="yes" optional="yes">
                 <cd:constant type="cd:name"/>
@@ -416,7 +424,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setupitemgroups" level="style" category="structure counter" file="strc-itm.mkvi">
+    <cd:command name="setupitemgroups" level="style" category="structure" keywords="counter" file="strc-itm.mkvi">
         <cd:arguments>
             <cd:keywords list="yes" optional="yes">
                 <cd:constant type="cd:name"/>
@@ -426,7 +434,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="setupitemgroup" generated="yes" variant="instance" level="style" category="structure counter" file="strc-itm.mkvi">
+    <cd:command name="setupitemgroup" generated="yes" variant="instance" level="style" category="structure" keywords="counter" file="strc-itm.mkvi">
         <cd:sequence>
             <cd:string value="setup"/>
             <cd:instance value="itemgroup"/>

@@ -256,17 +256,35 @@
    \c!date={\v!day,{.},\space,\v!month,\space,\v!year}]
 
 \installlanguage
- [\s!sl]
- [\c!spacing=\v!packed,
-  \c!leftsentence=\hbox{\endash\space},
-  \c!rightsentence=\hbox{\space\endash},
-  \c!leftsubsentence=\endash,
-  \c!rightsubsentence=\endash,
-  \c!leftquote=\guilsingleright,
-  \c!rightquote=\guilsingleleft,
-  \c!leftquotation=\rightguillemot,
-  \c!rightquotation=\leftguillemot,
-  \c!date={\v!day,{.},\space,\v!month,\space,\v!year}]
+  [\s!sl]
+  [\c!command=\v!no,
+   \c!spacing=\v!packed,
+   \c!leftsentence=\hbox{\endash\space},
+   \c!rightsentence=\hbox{\space\endash},
+   \c!leftsubsentence=\endash,
+   \c!rightsubsentence=\endash,
+   \c!leftquote=\guilsingleright,
+   \c!rightquote=\guilsingleleft,
+   \c!leftquotation=\rightguillemot,
+   \c!rightquotation=\leftguillemot,
+   \c!date={\v!day,{.},\space,\v!month,\space,\v!year}]
+
+\installlanguage
+  [\s!hy]
+  [\c!spacing=\v!packed,
+   \c!leftsentence=\endash, % *sentences not confirmed
+   \c!rightsentence=\endash,
+   \c!leftsubsentence=\endash,
+   \c!rightsubsentence=\endash,
+   \c!leftquote=\guilsingleleft,
+   \c!rightquote=\guilsingleright,
+   \c!leftquotation=\leftguillemot
+   \c!rightquotation=\rightguillemot
+   \c!date={\v!day,\space,\v!month,\space,\v!year}, % word
+ % \c!date={\v!day,{.},\v!month,{.},\v!year}, % numbers
+   \s!patterns=\s!hy,
+   \s!lefthyphenmin=2,
+   \s!righthyphenmin=2]
 
 \installlanguage [\s!polish]    [\s!pl]
 \installlanguage [\s!czech]     [\s!cs]
@@ -274,6 +292,10 @@
 \installlanguage [\s!croatian]  [\s!hr]
 \installlanguage [\s!slovenian] [\s!sl]
 \installlanguage [slovene]      [\s!sl] % both possible (mojca: still needed?)
+
+\installlanguage [\s!armenian]  [\s!hy]
+\installlanguage [\s!hye]  [\s!hy]	% Eastern Armenian
+\installlanguage [\s!hyw]  [\s!hy]  % Western Armenian
 
 % Cyrillic Languages
 
@@ -308,8 +330,71 @@
    \c!date={\v!day,\space,\v!month,\space,\v!year},
    \s!patterns=\s!uk]
 
-\installlanguage [\s!russian]   [\s!ru]
-\installlanguage [\s!ukrainian] [\s!ua]
+\installlanguage
+  [\s!be]
+  [\s!lefthyphenmin=2,
+   \s!righthyphenmin=2,
+   \c!spacing=\v!packed,
+   \c!leftsentence=\leftguillemot,
+   \c!rightsentence=\rightguillemot,
+   \c!leftsubsentence=\lowerleftdoubleninequote,
+   \c!rightsubsentence=\upperrightdoublesixquote,
+   \c!leftquote=\lowerleftdoubleninequote,
+   \c!rightquote=\upperrightdoublesixquote,
+   \c!leftquotation=\leftguillemot,
+   \c!rightquotation=\rightguillemot,
+   \c!date={\v!day,\space,\v!month,\space,\v!year}]
+
+ \installlanguage
+  [\s!sr]
+  [\c!spacing=\v!packed,
+   \c!leftsentence=\hbox{\endash\space},
+   \c!rightsentence=\hbox{\space\endash},
+   \c!leftsubsentence=\endash,
+   \c!rightsubsentence=\endash,
+   \c!leftquote=\upperrightsingleninequote,
+   \c!rightquote=\upperrightsingleninequote,
+   \c!leftquotation=\lowerleftdoubleninequote,
+   \c!rightquotation=\upperleftdoubleninequote,
+   \c!date={\v!day,{.},\space,\v!month,\space,\v!year}]
+
+\installlanguage
+  [\s!mk]
+  [\c!spacing=\v!packed,
+   \c!leftsentence=\endash,
+   \c!rightsentence=\endash,
+   \c!leftsubsentence=\endash,
+   \c!rightsubsentence=\endash,
+   \c!leftquote=\upperleftsingleninequote,
+   \c!rightquote=\upperrightsinglesixquote,
+   \c!leftquotation=\lowerleftdoubleninequote,
+   \c!rightquotation=\upperrightdoublesixquote,
+   \c!date={\v!day,\space,\v!month,\space,\v!year}]
+
+\installlanguage
+  [\s!bg]
+  [\s!lefthyphenmin=2,
+   \s!righthyphenmin=2,
+   \c!spacing=\v!packed,
+   \c!leftsentence=\leftguillemot,
+   \c!rightsentence=\rightguillemot,
+   \c!leftsubsentence=\lowerleftdoubleninequote,
+   \c!rightsubsentence=\upperrightdoubleninequote,
+   \c!leftquote=\lowerleftsingleninequote,
+   \c!rightquote=\upperrightsinglesixquote,
+   \c!leftquotation=\lowerleftdoubleninequote,
+   \c!rightquotation=\upperrightdoublesixquote,
+   \c!date={\v!day,\space,\v!month,\space,\v!year}]
+
+\installlanguage [\s!russian]    [\s!ru]
+\installlanguage [\s!ukrainian]  [\s!ua]
+\installlanguage [\s!belarussian][\s!be]
+\installlanguage [\s!serbian]    [\s!sr]
+\installlanguage [\s!sr-latn]    [\s!sr]
+\installlanguage [\s!sr-cyrl]    [\s!sr]
+\installlanguage [\s!macedonian] [\s!mk]
+\installlanguage [\s!bulgarian]  [\s!bg]
+
 
 % Uralic Languages: Cheremiss, Estonian, Finnish, Karelian, Laap,
 % Mordvinian, Permian tongues, Hungarian, Ostyak, Vogul, Samoyed
@@ -413,7 +498,12 @@
    \c!rightquotation=\upperrightdoubleninequote,
    \c!date={\v!day,\space,\v!month,{،\space},\v!year}]
 
-\installlanguage [\s!hebrew] [\s!he]
+\installlanguage % same as arabic now .. someone needs to fix this
+  [\s!yi]
+  [\s!he]
+
+\installlanguage [\s!hebrew]  [\s!he]
+\installlanguage [\s!yiddish] [\s!yi]
 
 % Arabic Languages
 
@@ -433,7 +523,7 @@
 \installlanguage [\s!arabic] [\s!ar]
 
 \installlanguage
-  [\s!pe]
+  [\s!farsi]
   [\c!spacing=\v!broad,
    \c!leftsentence=\emdash,
    \c!rightsentence=\emdash,
@@ -445,9 +535,9 @@
    \c!rightquotation=\rightguillemot,
    \c!date={\v!day,\space,\v!month,\space,\v!year}]
 
-\installlanguage [\s!persian] [\s!pe]
-\installlanguage [\s!fa]      [\s!pe] % these two are redundant but sometimes might
-\installlanguage [\s!farsi]   [\s!fa] % sound more natural .. best set labels to 'pe'
+\installlanguage [\s!fa]      [\s!farsi]
+\installlanguage [\s!persian] [\s!farsi]
+\installlanguage [\s!pe]      [\s!farsi]
 
 % Just aliases to "ar" for now
 
@@ -484,11 +574,30 @@
 
 % Artificial Languages: Esperanto
 
+\installlanguage
+  [\s!eo]
+  [\c!spacing=\v!packed,
+   \c!leftsentence=\endash,
+   \c!rightsentence=\endash,
+   \c!leftsubsentence=\endash,
+   \c!rightsubsentence=\endash,
+   \c!leftquote=\upperleftsinglesixquote,         %U+2018,
+   \c!rightquote=\upperrightsingleninequote,      %U+2019,
+   \c!leftquotation=\upperleftdoublesixquote,     %U+201C,
+   \c!rightquotation=\upperrightdoubleninequote,  %U+201D,
+   \c!date={\v!day,-a\space de\space,\v!month,\space \v!year},
+   \s!patterns=eo,
+   \s!lefthyphenmin=2,
+   \s!righthyphenmin=2]
+
+\installlanguage[\s!esperanto][\c!default=\s!eo]
+
 % Baltic Languages: Lettish/Latvian, Lietuvių/Lithuanian
 
 \installlanguage
   [\s!lt]
-  [\c!spacing=\v!packed,
+  [\c!command=\v!no,
+   \c!spacing=\v!packed,
    \c!leftsentence=\emdash,
    \c!rightsentence=\emdash,
    \c!leftsubsentence=\emdash,
@@ -583,9 +692,6 @@
 % Sardian, Catalan, French, Ladino, Portuguese, Proven\c{c}al,
 % Spanish
 
-\ifdefined\guillemotspace \else \let\guillemotspace\empty \fi
-\ifdefined\sentencespace  \else \let\sentencespace \empty \fi
-
 \installlanguage
   [\s!fr]
   [\c!spacing=\v!packed,
@@ -632,7 +738,8 @@
 
 \installlanguage
   [\s!it]
-  [\c!spacing=\v!packed,
+  [\c!command=\v!no,
+   \c!spacing=\v!packed,
    \c!leftsentence=\emdash,
    \c!rightsentence=\emdash,
    \c!leftsubsentence=\endash,
@@ -674,7 +781,8 @@
    \c!rightquote=\upperrightsingleninequote,
    \c!leftquotation=\upperleftdoublesixquote,
    \c!rightquotation=\upperrightdoubleninequote,
-   \c!date={\v!year,\space,\v!month,\space,\v!day}]
+   \c!date={\v!day,\space,\v!month,\space,\v!year}]
+
 
 \installlanguage[\s!pt-br][\c!default=\s!pt]    % Brazil
 \installlanguage[\s!es-es][\c!default=\s!es]    % Spain

@@ -14,6 +14,8 @@
 %D In this style the table of contents is a bunch of rectangular blobs. The layout
 %D adapts itself upto 25 pages. This style was made for Bacho\TeX\ 2013.
 
+\pushoverloadmode
+
 \startmodule[present-tiles]
 
 \setupbodyfont[pagella,14.4pt]
@@ -259,12 +261,12 @@
 
         \switchtobodyfont[\measure{titlepagefont}]
 
-        \let\\=\crlf
+        \enforced\let\\\crlf
 
         \startalignment[flushleft]
             \bf
             \setupinterlinespace
-            \begstrut\getvariable{document}{title}\endstrut\par
+            \begstrut\documentvariable{title}\endstrut\par
         \stopalignment
 
         \vfill
@@ -272,7 +274,7 @@
         \startalignment[flushright]
             \bf
             \setupinterlinespace
-            \begstrut\getvariable{document}{subtitle}\endstrut\par
+            \begstrut\documentvariable{subtitle}\endstrut\par
         \stopalignment
 
     \stoptopicmakeup

@@ -24,6 +24,7 @@ local lpegmatch = lpeg.match
 local jobpositions      = job.positions
 local formatters        = string.formatters
 local setmetatableindex = table.setmetatableindex
+local settings_to_array = utilities.parsers.settings_to_array
 
 local enableaction      = nodes.tasks.enableaction
 
@@ -32,6 +33,7 @@ local context           = context
 
 local implement         = interfaces.implement
 
+local texgetcount       = tex.getcount
 local report_graphics   = logs.reporter("backgrounds")
 local report_shapes     = logs.reporter("backgrounds","shapes")
 local report_free       = logs.reporter("backgrounds","free")
@@ -76,11 +78,11 @@ local getheight         = nuts.getheight
 local getdepth          = nuts.getdepth
 
 local nodecodes         = nodes.nodecodes
-local localpar_code     = nodecodes.localpar
+local par_code          = nodecodes.par
 
-local start_of_par      = nuts.start_of_par
-local insert_before     = nuts.insert_before
-local insert_after      = nuts.insert_after
+local startofpar        = nuts.startofpar
+local insertbefore      = nuts.insertbefore
+local insertafter       = nuts.insertafter
 
 local processranges     = nuts.processranges
 
@@ -99,6 +101,7 @@ local enabled           = false
 -- many pages but for an arbitrary background shape that is not so common.
 
 local function check(specification)
+    --
     local a     = specification.attribute
     local index = specification.index
     local depth = specification.depth
@@ -165,12 +168,12 @@ local function flush(head,f,l,a,parent,depth)
             ln = new_hlist(setlink(new_rule(65536,65536*4,0),new_kern(-65536),ln))
             rn = new_hlist(setlink(new_rule(65536,0,65536*4),new_kern(-65536),rn))
         end
-        if getid(f) == localpar_code and start_of_par(f) then -- we need to clean this mess
-            insert_after(head,f,ln)
+        if getid(f) == par_code and startofpar(f) then -- we need to clean this mess
+            insertafter(head,f,ln)
         else
-            head, f = insert_before(head,f,ln)
+            head, f = insertbefore(head,f,ln)
         end
-        insert_after(head,l,rn)
+        insertafter(head,l,rn)
     end
     return head, true
 end
@@ -205,24 +208,10 @@ local function registerbackground(name)
     end
 end
 
--- local function collectbackgrounds(r,n)
---     if enabled then
---         local parent = getbox(n)
---         local head   = getlist(parent)
---         realpage     = r
---         processranges(a_textbackground,flush,head) -- ,parent)
---     end
--- end
---
--- interfaces.implement {
---     name      = "collectbackgrounds",
---     actions   = collectbackgrounds,
---     arguments = { "integer", "integer" }
--- }
-
 nodes.handlers.textbackgrounds = function(head,where,parent) -- we have hlistdir and local dir
     -- todo enable action in register
-    index = index + 1
+    index    = index + 1
+    realpage = texgetcount("realpageno")
     return processranges(a_textbackground,flush,head,parent)
 end
 
@@ -234,8 +223,6 @@ interfaces.implement {
 
 -- optimized already but we can assume a cycle i.e. prune the last point and then
 -- even less code .. we could merge some loops but his is more robust
-
--- use idiv here
 
 local function topairs(t,n)
     local r = { }
@@ -783,9 +770,7 @@ local function calculatemultipar(tag)
         for i=bindex+1,eindex-1 do
             br = f_tag_two(btag,i)
             local r = collected[br]
-            if not r then
-               report_graphics("invalid middle for %a",br)
-            else
+            if r then
                 local rp = r.p -- page
                 local pp = list[rp]
                 local mp = middlepart(b,e,p,rp,r,left,right)
@@ -794,6 +779,8 @@ local function calculatemultipar(tag)
                 else
                     list[rp] = { mp }
                 end
+            else
+                report_graphics("invalid middle for %a",br)
             end
         end
         local ep = e.p -- page
@@ -1210,10 +1197,10 @@ posregions[%s] := (%p,%p)--(%p,%p)--(%p,%p)--(%p,%p)--cycle ;
 implement {
     name      = "fetchposboxes",
     arguments = { "string", "string", "integer" },
-    actions   = function(tags,anchor,page)  -- no caching (yet) / todo: anchor, page
+    actions   = function(tags,anchor,page)  -- no caching (yet) / page
         local collected = jobpositions.collected
         if type(tags) == "string" then
-            tags = utilities.parsers.settings_to_array(tags)
+            tags = settings_to_array(tags)
         end
         local list     = { }
         local nofboxes = 0
@@ -1222,6 +1209,9 @@ implement {
             local c = collected[tag]
             if c then
                 local r = c.r
+                if anchor ~= r then
+                    r = anchor
+                end
                 if r then
                     r = collected[r]
                     if r then
@@ -1231,7 +1221,7 @@ implement {
                         local rh = r.h
                         local rd = r.d
                         local cx = c.x - rx
-                        local cy = c.y
+                        local cy = c.y - ry
                         local cw = cx + c.w
                         local ch = cy + c.h
                         local cd = cy - c.d

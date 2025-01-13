@@ -6,20 +6,15 @@ if not modules then modules = { } end modules ['data-tmp'] = {
     license   = "see context related readme files"
 }
 
---[[ldx--
-<p>This module deals with caching data. It sets up the paths and implements
-loaders and savers for tables. Best is to set the following variable. When not
-set, the usual paths will be checked. Personally I prefer the (users) temporary
-path.</p>
-
-</code>
-TEXMFCACHE=$TMP;$TEMP;$TMPDIR;$TEMPDIR;$HOME;$TEXMFVAR;$VARTEXMF;.
-</code>
-
-<p>Currently we do no locking when we write files. This is no real problem
-because most caching involves fonts and the chance of them being written at the
-same time is small. We also need to extend luatools with a recache feature.</p>
---ldx]]--
+-- This module deals with caching data. It sets up the paths and implements loaders
+-- and savers for tables. Best is to set the following variable. When not set, the
+-- usual paths will be checked. Personally I prefer the (users) temporary path.
+--
+--   TEXMFCACHE=$TMP;$TEMP;$TMPDIR;$TEMPDIR;$HOME;$TEXMFVAR;$VARTEXMF;.
+--
+-- Currently we do no locking when we write files. This is no real problem because
+-- most caching involves fonts and the chance of them being written at the same time
+-- is small. We also need to extend luatools with a recache feature.
 
 local next, type = next, type
 local pcall, loadfile, collectgarbage = pcall, loadfile, collectgarbage
@@ -74,7 +69,7 @@ local usedreadables = { }
 local compilelua    = luautilities.compile
 local luasuffixes   = luautilities.suffixes
 
-caches.base         = caches.base or "luatex-cache"  -- can be local
+caches.base         = caches.base or (LUATEXENGINE and LUATEXENGINE .. "-cache") or "luatex-cache"  -- can be local
 caches.more         = caches.more or "context"       -- can be local
 caches.defaults     = { "TMPDIR", "TEMPDIR", "TMP", "TEMP", "HOME", "HOMEPATH" }
 
@@ -324,7 +319,11 @@ caches.setluanames          = setluanames
 --
 -- runtime files like fonts are written to the writable cache anyway
 
+local checkmemory = utilities and utilities.lua and utilities.lua.checkmemory
+local threshold   = 100 -- MB
+
 function caches.loaddata(readables,name,writable)
+    local used = checkmemory and checkmemory()
     if type(readables) == "string" then
         readables = { readables }
     end
@@ -352,7 +351,11 @@ function caches.loaddata(readables,name,writable)
         end
         if loader then
             loader = loader()
-            collectgarbage("step")
+            if checkmemory then
+                checkmemory(used,threshold)
+            else -- generic
+                collectgarbage("step") -- option, really slows down!
+            end
             return loader
         end
     end

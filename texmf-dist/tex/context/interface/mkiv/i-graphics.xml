@@ -85,6 +85,11 @@
                 <cd:parameter name="color">
                     <cd:constant type="cd:color"/>
                 </cd:parameter>
+                <cd:parameter name="cmyk">
+                    <cd:constant type="yes"/>
+                    <cd:constant type="no" default="yes"/>
+                    <cd:constant type="auto"/>
+                </cd:parameter>
                 <cd:parameter name="arguments">
                     <cd:constant type="cd:text"/>
                 </cd:parameter>
@@ -246,22 +251,29 @@
                 <cd:parameter name="ownerpassword">
                     <cd:constant type="cd:text"/>
                 </cd:parameter>
+                <cd:parameter name="compact">
+                    <cd:constant type="yes"/>
+                    <cd:constant type="no" default="yes"/>
+                    <cd:constant type="cd:text"/>
+                </cd:parameter>
+                <cd:parameter name="metadata">
+                    <cd:constant type="page" default="yes"/>
+                    <cd:constant type="document"/>
+                    <cd:constant type="yes"/>
+                    <cd:constant type="no"/>
+                </cd:parameter>
             </cd:assignments>
         </cd:arguments>
     </cd:command>
 
-    <!--
-
-        <cd:command name="setupexternalfigures" level="style" category="graphics" file="grph-inc.mkvi">
-            <cd:arguments>
-                <cd:resolve name="keyword-name-list-optional"/>
-                <cd:assignments list="yes">
-                    <cd:inherit name="setupexternalfigure"/>
-                </cd:assignments>
-            </cd:arguments>
-        </cd:command>
-
-    -->
+    <cd:command name="setupexternalfigures" level="style" category="graphics" file="grph-inc.mkvi">
+        <cd:arguments>
+            <cd:resolve name="keyword-name-list-optional"/>
+            <cd:assignments list="yes">
+                <cd:inherit name="setupexternalfigure"/>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
 
     <cd:command name="useexternalfigure" level="style" category="graphics" file="grph-inc.mkiv">
         <cd:arguments>
@@ -318,7 +330,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doifelsefigure" level="system" category="graphics conditional" file="grph-inc.mkiv">
+    <cd:command name="doifelsefigure" level="system" category="graphics" keywords="conditional" file="grph-inc.mkiv">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
             <cd:resolve name="argument-true"/>
@@ -326,7 +338,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="doiffigureelse" level="system" category="graphics conditional" file="grph-inc.mkiv">
+    <cd:command name="doiffigureelse" level="system" category="graphics" keywords="conditional" file="grph-inc.mkiv">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
             <cd:resolve name="argument-true"/>
@@ -478,7 +490,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="typesetbuffer" level="document" category="graphics buffer" file="grph-fig.mkiv">
+    <cd:command name="typesetbuffer" level="document" category="graphics" keywords="buffer" file="grph-fig.mkiv">
         <cd:arguments>
             <cd:keywords optional="yes">
                 <cd:constant type="*"/>
@@ -490,7 +502,16 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="definetypesetting" level="style" category="graphics structure" file="grph-fig.mkiv">
+    <cd:command name="typesetbufferonly" level="document" category="graphics" keywords="buffer" file="grph-fig.mkiv">
+        <cd:arguments>
+            <cd:keywords optional="yes">
+                <cd:constant type="*"/>
+                <cd:constant type="cd:buffer"/>
+            </cd:keywords>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="definetypesetting" level="style" category="graphics" keywords="structure" file="grph-fig.mkiv">
         <cd:arguments>
             <cd:resolve name="keyword-name"/>
             <cd:resolve name="keyword-text-optional"/>
@@ -500,7 +521,7 @@
         </cd:arguments>
     </cd:command>
 
-    <cd:command name="typesetfile" level="document" category="graphics structure" file="grph-fig.mkiv">
+    <cd:command name="typesetfile" level="document" category="graphics" keywords="structure" file="grph-fig.mkiv">
         <cd:arguments>
             <cd:keywords>
                 <cd:constant type="cd:name"/>
@@ -543,6 +564,28 @@
     <cd:command name="clippedoverlayimage" level="style" category="graphics" file="pack-box.mkiv">
         <cd:arguments>
             <cd:resolve name="argument-file"/>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="includesvgfile" level="document" category="graphics" file="grph-inc.mkiv">
+        <cd:arguments>
+            <cd:resolve name="keyword-file"/>
+            <cd:assignments list="yes" optional="yes">
+                <cd:parameter name="offset">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+            </cd:assignments>
+        </cd:arguments>
+    </cd:command>
+
+    <cd:command name="includesvgbuffer" level="document" category="graphics" file="grph-inc.mkiv">
+        <cd:arguments>
+            <cd:resolve name="keyword-buffer"/>
+            <cd:assignments list="yes" optional="yes">
+                <cd:parameter name="offset">
+                    <cd:constant type="cd:dimension"/>
+                </cd:parameter>
+            </cd:assignments>
         </cd:arguments>
     </cd:command>
 

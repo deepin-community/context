@@ -157,73 +157,13 @@ update.goodies = {
     },
 }
 
--- update.platforms = {
---     ["mswin"]          = "mswin",
---     ["windows"]        = "mswin",
---     ["win32"]          = "mswin",
---     ["win"]            = "mswin",
---  -- ["mswin"]          = "win32",
---  -- ["windows"]        = "win32",
---  -- ["win32"]          = "win32",
---  -- ["win"]            = "win32",
---     --
---  -- ["mswin-64"]       = "mswin-64",
---  -- ["windows-64"]     = "mswin-64",
---  -- ["win64"]          = "mswin-64",
---     ["mswin-64"]       = "win64",
---     ["windows-64"]     = "win64",
---     ["win64"]          = "win64",
---     --
---     ["linux"]          = "linux",
---     ["linux-32"]       = "linux",
---     ["linux32"]        = "linux",
---     --
---     ["linux-64"]       = "linux-64",
---     ["linux64"]        = "linux-64",
---     --
---     ["linuxmusl-64"]   = "linuxmusl-64",
---     --
---     ["linux-armhf"]    = "linux-armhf",
---     --
---     ["freebsd"]        = "freebsd",
---     --
---     ["freebsd-amd64"]  = "freebsd-amd64",
---     --
---     ["kfreebsd"]       = "kfreebsd-i386",
---     ["kfreebsd-i386"]  = "kfreebsd-i386",
---     --
---     ["kfreebsd-amd64"] = "kfreebsd-amd64",
---     --
---     ["linux-ppc"]      = "linux-ppc",
---     ["ppc"]            = "linux-ppc",
---     --
---     ["osx"]            = "osx-intel",
---     ["macosx"]         = "osx-intel",
---     ["osx-intel"]      = "osx-intel",
---     ["osxintel"]       = "osx-intel",
---     --
---     ["osx-ppc"]        = "osx-ppc",
---     ["osx-powerpc"]    = "osx-ppc",
---     ["osxppc"]         = "osx-ppc",
---     ["osxpowerpc"]     = "osx-ppc",
---     --
---     ["osx-64"]         = "osx-64",
---     --
---     ["solaris-intel"]  = "solaris-intel",
---     --
---     ["solaris-sparc"]  = "solaris-sparc",
---     ["solaris"]        = "solaris-sparc",
---     --
---     ["unknown"]        = "unknown",
--- }
-
 update.platforms = {
-    ["mswin"]          = "mswin",
-    ["windows"]        = "mswin",
-    ["win32"]          = "mswin",
-    ["win"]            = "mswin",
+ -- ["mswin"]          = "mswin",
+ -- ["windows"]        = "mswin",
+ -- ["win32"]          = "mswin",
+ -- ["win"]            = "mswin",
     --
-    ["mswin-64"]       = "win64",
+    ["windows"]        = "win64",
     ["windows-64"]     = "win64",
     ["win64"]          = "win64",
     --
@@ -231,19 +171,21 @@ update.platforms = {
     ["linux-32"]       = "linux",
     ["linux32"]        = "linux",
     --
+ -- ["linux"]          = "linux-64",
     ["linux-64"]       = "linux-64",
     ["linux64"]        = "linux-64",
     --
+    ["linuxmusl"]      = "linuxmusl",
     ["linuxmusl-64"]   = "linuxmusl-64",
     --
-    ["linux-armhf"]    = "linux-armhf",
+ -- ["linux-armhf"]    = "linux-armhf",
     --
-    ["openbsd"]        = "openbsd6.5",
-    ["openbsd-i386"]   = "openbsd6.5",
-    ["openbsd-amd64"]  = "openbsd6.5-amd64",
+    ["openbsd"]        = "openbsd-amd64",
+ -- ["openbsd-i386"]   = "openbsd7.3",
+    ["openbsd-amd64"]  = "openbsd-amd64",
     --
-    ["freebsd"]        = "freebsd",
-    ["freebsd-i386"]   = "freebsd",
+    ["freebsd"]        = "freebsd-amd64",
+ -- ["freebsd-i386"]   = "freebsd",
     ["freebsd-amd64"]  = "freebsd-amd64",
     --
  -- ["kfreebsd"]       = "kfreebsd-i386",
@@ -265,7 +207,10 @@ update.platforms = {
     --
     ["macosx"]         = "osx-64",
     ["osx"]            = "osx-64",
+    ["osx-intel"]      = "osx-64",
     ["osx-64"]         = "osx-64",
+    ["osx-arm"]        = "osx-arm64",
+    ["osx-arm64"]      = "osx-arm64",
     --
  -- ["solaris-intel"]  = "solaris-intel",
     --
@@ -276,8 +221,8 @@ update.platforms = {
 }
 
 local windowsplatform = {
-    ["mswin"] = true,
-    ["win32"] = true,
+    ["mswin"] = true, -- hm
+    ["win32"] = true, -- hm
     ["win64"] = true,
 }
 
@@ -740,15 +685,11 @@ if scripts.savestate then
  -- states.set("formats.metafun", true)
 
     for r in gmatch(environment.argument("extras") or "","([^, ]+)") do -- for old times sake
-        if r ~= "all" and not find(r,"^[a-z]%-") then
-            r = "t-" .. r
-        end
+        local r = (r ~= "all" and not find(r,"^[a-z]%-") and  ("t-" .. r)) or r
         states.set("modules." .. r, true)
     end
     for r in gmatch(environment.argument("modules") or "","([^, ]+)") do
-        if r ~= "all" and not find(r,"^[a-z]%-") then
-            r = "t-" .. r
-        end
+        local r = (r ~= "all" and not find(r,"^[a-z]%-") and  ("t-" .. r)) or r
         states.set("modules." .. r, true)
     end
     for r in gmatch(environment.argument("fonts") or "","([^, ]+)") do

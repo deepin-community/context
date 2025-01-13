@@ -16,12 +16,12 @@
 
 \unprotect
 
-%D WARNING: If the code here changes, the export needs to be checked! Stackers are rather
-%D special because the order in mathml matters, so we flush in [base under over] order. We
-%D also do some analysis at the \TEX\ end (passing the right variant). It's easy in the
-%D export to deal with it but in the pdf stream less trivial as we don't actually analyze
-%D there.
-
+%D WARNING: If the code here changes, the export needs to be checked! Stackers are
+%D rather special because the order in mathml matters, so we flush in [base under
+%D over] order. We also do some analysis at the \TEX\ end (passing the right
+%D variant). It's easy in the export to deal with it but in the pdf stream less
+%D trivial as we don't actually analyze there.
+%D
 %D At some point the \MKII\ arrow mechanism has been converted to \MKIV, but we kept
 %D most of the logic. We now have a more generic variant dealing with extensibles.
 %D There are a few demands than we need to meet:
@@ -42,11 +42,11 @@
 %D to support the traditional Latin Modern Virtual math font those were extended
 %D with a couple of virtual extensibles as well.
 %D
-%D {\em For the moment we still have some mess here: we can deal with known dimensions, but
-%D fillers (like \type {\rightarrowfil} don't work with \OPENTYPE\ extensibles yet
-%D because there is no way to let them stretch like leaders. At some point \LUATEX\
-%D might provide a auto||fit||to||encapsulated||box and if not I will cook up a \LUA\
-%D based variant.}
+%D {\em For the moment we still have some mess here: we can deal with known
+%D dimensions, but fillers (like \type {\rightarrowfil} don't work with \OPENTYPE\
+%D extensibles yet because there is no way to let them stretch like leaders. At some
+%D point \LUATEX\ might provide a auto||fit||to||encapsulated||box and if not I will
+%D cook up a \LUA\ based variant.}
 %D
 %D We could mess with something like \type {$mid\limits^{top}_{bottom}$} but we like
 %D a bit more control. At some point we need to add some hacks to get exports
@@ -54,9 +54,9 @@
 %D
 %D In the end we have a more flexible mechanism which also handles text variants.
 
-%D When wrapping up some math developments I decided to add mp support here
-%D as well. A nice evening job with Joe Bonamassa performing live on the big
-%D screen (real nice bluray's). See meta-imp-mat.mkiv for examples.
+%D When wrapping up some math developments I decided to add mp support here as well.
+%D A nice evening job with Joe Bonamassa performing live on the big screen (real
+%D nice bluray's). See meta-imp-mat.mkiv for examples.
 
 % possible improvements:
 %
@@ -150,9 +150,9 @@
 \let\math_stackers_stop_tagged     \relax
 
 \appendtoks
-    \def\math_stackers_start_tagged_mid{\dostarttagged\t!mathstackermid\empty\hbox\bgroup}%
-    \def\math_stackers_start_tagged_top{\dostarttagged\t!mathstackertop\empty\hbox\bgroup}%
-    \def\math_stackers_start_tagged_bot{\dostarttagged\t!mathstackerbot\empty\hbox\bgroup}%
+    \def\math_stackers_start_tagged_mid{\dostarttagged\t!mstackermid\empty\hbox\bgroup}%
+    \def\math_stackers_start_tagged_top{\dostarttagged\t!mstackertop\empty\hbox\bgroup}%
+    \def\math_stackers_start_tagged_bot{\dostarttagged\t!mstackerbot\empty\hbox\bgroup}%
     \def\math_stackers_stop_tagged     {\egroup\dostoptagged}%
 \to \everysetuptagging
 
@@ -328,7 +328,7 @@
   {\begingroup
    \edef\currentmathstackers{#category}%
    \mathstackersparameter\c!left\relax
-   \dostarttagged\t!mathstacker\currentmathstackers
+   \dostarttagged\t!mstacker\currentmathstackers
    \ifmmode\math_class_by_parameter\mathstackersparameter\else\dontleavehmode\fi
      {\edef\p_offset     {\mathstackersparameter\c!offset}%
       \edef\p_location   {\mathstackersparameter\c!location}%
@@ -415,7 +415,7 @@
       \advance\scratchwidth2\scratchhoffset
       %
       \ifcase#method\relax
-        \dostarttagged\t!mathstackermid\empty
+        \dostarttagged\t!mstackermid\empty
         \setbox\scratchboxthree\csname\??mathstackersalternative\p_alternative\endcsname
         \dostoptagged
       \fi
@@ -433,20 +433,15 @@
       \ifcsname\??mathstackerslocation\p_location\endcsname
         \ifcase\csname\??mathstackerslocation\p_location\endcsname\relax
           \scratchdistance\zeropoint
-        \or
-          % top
+        \or % top
           \scratchdistance\zeropoint
-        \or
-          % high
+        \or % high
           \scratchdistance.25\htdp\scratchboxthree
-        \or
-          % centered
+        \or % centered
           \scratchdistance.5\htdp\scratchboxthree
-        \or
-          % low
+        \or % low
           \scratchdistance.75\htdp\scratchboxthree
-        \or
-          % bottom
+        \or % bottom
           \scratchdistance\htdp\scratchboxthree
         \else
           \scratchdistance\zeropoint
@@ -602,7 +597,7 @@
      \setupcurrentmathstackers[#settings]%
    \fi
    \mathstackersparameter\c!left\relax
-   \dostarttagged\t!mathstacker\currentmathstackers
+   \dostarttagged\t!mstacker\currentmathstackers
    \ifmmode\math_class_by_parameter\mathstackersparameter\else\dontleavehmode\fi
      {\edef\m_math_stackers_text_middle {#text}%
       %
@@ -798,7 +793,7 @@
 \unexpanded\def\math_stackers_make_double_text#where#category#codepoint#text#extra%
   {\math_stackers_start_group{#category}%
    \mathstackersparameter\c!left\relax
-   \dostarttagged\t!mathstacker\currentmathstackers
+   \dostarttagged\t!mstacker\currentmathstackers
    \ifmmode\math_class_by_parameter\mathstackersparameter\else\dontleavehmode\fi
      {\edef\currentmathstackers{#category}%
       %
@@ -1069,8 +1064,8 @@
 %D We save a few definitions that we automatically got from the \type {char-def.lua}
 %D database.
 
-% Be careful in choosing what accents you take (the code below uses a
-% combining one):
+% Be careful in choosing what accents you take (the code below uses a combining
+% one):
 %
 % \startbuffer
 % % $\Umathaccent top        0 0 "20D7 {example}$
@@ -1224,15 +1219,15 @@
 % We don't use overline and underline. This is one of the overlooked aspects of
 % unicode cq. opentype math: why treat rules different than e.g. arrows and
 % accents. It is a bit unfortunate that the opportunity to move math to new
-% technologies happened outside the tex domain (and/or some aspects were kept
-% while in fact they were side effects of limitations of traditional fonts).
-% From the unicode aware tex engines' implementation point of view things
-% could have been done a bit nicer but then: the community didn't seem to care
-% too much and just has to follow now.
+% technologies happened outside the tex domain (and/or some aspects were kept while
+% in fact they were side effects of limitations of traditional fonts). From the
+% unicode aware tex engines' implementation point of view things could have been
+% done a bit nicer but then: the community didn't seem to care too much and just
+% has to follow now.
 %
-% Anyhow, we use a character based approach so that at least we get unicode
-% stuff in the backend (okay, we still need to deal with some cut and paste
-% issues but at least we now know what we deal with.
+% Anyhow, we use a character based approach so that at least we get unicode stuff
+% in the backend (okay, we still need to deal with some cut and paste issues but at
+% least we now know what we deal with.
 
 % alternatively we can move the original to FE*
 

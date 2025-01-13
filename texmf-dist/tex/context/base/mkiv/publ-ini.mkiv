@@ -59,22 +59,24 @@
 
 \startcontextdefinitioncode
 
-\def\s!btx          {btx}
+%D These are currently not interfaced.
 
-\def\v!btxcite      {btxcite}
-\def\v!btxlist      {btxlist}
-\def\v!btxrendering {btxrendering}
+\definesystemconstant    {btx}
 
-\def\s!btxset       {btxset}
-\def\s!btxref       {btxref}
-\def\s!btxint       {btxint}
-\def\s!btxltx       {btxltx}
-\def\s!btxrtx       {btxrtx}
-\def\s!btxatx       {btxatx}
-\def\s!btxbtx       {btxbtx}
-\def\s!btxspc       {btxspc}
-\def\s!btxlst       {btxlst}
-\def\s!btxcom       {btxcom}
+\definesystemconstant    {btxset}
+\definesystemconstant    {btxref}
+\definesystemconstant    {btxint}
+\definesystemconstant    {btxltx}
+\definesystemconstant    {btxrtx}
+\definesystemconstant    {btxatx}
+\definesystemconstant    {btxbtx}
+\definesystemconstant    {btxspc}
+\definesystemconstant    {btxlst}
+\definesystemconstant    {btxcom}
+
+\defineinterfacevariable {btxcite}      {btxcite}
+\defineinterfacevariable {btxlist}      {btxlist}
+\defineinterfacevariable {btxrendering} {btxrendering}
 
 \definelabelclass[btxlabel][2]
 
@@ -340,7 +342,7 @@
 \newtoks\t_btx_cmd
 \newbox \b_btx_cmd
 
-\t_btx_cmd{\global\setbox\b_btx_cmd\hpack{\clf_btxcmdstring}}
+\t_btx_cmd{\global\setbox\b_btx_cmd\hbox{\clf_btxcmdstring}} % no \hpack, otherwise prerolling --- doesn't work
 
 \let\btxcmd\btxcommand
 
@@ -394,6 +396,10 @@
 
 \let\btxsetup\fastsetup
 
+% This fails when we check field values:
+
+\let\btxrawfield\btxfield
+
 \def\btxfield      #1{\dostarttagged\t!pubfld{#1}\clf_btxfield {\currentbtxdataset}{\currentbtxtag}{#1}\dostoptagged}
 \def\btxdetail     #1{\dostarttagged\t!pubfld{#1}\clf_btxdetail{\currentbtxdataset}{\currentbtxtag}{#1}\dostoptagged}
 \def\btxflush      #1{\dostarttagged\t!pubfld{#1}\clf_btxflush {\currentbtxdataset}{\currentbtxtag}{#1}\dostoptagged}
@@ -411,9 +417,12 @@
 \unexpanded\def\btxnbsp                  {\removeunwantedspaces\nbsp}         % the same anyway
 \unexpanded\def\btxperiod                {\removeunwantedspaces.\space}
 \unexpanded\def\btxcomma                 {\removeunwantedspaces,\space}
+\unexpanded\def\btxserialcomma           {\removeunwantedspaces,\space} % (aka Oxford comma) redefine to disable
+\unexpanded\def\btxellipsis              {\removeunwantedspaces\nobreakspace\textellipsis\space}
 \unexpanded\def\btxcommabreak            {\removeunwantedspaces,\hskip\zeropoint plus .5\emwidth\relax}
 \unexpanded\def\btxcolon                 {\removeunwantedspaces:\space}
 \unexpanded\def\btxsemicolon             {\removeunwantedspaces;\space}
+\unexpanded\def\btxhyphen                {\removeunwantedspaces-}
 \unexpanded\def\btxlparent               {\removeunwantedspaces\space(} % obsolete
 \unexpanded\def\btxrparent               {\removeunwantedspaces)\space} % obsolete
 \unexpanded\def\btxleftparenthesis       {\removeunwantedspaces\space(}
@@ -679,7 +688,7 @@
    \dostarttagged\t!publication\empty
    \dotagpublication\currentbtxdataset\currentbtxtag
    \redoconvertfont % see (**) in strc-lst, this will become an configuration option
-   \edef\currentbtxcategory{\btxfield{category}}%
+   \edef\currentbtxcategory{\btxrawfield{category}}%
    \ignorespaces
    \ifconditional\c_btx_list_texts
      \dostarttagged\t!listtext\s!left
@@ -793,9 +802,13 @@
 \unexpanded\def\btxdoifelsecombiinlist#1#2%
   {\clf_btxdoifelsecombiinlist{#1}{#2}}
 
+\unexpanded\def\btxdoifelsecitedone#1#2%
+  {\clf_btxdoifelsecitedone{#1}{#2}}
+
 \let\btxdoifsameaspreviouscheckedelse\btxdoifelsesameaspreviouschecked
 \let\btxdoifsameaspreviouselse       \btxdoifelsesameasprevious
 \let\btxdoifcombiinlistelse          \btxdoifelsecombiinlist
+\let\btxdoifcitedoneelse             \btxdoifelsecitedone
 
 \def\publ_place_list_indeed#1#2[#3][#4]%
   {\begingroup
@@ -917,7 +930,7 @@
 %D \starttyping
 %D % #1 is number of entries
 %D
-%D \starttexdefinition unexpanded btx:for:alan:wrapper #1
+%D \starttexdefinition mutable protected btx:for:alan:wrapper #1
 %D     \bTABLE
 %D         % we can have a command or setups
 %D         \flushbtxentries[command=\texdefinition{btx:for:alan:content}]
@@ -926,7 +939,7 @@
 %D
 %D % #1 is tag
 %D
-%D \starttexdefinition unexpanded btx:for:alan:content #1
+%D \starttexdefinition mutable protected btx:for:alan:content #1
 %D     \bTR
 %D         \bTD
 %D             \btxsettag{#1}
@@ -1985,8 +1998,9 @@
    \c!otherstext={\btxspace et al.},
    \c!separator:firstnames={\btxspace},
    \c!separator:juniors={\btxspace},
-   \c!separator:vons={\btxspace},
+   \c!separator:vons={\btxnobreakspace},
    \c!separator:initials={\btxspace},
+   \c!connector:initials={\btxhyphen},
    \c!stopper:initials={.},
   %\c!surnamesep={\btxcomma}, % is this used anywhere?
    \c!separator:invertedinitials={\btxcomma},

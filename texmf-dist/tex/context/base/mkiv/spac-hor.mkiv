@@ -210,12 +210,12 @@
 
 %D Here come the handlers (still rather messy ... we need states).
 
-\newif\ifindentation \indentationtrue  % will become a mode
+%newif\ifindentation \indentationtrue  % will become a mode
 
 \let\checkindentation\relax
 
 \installmacrostack\checkindentation
-\installmacrostack\ifindentation
+%installmacrostack\ifindentation
 
 \def\spac_indentation_remove
   {\ifzeropt\parindent \else
@@ -225,20 +225,20 @@
    \fi}
 
 \def\spac_indentation_kill_indeed
-  {\global\indentationfalse
+  {%\global\indentationfalse
    \spac_indentation_remove}
 
 \def\spac_indentation_do_toggle_indeed
-  {\global\indentationfalse
+  {%\global\indentationfalse
    \glet\checkindentation\spac_indentation_no_toggle_indeed
    \spac_indentation_remove}
 
 \def\spac_indentation_no_toggle_indeed
-  {\global\indentationtrue
+  {%\global\indentationtrue
    \glet\checkindentation\spac_indentation_do_toggle_indeed}
 
 \def\spac_indentation_do_indeed
-  {\global\indentationtrue}
+  {}%\global\indentationtrue}
 
 \def\spac_indentation_do_toggle
   {\glet\checkindentation\spac_indentation_do_toggle_indeed}
@@ -264,13 +264,13 @@
 
 \def\spac_indentation_variant_no % made global
   {\ifinpagebody \else
-     \global\indentationfalse
+     %\global\indentationfalse
      \glet\checkindentation\spac_indentation_no_next_check
    \fi}
 
 \def\nonoindentation % bv bij floats
   {\ifinpagebody \else
-     \global\indentationtrue
+     %\global\indentationtrue
      \glet\checkindentation\spac_indentation_do_indeed
    \fi}
 
@@ -478,11 +478,20 @@
 %D from now on we treat it as a normal space and not as a space with \type
 %D {sfcode} 1000.
 
+% \unexpanded\def\specialspaceprimitive
+%   {\begingroup
+%    % so, no fancy extra spacing after: foo i.e.\ bar
+%    \nonfrenchspacing\normalspaceprimitive
+%    \endgroup}
+
 \unexpanded\def\specialspaceprimitive
-  {\begingroup
-   % so, no fancy extra spacing after: foo i.e.\ bar
-   \nonfrenchspacing\normalspaceprimitive
-   \endgroup}
+  {% is a current state, set explicitly or when a character is appended
+   \ifhmode
+     \spacefactor\plusthousand
+   \else
+     \dontleavehmode
+   \fi
+   \normalspaceprimitive}
 
 \unexpanded\def\normalnotobeyedspace
   {\mathortext\normalspaceprimitive\specialspaceprimitive} % no \dontleavehmode\space (else no frenchspacing)
@@ -612,6 +621,7 @@
     \unexpanded\def\thinspace   {\kern .16667\emwidth}
     \unexpanded\def\negthinspace{\kern-.16667\emwidth}
     \unexpanded\def\enspace     {\kern     .5\emwidth}
+    \unexpanded\def\emspace     {\kern       \emwidth}
 
 \fi
 
@@ -625,8 +635,6 @@
 
 \unexpanded\def\negenspace{\kern-.5\emwidth}
 \unexpanded\def\negemspace{\kern-  \emwidth}
-
-\let\emspace\quad
 
 \unexpanded\def\charspace{ } % the unexpandable \space (as space can also be delimiter for numbers)
 

@@ -211,7 +211,7 @@
 
 \let\strc_floats_define_saved\definefloat
 
-\unexpanded\def\definefloat
+\unexpanded\overloaded\def\definefloat
   {\dotripleempty\strc_floats_define}
 
 \def\strc_floats_define[#1][#2][#3]% name+plural+parent | name+parent+settings
@@ -397,7 +397,7 @@
      \glet\currentfloatsynchronize\m_strc_counters_last_registered_synchronize
      %
    % \iflocation
-   %    \attribute\destinationattribute\currentfloatattribute\relax
+   %    \c_attr_destination\currentfloatattribute\relax
    % \fi
      \currentfloatsynchronize
      \strc_floats_make_complete_caption
@@ -844,7 +844,8 @@
      {\strc_floats_set_local_hsize
       \floatparameter\c!inner
       \postponenotes} % new
-     {\dostoptagged
+     {\page_postprocessors_linenumbers_box\nextbox % for aditya
+      \dostoptagged
       \strc_floats_finish_placement}
      \vbox}
 
@@ -1110,6 +1111,35 @@
 \def\strc_floats_group_index
   {\numexpr\clf_listgroupindex{\currentfloat}{\currentfloatgroup}\relax}
 
+%D A lightweight subnumber feature:
+%D
+%D \starttyping
+%D \startplacefigure [location=none]
+%D   \startsubfloatnumbering
+%D     \startfloatcombination [nx=3]
+%D       \startplacefigure [title=Left]   \externalfigure \stopplacefigure
+%D       \startplacefigure [title=Middle] \externalfigure \stopplacefigure
+%D       \startplacefigure [title=Right]  \externalfigure \stopplacefigure
+%D     \stopfloatcombination
+%D   \stopsubfloatnumbering
+%D \stopplacefigure
+%D \stoptyping
+
+\glet\currentsubfloatcounter\empty
+
+\unexpanded\def\startsubfloatnumbering
+  {\glet\currentsubfloatcounter\s!unknown}
+
+\unexpanded\def\stopsubfloatnumbering
+  {\strc_counters_reset_sub\currentsubfloatcounter\plustwo
+   \glet\currentsubfloatcounter\empty}
+
+\defineconversionset[subfloats][number,characters]
+
+\setupcaptions
+ %[figure]
+  [\c!numberconversionset=subfloats]
+
 \def\strc_floats_place_packaged_boxes
   {\expandafter\strc_floats_place_packaged_boxes_indeed\expandafter{\m_strc_floats_saved_userdata}}
 
@@ -1126,7 +1156,17 @@
        \ifx\currentfloatgroup\empty
          % independent
          \iftrialtypesetting\strc_counters_save\currentfloatcounter\fi
-         \strc_counters_increment\currentfloatcounter
+         \ifx\empty\currentsubfloatcounter
+           \strc_counters_increment\currentfloatcounter
+           \strc_counters_reset_sub\currentfloatcounter\plustwo
+         \else
+           \ifcase\strc_counters_raw_sub\currentfloatcounter\plustwo\relax
+             \strc_counters_increment\currentfloatcounter
+             \strc_counters_reset_sub\currentfloatcounter\plustwo
+           \fi
+           \strc_counters_increment_sub\currentfloatcounter\plustwo
+           \glet\currentsubfloatcounter\currentfloatcounter
+         \fi         
        \else\ifcase\strc_floats_group_index
          % first in group
          \iftrialtypesetting\strc_counters_save\currentfloatcounter\fi
@@ -1229,7 +1269,7 @@
 \let\doifoddpagefloatelse  \doifelseoddpagefloat
 
 \appendtoks
-    \let\rightorleftpageaction\doifelserightpagefloat
+    \overloaded\frozen\let\rightorleftpageaction\doifelserightpagefloat
 \to \everyinsidefloat
 
 % \let\movesidefloat\gobbleoneargument
@@ -1623,7 +1663,7 @@
        \setbox\b_strc_floats_caption\hbox % text
          {\floatcaptionparameter\c!command{\box\b_strc_floats_caption}}%
        \strc_floats_set_caption_dimensions\b_strc_floats_caption
-       \moveboxontogrid\b_strc_floats_caption{\floatcaptionparameter\c!grid}\d_strc_floats_caption_height
+      %\moveboxontogrid\b_strc_floats_caption{\floatcaptionparameter\c!grid}\d_strc_floats_caption_height
       %\page_backgrounds_add_local_to_box\b_strc_floats_caption
        \strc_floats_build_box
      \fi
@@ -2202,6 +2242,8 @@
         {\box\floatbox}}}
 
 % special purpose: used in floatcombinations
+%
+% todo : keep float content and caption separated in local
 
 \newbox\b_strc_floats_separate_content
 \newbox\b_strc_floats_separate_caption
@@ -2210,37 +2252,44 @@
   {\settrue\c_floats_adapt_to_caption_width
    \settrue\c_floats_store_minimal_package}
 
-\def\strc_floats_build_box_separate_make
-  {\offinterlineskip
-   \vpack to \onepoint{\box\b_strc_floats_content}\break
-   \vpack to \onepoint{\box\b_strc_floats_caption}}
+% \def\strc_floats_build_box_separate_make
+%   {\offinterlineskip
+%    \vpack to \onepoint{\box\b_strc_floats_content}\break
+%    \vpack to \onepoint{\box\b_strc_floats_caption}}
 
-\def\strc_floats_build_box_separate_split#1%
-  {\setbox\scratchbox\vbox\bgroup
-     \setbox\scratchbox\vpack{#1}%
-     \unvbox\scratchbox\relax
-     \setbox\scratchbox\lastbox
-    %\doloop{%
-        \unvbox\scratchbox
-        \setbox\scratchbox\lastbox
-    %   \ifdim\ht\scratchbox=2\onepoint
-          \unvbox\scratchbox
-          \setbox\scratchbox\lastbox
-    %     \exitloop
-    %   \fi
-    %}%
-     \splittopskip\zeropoint
-     \global\setbox\b_strc_floats_separate_content\vsplit\scratchbox to \onepoint
-     \global\setbox\b_strc_floats_separate_caption\vsplit\scratchbox to \onepoint
-   \egroup
-   \global\setbox\b_strc_floats_separate_content\vpack
-     {\unvbox\b_strc_floats_separate_content
-      \setbox\scratchbox\lastbox
-      \unvbox\scratchbox}%
-   \global\setbox\b_strc_floats_separate_caption\tpack
-     {\unvbox\b_strc_floats_separate_caption
-      \setbox\scratchbox\lastbox
-      \unvbox\scratchbox}}
+%D Remark for \LMTX: we don't want to migrate inserts here so we unpack
+%D (could be a flag). When migrated, the inserts end up in the vertical
+%D list and we no longer have just a box (but inserts and lines again).
+
+% \def\strc_floats_build_box_separate_split#1%
+%   {\setbox\scratchbox\vpack{#1}%
+%    \setbox\scratchbox\vbox\bgroup
+%      \unvpack\scratchbox
+%      \setbox\scratchbox\lastbox % can have (unmigrated) inserts
+%      \unvpack\scratchbox
+%      \setbox\scratchbox\lastbox % can have (unmigrated) inserts
+%      \unvpack\scratchbox
+%      \setbox\scratchbox\lastbox % can have (unmigrated) inserts
+%      \splittopskip\zeropoint
+%      \global\setbox\b_strc_floats_separate_content\vsplit\scratchbox to \onepoint
+%      \global\setbox\b_strc_floats_separate_caption\vsplit\scratchbox to \onepoint
+%    \egroup
+%    \global\setbox\b_strc_floats_separate_content\vpack
+%      {\unvbox\b_strc_floats_separate_content
+%       \setbox\scratchbox\lastbox
+%       \unvbox\scratchbox}%
+%    \global\setbox\b_strc_floats_separate_caption\tpack
+%      {\unvbox\b_strc_floats_separate_caption
+%       \setbox\scratchbox\lastbox
+%       \unvbox\scratchbox}}
+
+\def\strc_floats_build_box_separate_make
+  {\savebox\??localfloatstack{\number\numexpr\c_strc_localfloats_n+1\relax:a}{\box\b_strc_floats_content}%
+   \savebox\??localfloatstack{\number\numexpr\c_strc_localfloats_n+1\relax:b}{\box\b_strc_floats_caption}}
+
+\unexpanded\def\strc_floats_build_box_separate_split#1%
+  {\global\setbox\b_strc_floats_separate_content\vpack{\foundbox\??localfloatstack{\number#1:a}}%
+   \global\setbox\b_strc_floats_separate_caption\tpack{\foundbox\??localfloatstack{\number#1:b}}}
 
 % \def\strc_floats_build_box_step#1%
 %   {\doifdefined{\??floatbuilder#1}{\def\floatcaptionarrangement{#1}\quitcommalist}}
@@ -2339,7 +2388,7 @@
      \strc_floats_check_caption_content
      \strc_floats_prepare_side_caption
      \setbox\b_strc_floats_caption\hbox{\floatcaptionparameter\c!command{\box\b_strc_floats_caption}}% \hpack ?
-     \moveboxontogrid\b_strc_floats_caption{\floatcaptionparameter\c!grid}\d_strc_floats_caption_height
+    %\moveboxontogrid\b_strc_floats_caption{\floatcaptionparameter\c!grid}\d_strc_floats_caption_height
     %\page_backgrounds_add_local_to_box\b_strc_floats_caption
      \strc_floats_build_side_box
    \fi

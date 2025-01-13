@@ -143,20 +143,31 @@ local function textopener(tag,filename,filehandle,coding)
         lines[noflines] = nil
     end
     pushinputname(filename)
-    local currentline, noflines = 0, noflines
-    local t = {
+    local currentline = 0
+    local noflines    = noflines
+    local handler = {
         filename    = filename,
         noflines    = noflines,
      -- currentline = 0,
+        gotoline    = function(self,n)
+            currentline = n - 1
+            if currentline <= 0 then
+                currentline = 0
+            end
+        end,
+        endoffile   = function()
+            return not lines or currentline >= noflines
+        end,
         close       = function()
             local usedname = popinputname() -- should match filename
             if trace_locating then
                 report_tex("%a closer: %a closed",tag,filename)
             end
-            t = nil
+            handler = nil
+            lines   = nil
         end,
         reader      = function(self)
-            self = self or t
+            self = self or handler
          -- local currentline, noflines = self.currentline, self.noflines
             if currentline >= noflines then
                 return nil
@@ -164,8 +175,10 @@ local function textopener(tag,filename,filehandle,coding)
                 currentline = currentline + 1
              -- self.currentline = currentline
                 local content = lines[currentline]
+             -- lines[currentline] = false
                 if content == "" then
-                    return ""
+                 -- return ""
+                    return content
              -- elseif content == ctrl_d or ctrl_z then
              --     return nil -- we need this as \endinput does not work in prints
                 elseif content then
@@ -181,14 +194,14 @@ local function textopener(tag,filename,filehandle,coding)
             end
         end
     }
-    setmetatableindex(t,function(t,k)
+    setmetatableindex(handler,function(t,k)
         if k == "currentline" then
             return currentline
         else
             -- no such key
         end
     end)
-    return t
+    return handler
 end
 
 helpers.settextopener(textopener) -- can only be done once

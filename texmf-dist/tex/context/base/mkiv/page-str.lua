@@ -24,11 +24,12 @@ local nuts              = nodes.nuts
 local tonut             = nodes.tonut
 local slide_node_list   = nuts.slide
 local write_node        = nuts.write
-local flush_node        = nuts.flush
-local copy_node_list    = nuts.copy_list
+local flushnode         = nuts.flush
+local copy_node_list    = nuts.copylist
 local vpack_node_list   = nuts.vpack
+local new_rule          = nuts.pool.rule
 
-local getbox            = nuts.getbox
+----- getbox            = nuts.getbox
 local setlink           = nuts.setlink
 local getlist           = nuts.getlist
 local setlist           = nuts.setlist
@@ -40,7 +41,6 @@ local settings_to_array = utilities.parsers.settings_to_array
 local enableaction      = nodes.tasks.enableaction
 
 local texgetdimen       = tex.getdimen
------ texgetbox         = tex.getbox
 
 local trace_collecting = false  trackers.register("streams.collecting", function(v) trace_collecting = v end)
 local trace_flushing   = false  trackers.register("streams.flushing",   function(v) trace_flushing   = v end)
@@ -146,7 +146,7 @@ function streams.flush(name,copy) -- problem: we need to migrate afterwards
                 if di then
                     write_node(getlist(di)) -- list, will be option
                     setlist(di)
-                    flush_node(di)
+                    flushnode(di)
                 end
             end
         end
@@ -226,9 +226,11 @@ function streams.synchronize(list) -- this is an experiment !
                             local delta = delta_height -- for tracing
                             while delta > 0 do
                                 -- we need to add some interline penalties
-                                local line = copy_node_list(getbox("strutbox"))
-                                setwhd(line,false,strutht,strutdp)
+                             -- local line = copy_node_list(getbox("strutbox"))
+                             -- setwhd(line,false,strutht,strutdp)
+                                local line = new_rule(0,strutht,strutdp) -- no tracing
                                 if tail then
+                                    -- todo: inject at a better place
                                     setlink(tail,line)
                                 end
                                 tail  = line
@@ -237,7 +239,7 @@ function streams.synchronize(list) -- this is an experiment !
                             end
                             dana[m] = vpack_node_list(getlist(vbox))
                             setlist(vbox)
-                            flush_node(vbox)
+                            flushnode(vbox)
                             if trace_flushing then
                                 report_streams("slot %s:%s with delta (%p,%p) is compensated by %s lines",m,i,delta_height,delta_depth,n)
                             end

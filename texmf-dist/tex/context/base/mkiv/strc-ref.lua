@@ -435,9 +435,21 @@ end
 references.synchronizepage = synchronizepage
 
 local function enhancereference(specification)
-    local l = tobesaved[specification.prefix][specification.tag]
-    if l then
-        synchronizepage(l.references)
+    local prefix = specification.prefix
+    if prefix then
+        local entry = tobesaved[prefix]
+        if entry then
+            entry = entry[specification.tag]
+            if entry then
+                synchronizepage(entry.references)
+            else
+                -- normally a bug
+            end
+        else
+            -- normally a bug
+        end
+    else
+        -- normally a bug
     end
 end
 
@@ -1027,6 +1039,7 @@ local function loadexternalreferences(name,utilitydata)
         local external = struc.references.collected -- direct references
         local lists    = struc.lists.collected      -- indirect references (derived)
         local pages    = struc.pages.collected      -- pagenumber data
+        local sections = struc.sections.collected
         -- a bit weird one, as we don't have the externals in the collected
         for prefix, set in next, external do
             if prefix == "" then
@@ -1061,6 +1074,15 @@ local function loadexternalreferences(name,utilitydata)
                         local prefix = references.prefix or ""
                         if prefix == "" then
                             prefix = name -- this can clash!
+                        end
+                        local section = references.section
+                        if section then
+                            -- we have to make sure that the right section is used, see helpers.prefix
+                            if sections then
+                                references.sectiondata = sections[section]
+                            else
+                                -- warning
+                            end
                         end
                         local target = external[prefix]
                         if not target then
@@ -2084,7 +2106,7 @@ function references.setandgetattribute(data) -- maybe do internal automatically 
         if ndat then
             local numbers = ndat.numbers
             if type(numbers) == "string" then
-                ndat.numbers = counters.compact(numbers,nil,true)
+                counters.compact(ndat,numbers)
             end
             data.numberdata = helpers.simplify(ndat)
         end
@@ -2289,7 +2311,7 @@ function genericfilters.title(data)
     if data then
         local titledata = data.titledata or data.useddata
         if titledata then
-            helpers.title(titledata.title or "?",data.metadata)
+            helpers.title(titledata.reference or titledata.title or "?",data.metadata)
         end
     end
 end
@@ -2615,6 +2637,18 @@ implement {
 -- }
 
 implement {
+    name      = "askedreference",
+    public    = true,
+    protected = true,
+    actions   = function()
+        local actions = references.currentset
+        if actions then
+            context("[p=%s,r=%s]",actions.prefix or "",actions.reference)
+        end
+    end
+}
+
+implement {
     name    = "referencerealpage",
     actions = function()
         local actions = references.currentset
@@ -2637,7 +2671,6 @@ end
 
 implement { name = "referenceposx", actions = function() context("%p",referencepos("x")) end }
 implement { name = "referenceposy", actions = function() context("%p",referencepos("y")) end }
-
 
 implement {
     name    = "referencecolumn",

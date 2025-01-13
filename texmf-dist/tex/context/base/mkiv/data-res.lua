@@ -135,16 +135,47 @@ local criticalvars = {
 -- we also report weird ones, with weird being: (1) duplicate /texmf or (2) no /web2c in
 -- the names.
 
-if environment.default_texmfcnf then
-    resolvers.luacnfspec = "home:texmf/web2c;" .. environment.default_texmfcnf -- texlive + home: for taco etc
-else
-    resolvers.luacnfspec = concat ( {
+do
+
+    local texroot = environment.texroot
+
+    resolvers.luacnfspec = {
         "home:texmf/web2c",
         "selfautoparent:/texmf-local/web2c",
         "selfautoparent:/texmf-context/web2c",
-        "selfautoparent:/texmf-dist/web2c",
         "selfautoparent:/texmf/web2c",
-    }, ";")
+    }
+
+    if environment.default_texmfcnf then
+        -- this will go away (but then also no more checking in mtxrun.lua itself)
+        resolvers.luacnfspec = {
+            "home:texmf/web2c",
+            environment.default_texmfcnf, -- texlive + home: for taco etc
+        }
+    elseif texroot and isdir(texroot .. "/texmf-context") then
+        -- we're okay and run the lean and mean reference installation
+    elseif texroot and isdir(texroot .. "/texmf-dist") then
+        -- we're in texlive where texmf-dist is leading
+        resolvers.luacnfspec = {
+            "home:texmf/web2c",
+            "selfautoparent:/texmf-local/web2c",
+            "selfautoparent:", -- new per 2024 as it's needed for osx
+            "selfautoparent:/texmf-dist/web2c",
+            "selfautoparent:/texmf/web2c",
+        }
+    elseif ostype ~= "windows" and isdir("/etc/texmf/web2c") then
+        -- we have some linux distribution that does it its own way
+        resolvers.luacnfspec = {
+            "home:texmf/web2c",
+            "/etc/texmf/web2c",
+            "selfautodir:/share/texmf/web2c",
+        }
+    else
+        -- we stick to the reference specification
+    end
+
+    resolvers.luacnfspec = concat(resolvers.luacnfspec,";")
+
 end
 
 local unset_variable = "unset"
@@ -1145,7 +1176,7 @@ local preparetreepattern = Cs((P(".")/"%%." + P("-")/"%%-" + P(1))^0 * Cc("$"))
 local collect_instance_files
 
 local function find_analyze(filename,askedformat,allresults)
-    local filetype    = ''
+    local filetype    = ""
     local filesuffix  = suffixonly(filename)
     local wantedfiles = { }
     -- too tricky as filename can be bla.1.2.3:
@@ -1158,7 +1189,7 @@ local function find_analyze(filename,askedformat,allresults)
         if filesuffix == "" or not suffixmap[filesuffix] then
             local defaultsuffixes = resolvers.defaultsuffixes
             for i=1,#defaultsuffixes do
-                local forcedname = filename .. '.' .. defaultsuffixes[i]
+                local forcedname = filename .. "." .. defaultsuffixes[i]
                 wantedfiles[#wantedfiles+1] = forcedname
                 filetype = formatofsuffix(forcedname)
                 if trace_locating then
@@ -1563,7 +1594,9 @@ collect_instance_files = function(filename,askedformat,allresults) -- uses neste
         local result = { }
         local status = { }
         local done   = { }
-        for k, r in next, results do
+--         for k, r in next, results do
+        for k=1,#results do
+            local r = results[k]
             local method, list = r[1], r[2]
             if method and list then
                 for i=1,#list do

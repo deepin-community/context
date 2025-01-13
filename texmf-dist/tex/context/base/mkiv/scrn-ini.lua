@@ -33,11 +33,19 @@ interfaces.implement {
     arguments = {
         {
             { "title" },
-            { "subtitle" },
+            { "subtitle"},
             { "author" },
             { "creator" },
             { "date" },
             { "keywords" },
         }
     }
+}
+
+interfaces.implement {
+    name      = "setautoprefix",
+    actions   = function(prefix)
+        backends.codeinjections.setautoprefix(prefix)
+    end,
+    arguments = "string",
 }

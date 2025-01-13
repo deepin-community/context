@@ -1,4 +1,4 @@
-% language=us
+% language=us runpath=texruns:manuals/lowlevel
 
 \environment lowlevel-style
 
@@ -6,7 +6,7 @@
   [title=registers,
    color=darkmagenta]
 
-\startsection[title=Preamble]
+\startsectionlevel[title=Preamble]
 
 Registers are sets of variables that are accessed by index and a such resemble
 registers in a processing unit. You can store a quantity in a register, retrieve
@@ -14,9 +14,9 @@ it, and also manipulate it.
 
 There is hardly any need to use them in \CONTEXT\ so we keep it simple.
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\TEX\ primitives}]
+\startsectionlevel[title={\TEX\ primitives}]
 
 There are several categories:
 
@@ -105,9 +105,11 @@ but in a macro package you should not use that one but the higher level \type
 
 Watch the difference:
 
+\pushoverloadmode
 \startlines\tt
 \getbuffer[1,2]
 \stoplines
+\popoverloadmode
 
 The first definition uses a yet free register so you won't get a clash. The
 second one is just a shortcut using a macro and the third one too but again
@@ -182,9 +184,9 @@ If you want to know more about all these quantities, \quotation {\TEX\ By Topic}
 provides a good summary of what \TEX\ has to offer, and there is no need to repeat
 it here.
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\ETEX\ primitives}]
+\startsectionlevel[title={\ETEX\ primitives}]
 
 Apart from the ability to use expressions, the contribution to registers that
 \ETEX\ brought was that suddenly we could use upto 65K of them, which is more
@@ -194,9 +196,9 @@ and later \LUATEX\ regular arrays were used, at the cost of more memory which in
 the meantime has become cheap. As \CONTEXT\ moved to \ETEX\ rather early its
 users never had to worry about it.
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\LUATEX\ primitives}]
+\startsectionlevel[title={\LUATEX\ primitives}]
 
 The \LUATEX\ engine introduced attributes. These are numeric properties that are
 bound to the nodes that are the result of typesetting operations. They are
@@ -239,13 +241,252 @@ Just be aware that defining attributes can have an impact on performance. As you
 cannot access them at the \TEX\ end you seldom need them. If you do you can
 better use the proper more high level definers (not discussed here).
 
-\stopsection
+\stopsectionlevel
 
-\startsection[title={\LUAMETATEX\ primitives}]
+\startsectionlevel[title={\LUAMETATEX\ primitives}]
 
-{\em todo}
+The fact that scanning stops at a non-number or \type {\relax} can be sort of
+unpredictable which is why in \LUAMETATEX\ we also support the following variant:
 
-\stopsection
+\starttyping[option=TEX]
+\scratchdimen\dimexpr  10pt + 3pt \relax
+\scratchdimen\dimexpr {10pt + 3pt}
+\stoptyping
+
+At the cost of one more token braces can be used as boundaries instead of the
+single \type {\relax} boundary.
+
+An important property of registers is that they can be accessed by a number. This
+has big consequences for the implementation: they are part of the big memory
+store and consume dedicated ranges. If we had only named access \TEX's memory
+layout could be a bit leaner. In principle we could make the number of registers
+smaller because any limit on the amount at some point can be an obstacle. It is
+for that reason that we also have name-only variants:
+
+\starttyping[option=TEX]
+\dimensiondef \MyDimenA   12pt
+\integerdef   \MyIntegerA 12
+\gluespecdef  \MyGlueA    12pt + 3pt minus 4pt
+\mugluespecdef\MyMuA      12mu + 3mu minus 4mu
+\stoptyping
+
+These are as efficient but not accessible by number but they behave like
+registers which means that you (can) use \type {\the}, \type {\advance}, \type
+{\multiply} and \type {\divide} with them. \footnote {There are also the slightly
+more efficient \type {\advanceby}, \type {\multiplyby} and \type {\divideby} that
+don't check for the \type {by} keyword.} In case you wonder why there is no
+alternative for \type {\toksdef}, there actually are multiple: they are called
+macros.
+
+{\em todo: expressions}
+
+\stopsectionlevel
+
+\startsectionlevel[title=Units]
+
+The \LUAMETATEX\ engine supports the following units. The first batch is constant
+with hard coded fine tuned values. The second set is related to the current font.
+The last group is kind of special, the \type {es} is a replacement for the \type
+{in} and has a little sister in \type {ts}. The \type {dk} is dedicated to the
+master and makes a nice offset for so called \TEX\ pages that we use for demos.
+
+\starttabulate[|Tl|Tr|l|]
+\FL
+\NC pt \NC \thewithoutunit\dimexpr1pt \NC point \NC \NR
+\NC bp \NC \thewithoutunit\dimexpr1bp \NC big point (aka postscript point) \NC \NR
+\NC in \NC \thewithoutunit\dimexpr1in \NC inch \NC \NR
+\NC cm \NC \thewithoutunit\dimexpr1cm \NC centimeter \NC \NR
+\NC mm \NC \thewithoutunit\dimexpr1mm \NC milimeter \NC \NR
+\NC dd \NC \thewithoutunit\dimexpr1dd \NC didot \NC \NR
+\NC cc \NC \thewithoutunit\dimexpr1cc \NC cicero \NC \NR
+\NC pc \NC \thewithoutunit\dimexpr1pc \NC pica \NC \NR
+\NC sp \NC \thewithoutunit\dimexpr1sp \NC scaled points \NC \NR
+\NC px \NC \thewithoutunit\dimexpr1sp \NC pixel \NC \NR
+\ML
+\NC ex \NC \thewithoutunit\dimexpr1ex \NC ex height \NC \NR
+\NC em \NC \thewithoutunit\dimexpr1em \NC em width \NC \NR
+\NC mu \NC $\tt\thewithoutunit\onemuskip$ \NC math unit \NC \NR
+\ML
+\NC ts \NC \thewithoutunit\dimexpr1ts \NC tove \NC \NR
+\NC es \NC \thewithoutunit\dimexpr1es \NC edith \NC \NR
+\NC eu \NC \thewithoutunit\dimexpr1eu \NC european unit \NC \NR
+\NC dk \NC \thewithoutunit\dimexpr1dk \NC knuth \NC \NR
+\LL
+\stoptabulate
+
+The \type {fi[lll]} unit is not really a unit but a multiplier for infinite
+stretch and shrink; original \TEX\ doesn't have the simple \type {fi}.
+
+In addition to these we can have many more. In principle a user can define
+additional ones but there's always a danger of clashing. For users we reserve the
+units starting with an \type{u}. Here is how you define your own, we show three
+variants:
+
+\startbuffer
+\newdimension \FooA   \FooA 1.23pt
+\newdimen     \FooB   \FooB 12.3pt
+\protected\def\FooC   {\the\dimexpr\FooA +\FooB\relax}
+
+\pushoverloadmode % just in case
+    \newuserunit\FooA ua
+    \newuserunit\FooB ub
+    \newuserunit\FooC uc
+\popoverloadmode
+\stopbuffer
+
+\typebuffer[option=TEX] \getbuffer
+
+And this is how they show up:
+
+\startbuffer
+\the\dimexpr 2 ua \relax\quad
+\the\dimexpr 2 ub \relax\quad
+\the\dimexpr 2 uc \relax
+\stopbuffer
+
+\getbuffer
+
+with
+
+\typebuffer[option=TEX]
+
+The following additional units are predefined (reserved). The values are in
+points and some depend on the current layout and document font.
+
+\starttabulate[|T|Tr|l|]
+\NC pi \NC \thewithoutunit\dimexpr 1pi \NC {\tt\pi} for Mikael        \NC \NR
+\NC ft \NC \thewithoutunit\dimexpr 1ft \NC \type {foot} for Alan      \NC \NR
+\NC fs \NC \thewithoutunit\dimexpr 1fs \NC (global body) font size    \NC \NR
+\NC tw \NC \thewithoutunit\dimexpr 1tw \NC (layout) text width        \NC \NR
+\NC th \NC \thewithoutunit\dimexpr 1th \NC (layout) text height       \NC \NR
+\NC hs \NC \thewithoutunit\dimexpr 1hs \NC (current) hsize            \NC \NR
+\NC vs \NC \thewithoutunit\dimexpr 1vs \NC (current) vsize            \NC \NR
+\NC cd \NC \thewithoutunit\dimexpr 1cd \NC (when set) column distance \NC \NR % todo
+\NC cw \NC \thewithoutunit\dimexpr 1cw \NC (when set) column width    \NC \NR % todo
+\NC cx \NC \thewithoutunit\dimexpr 1cx \NC combination cell width     \NC \NR
+\NC uu \NC \thewithoutunit\dimexpr 1uu \NC user unit (\METAFUN)       \NC \NR
+\NC fw \NC \thewithoutunit\dimexpr 1fw \NC framed width               \NC \NR
+\NC fh \NC \thewithoutunit\dimexpr 1fh \NC framed height              \NC \NR
+\NC fo \NC \thewithoutunit\dimexpr 1fo \NC framed offset              \NC \NR
+\NC lw \NC \thewithoutunit\dimexpr 1lw \NC line width                 \NC \NR
+\NC sh \NC \thewithoutunit\dimexpr 1sh \NC strut height               \NC \NR
+\NC sd \NC \thewithoutunit\dimexpr 1sd \NC strut depth                \NC \NR
+\NC st \NC \thewithoutunit\dimexpr 1st \NC strut total                \NC \NR
+\NC ch \NC \thewithoutunit\dimexpr 1ch \NC width of zero (css)        \NC \NR
+\NC fa \NC \thewithoutunit\dimexpr 1fa \NC font ascender              \NC \NR
+\NC fd \NC \thewithoutunit\dimexpr 1fd \NC font descender             \NC \NR
+\NC fc \NC \thewithoutunit\dimexpr 1fc \NC font cap height            \NC \NR
+\stoptabulate
+
+Here is an example of usage:
+
+\startbuffer
+\startcombination[nx=4,ny=1]
+    {\ruledhbox to 1cx{\strut one}}   {1}
+    {\ruledhbox to 1cx{\strut two}}   {2}
+    {\ruledhbox to 1cx{\strut three}} {3}
+    {\ruledhbox to 1cx{\strut four}}  {4}
+\stopcombination
+\stopbuffer
+
+\usemodule[system-units]
+
+\startplacefigure[title=A map of available units,reference=fig:unitsmap]
+    \framed[offset=1ex]{\showunitsmap}
+\stopplacefigure
+
+\typebuffer[option=TEX]
+
+\startlinecorrection
+\getbuffer
+\stoplinecorrection
+
+The \type {uu} can be set by users using the \type {\uunit} dimension variable.
+The default valu sis 1cm. Its current value is also known at the \METAPOST\ end,
+as demonstrated in \in {figure} [fig:userunits].
+
+\startbuffer
+\startcombination[nx=2,ny=1]
+    \startcontent
+        \uunit=1cm
+        \framed[offset=1uu]
+            \bgroup
+                \startMPcode
+                    fill fullcircle scaled 3uu withcolor "darkred"   ;
+                    fill fullcircle scaled 2cm withcolor "darkgreen" ;
+                \stopMPcode
+            \egroup
+    \stopcontent
+    \startcaption
+        \type {\uunit = 1cm}
+    \stopcaption
+    \startcontent
+        \uunit=1cx
+        \framed[offset=.1uu]
+            \bgroup
+                \startMPcode
+                    fill fullcircle scaled .5uu withcolor "darkblue"   ;
+                    fill fullcircle scaled  2cm withcolor "darkyellow" ;
+                \stopMPcode
+            \egroup
+    \stopcontent
+    \startcaption
+        \type {\uunit = 1cx}
+    \stopcaption
+\stopcombination
+\stopbuffer
+
+% \framed[offset=1uu]
+%     \bgroup
+%         \startMPcode
+%             save uu ; numeric uu ; uu := 1cm ;
+%             fill fullcircle scaled 3uu withcolor "darkcyan"    ;
+%             fill fullcircle scaled 2cm withcolor "darkmagenta" ;
+%         \stopMPcode
+%     \egroup
+
+\typebuffer[option=TEX]
+
+There is one catch here. If you use your own \type {uu} as numeric, you might
+need this:
+
+\starttyping[option=MP]
+save uu ; numeric uu ; uu := 1cm ;
+\stoptyping
+
+That is: make sure the meaning is restored afterwards and explicitly declare the
+variable. But this is good practice anyway when you generate multiple graphics
+using the same \METAPOST\ instance.
+
+\startplacefigure[reference=fig:userunits,title={Shared user units in \TEX\ and \METAFUN.}]
+    \getbuffer
+\stopplacefigure
+
+There a few units not mentioned yet and those concern math, where we need to adapt to
+the current style.
+
+\protected\def\ShowMathUnits#1%
+  {\im{#1x\mathord{+
+     {\darkgray \vrule width 1pt depth 0pt height 1ex \relax}%
+     {\darkred  \vrule width 1pt depth 0pt height 1ma \relax}%
+     {\darkgreen\vrule width 1pt depth 0pt height 1mx \relax}%
+     {\darkblue \vrule width 1pt depth 0pt height 1mq \relax}%
+    x}}}
+
+\startlinecorrection
+\startcombination[nx=3,ny=1]
+    {\scale[scale=6000]{\ShowMathUnits\textstyle}}         {text style}
+    {\scale[scale=6000]{\ShowMathUnits\scriptstyle}}       {script style}
+    {\scale[scale=6000]{\ShowMathUnits\scriptscriptstyle}} {script script style}
+\stopcombination
+\stoplinecorrection
+
+The bars show \type {1ex}, \type {1ma} (axis), \type {1mx} (ex|-|height) and
+\type {1mq} (em|-|width or quad). The last three adapt themselves to the style.
+Often the \type {mx} makes more sense than \type {ex}.
+
+\stopsectionlevel
+
+\page
 
 \stopdocument
-

@@ -29,7 +29,7 @@
 %D them in a string. So this needs thinking. Not that we can compare the
 %D nobreakspace now anyway.
 
-% \unexpanded\def\specialspacecharacter#1{\begingroup\attribute\charactersattribute#1\ \endgroup}
+% \unexpanded\def\specialspacecharacter#1{\begingroup\c_attr_characters#1\ \endgroup}
 %
 % \unexpanded\edef\nobreakspace            {\specialspacecharacter{"00A0}} % 1 = left
 % \unexpanded\edef\ideographicspace        {\specialspacecharacter{"2000}}
@@ -54,6 +54,8 @@
 % Making them active is also not an option unless we do that in every
 % catcode vector.
 
+\pushoverloadmode
+
 %    \nobreakspace            {\begingroup\setalignstateattribute\normalUchar"00A0\endgroup} % 1 = left
 \edef\nobreakspace            {\normalUchar"00A0} % space
 \edef\softhyphen              {\normalUchar"00AD} % softhyohen
@@ -62,6 +64,9 @@
 
 \let\ideographicspace         \enquad
 \let\ideographichalffillspace \emquad
+
+\unletfrozen\hairspace
+\unletfrozen\sixperemspace
 
 \edef\twoperemspace           {\normalUchar"2002} % quad/2
 %                             %            "2003  % quad == \quad == \hskip\emwidth
@@ -88,7 +93,10 @@
 \let\zwj                      \zerowidthjoiner
 \let\nbsp                     \nobreakspace
 
-\chardef\optionalspace"1F % will be space unless before punctuation
+\popoverloadmode
+
+\chardef\optionalspace    "1F % will be space unless before punctuation
+\chardef\autoinsertedspace"1E % a more clever \autoinsertspace
 
 % Shortcuts:
 

@@ -22,23 +22,6 @@
 
 \unprotect
 
-% \def\checkbegincolumnfootnotes % should happen inside otr
-%   {\ifcase\c_strc_notes_page_location
-%      \erasenotebackup
-%    \else
-%      \flushnotes
-%      \savenotecontent
-%    \fi
-%    \savenotedata}
-
-% \def\checkendcolumnfootnotes
-%   {\restorenotedata
-%    \ifcase\c_strc_notes_page_location\else
-%      \restorenotecontent
-%    \fi}
-
-\let\checksinglecolumnfootnotes\relax
-
 \newdimen\totalinsertionheight
 
 \unexpanded\def\settotalinsertionheight

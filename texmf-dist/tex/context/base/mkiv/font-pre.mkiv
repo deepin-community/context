@@ -174,9 +174,14 @@
   [fin2=yes,fin3=yes,med2=yes]
 
 \definefontfeature
+  [reordercombining]
+  [reordercombining=yes]
+
+\definefontfeature
   [hebrew]
   [semitic-complete]
-  [script=hebr]
+  [script=hebr,
+   reordercombining=yes] % seems to work best with reasonable fonts
 
 \definefontfeature
   [simplearabic]
@@ -320,6 +325,17 @@
 \definefontfeature [tamil-two]      [tamil-one]      [script=tml2]
 \definefontfeature [telugu-two]     [telugu-one]     [script=tel2]
 
+% mongolian
+
+\definefontfeature
+  [mongolian]
+  [default]
+  [script=mong,
+   init=yes,medi=yes,fina=yes,isol=yes,
+   rlig=yes,rclt=yes,calt=yes,
+  %dlig=yes,cswh=yes, % optional
+   mset]
+
 % tibetan
 
 \definefontfeature
@@ -385,17 +401,29 @@
  % liga=yes, % makes no sense
  % tlig=yes, % makes no sense
  % trep=yes, % makes no sense
-   mathnolimitsmode={0,800}, % this looks okay on the average font
+ % mathnolimitsmode={0,800}, % this looks okay on the average font
    mathalternates=yes,
-   mathitalics=yes, % we pass them
-   mathdimensions=all,
+   emulatelmtx=yes,
+ % mathitalics=yes, % we pass them
+ % mathdimensions=all,
+ % mathkerns=yes,
  % mathgaps=yes,
    language=dflt,
    script=math]
 
-\ifdefined\mathnolimitsmode
-    \mathnolimitsmode\plusone % font driven (only opentype)
+% Users can define this:
+%
+% \definefontfeature
+%   [oldmath]
+%   [oldmath=yes]
+
+\ifdefined\variablefam
+    \variablefam\pluscclv
 \fi
+
+% \ifdefined\mathnolimitsmode
+%     \mathnolimitsmode\plusone % font driven (only opentype)
+% \fi
 
 \ifdefined\mathitalicsmode
      \mathitalicsmode\plusone   % simple noads become zero
@@ -915,9 +943,13 @@
 \unexpanded\def\normalss{\font_helpers_set_current_font_style{\s!ss}}
 \unexpanded\def\normaltt{\font_helpers_set_current_font_style{\s!tt}}
 
+\pushoverloadmode
+
 \let\rm\normalrm
 \let\ss\normalss
 \let\tt\normaltt
+
+\popoverloadmode
 
 \protect \endinput
 

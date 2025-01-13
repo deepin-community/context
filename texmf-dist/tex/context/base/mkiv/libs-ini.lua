@@ -13,10 +13,9 @@ if not modules then modules = { } end modules ['libs-ini'] = {
 -- is doing.
 
 local type, unpack = type, unpack
+local find = string.find
 
 -- here we implement the resolver
-
-local type = type
 
 local nameonly      = file.nameonly
 local joinfile      = file.join
@@ -30,8 +29,10 @@ local expandpaths   = resolvers.expandedpathlistfromvariable
 
 local report        = logs.reporter("resolvers","libraries")
 local trace         = false
+local silent        = false
 
-trackers.register("resolvers.lib", function(v) trace = v end)
+trackers.register("resolvers.lib",        function(v) trace  = v end)
+trackers.register("resolvers.lib.silent", function(v) silent = v end)
 
 local function findlib(required) -- todo: cache
     local suffix = os.libsuffix or "so"
@@ -52,10 +53,10 @@ local function findlib(required) -- todo: cache
         for i=1,#list do
             local name  = list[i]
             local found = findfile(name,"lib")
-            if not found then
+            if not found or found == "" then
                 found = findfile(addsuffix(name,suffix),"lib")
             end
-            if found then
+            if found and found ~= "" then
                 if trace then
                     report("library %a resolved via %a path to %a",name,"tds lib",found)
                 end
@@ -68,9 +69,9 @@ local function findlib(required) -- todo: cache
             for i=1,#list do
                 local full  = joinfile(list[i],base)
                 local found = isfile(full) and full
-                if found then
+                if found and found ~= "" then
                     if trace then
-                        report("library %a resolved via %a path to %a",name,"system",found)
+                        report("library %a resolved via %a path to %a",full,"system",found)
                     end
                     return found
                 end
@@ -135,7 +136,7 @@ function libraries.optionalloaded(name,libnames)
                 for i=1,#libnames do
                     local libname  = libnames[i]
                     local filename = foundlibraries[libname]
-                    if filename then
+                    if filename and filename ~= "" then
                         libnames[i] = filename
                     else
                         report("unable to locate library %a",libname)
@@ -143,16 +144,19 @@ function libraries.optionalloaded(name,libnames)
                     end
                 end
                 local initialized = thelib_initialize(unpack(libnames))
-                if initialized then
-                    report("using library '% + t'",libnames)
-                else
+                if not initialized then
                     report("unable to initialize library '% + t'",libnames)
+                elseif not silent then
+                    report("using library '% + t'",libnames)
                 end
                 return initialized
             end
         end
     end
 end
+
+-- For the moment the next blob is needed when we run \MTXRUN\ on top of \LUATEX\ and
+-- \LUAJITTEX\ but at some point we will {\em always} assume \LUAMETATEX\ as runner.
 
 if FFISUPPORTED and ffi and ffi.load then
 
@@ -194,3 +198,19 @@ end
 --         }
 --     end
 -- }
+
+local dofile       = dofile
+local savedrequire = require
+
+function require(name,version)
+    if find(name,"%.lua$") or find(name,"%.lmt$") then
+        local m = dofile(findfile(name))
+        if m then
+            package.loaded[name] = m
+            return m
+        end
+    else
+        return savedrequire(name)
+    end
+end
+

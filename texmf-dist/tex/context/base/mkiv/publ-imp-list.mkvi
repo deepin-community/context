@@ -13,20 +13,10 @@
 
 \unprotect
 
-\starttexdefinition unexpanded btx:list:inject:text #content
-    \ifconditional\btxinteractivetext
-        \ifx\currentbtxinternal\empty
-            #content
-        \else
-            \goto {
-                #content
-            } [
-                \s!internal(\currentbtxinternal)
-            ]
-        \fi
-    \else
+\starttexdefinition mutable protected btx:list:inject:text #content
+    \texdefinition{btx:format:gotointernal} {
         #content
-    \fi
+    }
 \stoptexdefinition
 
 \startsetups \s!btx:\s!list:text
@@ -39,23 +29,13 @@
    }
 \stopsetups
 
-\starttexdefinition unexpanded btx:list:inject:number #content
-    \ifconditional\btxinteractivenumber
-        \ifx\currentbtxinternal\empty
-            #content
-        \else
-            \goto {
-                #content
-            } [
-                \s!internal(\currentbtxinternal)
-            ]
-        \fi
-    \else
+\starttexdefinition mutable protected btx:list:inject:number #content
+    \texdefinition{btx:format:gotointernal} {
         #content
-    \fi
+    }
 \stoptexdefinition
 
-\starttexdefinition unexpanded btx:list:helpers:concat
+\starttexdefinition mutable protected btx:list:helpers:concat
     \space
 \stoptexdefinition
 
@@ -66,9 +46,9 @@
     }
 \stopsetups
 
-\starttexdefinition unexpanded btx:list:numbering #variant
+\starttexdefinition mutable protected btx:list:numbering #variant
     \btxstartstyleandcolor [\currentbtxspecification:\s!list:\s!numbering:#variant]
-        \btxusecommand[\currentbtxspecification:\s!list:\s!numbering:#variant] {
+        \btxusecommand [\currentbtxspecification:\s!list:\s!numbering:#variant] {
             \fastsetup{\s!btx:\s!list:\s!numbering}
         }
     \btxstopstyleandcolor

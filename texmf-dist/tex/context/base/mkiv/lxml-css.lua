@@ -17,6 +17,8 @@ local setmetatableindex = table.setmetatableindex
 xml.css            = xml.css or { }
 local css          = xml.css
 
+local report_css   = logs and logs.reporter("xml","css") or function(...) print(string.format(...)) end
+
 local getid        = lxml.getid
 
 if not number.dimenfactors then
@@ -231,7 +233,7 @@ do
         end
     end
 
-    function css.size(str,factors)
+    function css.size(str,factors, pct)
         local size, unit
         if type(str) == "table" then
             size, unit = str[1], str[2]
@@ -239,7 +241,9 @@ do
             size, unit = lpegmatch(p_size,lower(str))
         end
         if size and unit then
-            if factors then
+            if unit == "%" and pct then
+                return size * pct
+            elseif factors then
                 return (factors[unit] or 1) * size
             else
                 return size, unit
@@ -787,7 +791,7 @@ local p_not              = P(":not") * Cc(true) * skipspace * P("(") * skipspace
 local p_yes              =             Cc(false)                     * skipspace * p_step
 
 local p_stepper          = Ct((skipspace * (p_not+p_yes))^1)
-local p_steps            = Ct((p_stepper * p_separator^0)^1) * skipspace * (P(-1) + function() print("error") end)
+local p_steps            = Ct((p_stepper * p_separator^0)^1) * skipspace * (P(-1) + function() report_css("recovering from error") end)
 
 local cache = setmetatableindex(function(t,k)
     local v = lpegmatch(p_steps,k) or false
@@ -1063,13 +1067,15 @@ end
 -- -- faster interface (1.02):
 
 interfaces.implement {
-    name      = "xmlstylevalue",
+    name      = "xmlcssstylevalue",
+    public    = true,
     actions   = css.stylevalue,
     arguments = "2 strings",
 }
 
 interfaces.implement {
-    name      = "xmlmappedstylevalue",
+    name      = "xmlcssmappedstylevalue",
+    public    = true,
     actions   = css.mappedstylevalue,
     arguments = "3 strings",
 }

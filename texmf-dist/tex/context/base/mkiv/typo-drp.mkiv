@@ -22,7 +22,7 @@
 \definesystemattribute[initial][public]
 
 \appendtoks
-    \attribute\initialattribute\attributeunsetvalue
+    \c_attr_initial\attributeunsetvalue
 \to \everyforgetall
 
 %D For the moment here: dropped caps redone. In addition to the
@@ -59,9 +59,9 @@
    \c!n=3,
    \c!m=1,
    \c!method=\v!none,
- % \s!font=Bold sa 4,
- % \s!font=Bold ht \measure{initial:n},
-   \s!font=Bold cp \measure{initial:n},
+ % \c!font=Bold sa 4,
+ % \c!font=Bold ht \measure{initial:n},
+   \c!font=Bold cp \measure{initial:n},
    \c!distance=.125\emwidth,
    \c!hoffset=\zeropoint,
    \c!voffset=\v!line, % \dimexp\lineheight*\initialparameter\c!n-\lineheight\relax]
@@ -90,7 +90,7 @@
    \setupcurrentinitial[#2]%
    \resetfontfeature % might be needed in more places
    \doifelsenothing{\initialparameter\c!style}
-     {\definedfont[\initialparameter\s!font]}
+     {\definedfont[\initialparameter\c!font]}
      {\useinitialstyleparameter\c!style}%
    \useinitialcolorparameter\c!color
    \edef\p_voffset{\initialparameter\c!voffset}%
@@ -105,13 +105,13 @@
         distance  \dimexpr\initialparameter\c!distance\relax
         hoffset   \dimexpr\initialparameter\c!hoffset\relax
         voffset   \scratchvoffset
-        ma        \attribute\colormodelattribute
-        ca        \attribute\colorattribute
-        ta        \attribute\transparencyattribute
+        ma        \c_attr_colormodel
+        ca        \c_attr_color
+        ta        \c_attr_transparency
         font      \fontid\font
         dynamic   \font_dynamic_value % it's a bit over the top to support this here
    \relax
-   \attribute\initialattribute\plusone
+   \c_attr_initial\plusone
    \initialparameter\c!text
    \endgroup
    \glet\typo_initial_handle\relax}

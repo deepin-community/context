@@ -46,7 +46,7 @@ local nodeidstostring    = nodes.idstostring
 local nodepool           = nodes.pool
 local new_baselineskip   = nodepool.baselineskip
 local new_lineskip       = nodepool.lineskip
-local insert_node_before = nodes.insert_before
+local insertnodebefore   = nodes.insertbefore
 local hpack_node         = nodes.hpack
 
 local nuts               = nodes.nuts
@@ -157,9 +157,9 @@ function parbuilders.constructors.methods.oneline(head,followed_by_display)
     t.prevdepth = h.depth
     t.prevgraf  = 1
     if d < texget("lineskiplimit") then
-        return insert_node_before(h,h,new_lineskip(texget("lineskip",false))) -- no stretch etc
+        return insertnodebefore(h,h,new_lineskip(texget("lineskip",false))) -- no stretch etc
     else
-        return insert_node_before(h,h,new_baselineskip(d))
+        return insertnodebefore(h,h,new_baselineskip(d))
     end
 end
 
@@ -243,10 +243,9 @@ end
 -- the check can go away
 
 function builders.buildpage_filter(groupcode)
-    -- the next check saves 1% runtime on 1000 tufte pages
     local head = texlists.contrib_head
-    local done = false
     if head then
+        local done = false
         -- called quite often ... maybe time to remove timing
         starttiming(builders)
         if trace_page_builder then

@@ -62,7 +62,9 @@ if not modules then modules = { } end modules ['mtx-vscode'] = {
 -- me (too many different folders with source code, documentation etc). It's kind of
 -- strange because simple runners are provided by many editors. I don't want to program
 -- a lot to get such simple things done so, awaiting global tasks I stick to using the
--- terminal. But we're prepared.
+-- terminal. Also, having .vscode folderd in every place where a file sits makes no
+-- sense and clutters my disk too much. There is not much progress in this area but we
+-- are prepared.
 
 -- Another showstopper is the fact that we cannot disable utf8 for languages (like pdf,
 -- which is just bytes). I couldn't figure out how to set it in the extension.
@@ -138,7 +140,9 @@ local helpinfo = [[
   <category name="basic">
    <subcategory>
     <flag name="generate"><short>generate extension in sync with current version</short></flag>
+    <flag name="program"><short>use the given binary (e.g. codium, default: code)</short></flag>
     <flag name="start"><short>start vscode with extension context</short></flag>
+    <flag name="lsfile"><short>generate language server file (work in progress)</short></flag>
    </subcategory>
   </category>
  </flags>
@@ -149,6 +153,7 @@ local helpinfo = [[
     <example><command>mtxrun --script vscode --generate e:/vscode/extensions</command></example>
     <example><command>mtxrun --script vscode --generate</command></example>
     <example><command>mtxrun --script vscode --start</command></example>
+    <example><command>mtxrun --script vscode --program=codium --start</command></example>
    </subcategory>
   </category>
  </examples>
@@ -160,6 +165,8 @@ local application = logs.application {
     banner   = "vscode extension generator",
     helpinfo = helpinfo,
 }
+
+local concat = table.concat
 
 local report = application.report
 
@@ -278,6 +285,20 @@ function scripts.vscode.generate(targetpath)
 
     end
 
+ -- local function registersettings()
+ --
+ --     local filename = "./settings.json"
+ --
+ --     local data = {
+ --         ["editor.bracketPairColorization.enabled"]                            = false,
+ --         ["editor.bracketPairColorization.independentColorPoolPerBracketType"] = false,
+ --     }
+ --
+ --     report("saving settings %a",filename)
+ --
+ --     io.savedata(filename,data)
+ -- end
+
     local function registertheme(theme)
 
         local category = theme.category
@@ -294,6 +315,7 @@ function scripts.vscode.generate(targetpath)
             ["name"]        = category,
             ["colors"]      = theme.colors,
             ["tokenColors"] = theme.styles,
+            ["settings"]    = theme.settings,
         }
 
         report("saving theme %a in %a",category,filename)
@@ -353,11 +375,13 @@ function scripts.vscode.generate(targetpath)
             displayName = "ConTeXt",
             description = "ConTeXt Syntax Highlighting",
             publisher   = "ConTeXt Development Team",
+            publisher   = "cdt",
             version     = "1.0.0",
             engines     = {
                 vscode = "*"
             },
             categories = {
+                "Programming Languages",
                 "Lexers",
                 "Syntaxes"
             },
@@ -414,42 +438,69 @@ function scripts.vscode.generate(targetpath)
             tippanel  = "#444444",
             right     = "#0000FF",
             wrong     = "#FF0000",
+            default   = "#000000",
+            reverse   = "#FFFFFF",
+
+            -- some day a dark:
+
+--     red       = "#CC4444",
+--     green     = "#44CC44",
+--     blue      = "#4444FF",
+--     cyan      = "#55BBBB",
+--     magenta   = "#BB55BB",
+--     yellow    = "#BBBB55",
+--     orange    = "#B07F00",
+--     white     = "#FFFFFF",
+--     light     = "#CFCFCF",
+--     grey      = "#808080",
+--     dark      = "#4F4F4F",
+--     black     = "#000000",
+--     selection = "#F7F7F7",
+--     logpanel  = "#E7E7E7",
+--     textpanel = "#1E1E1E", -- VS "#101010",
+--     linepanel = "#A7A7A7",
+--     tippanel  = "#444444",
+--     right     = "#0000FF",
+--     wrong     = "#FF0000",
+--     default   = "#D4D4D4",
+--     reverse   = "#000000",
+
         }
 
         local colors = {
             ["editor.background"]               = mycolors.textpanel,
-            ["editor.foreground"]               = mycolors.black,
-            ["editorLineNumber.foreground"]     = mycolors.black,
+            ["editor.foreground"]               = mycolors.default,
+            ["editorLineNumber.foreground"]     = mycolors.default,
             ["editorIndentGuide.background"]    = mycolors.textpanel,
             ["editorBracketMatch.background"]   = mycolors.textpanel,
             ["editorBracketMatch.border"]       = mycolors.orange,
             ["editor.lineHighlightBackground"]  = mycolors.textpanel,
-            ["focusBorder"]                     = mycolors.black,
+            ["focusBorder"]                     = mycolors.default,
 
-            ["activityBar.background"]          = mycolors.black,
+            ["activityBar.background"]          = mycolors.default,
 
-            ["sideBar.background"]              = mycolors.linepanel,
-            ["sideBar.foreground"]              = mycolors.black,
-            ["sideBar.border"]                  = mycolors.white,
-            ["sideBarTitle.foreground"]         = mycolors.black,
+            ["editorGutter.background"]         = mycolors.linepanel,
+            ["editorGutter.foreground"]         = mycolors.default,
+            ["editorGutter.border"]             = mycolors.reverse,
+            ["sideBarTitle.foreground"]         = mycolors.default,
             ["sideBarSectionHeader.background"] = mycolors.linepanel,
-            ["sideBarSectionHeader.foreground"] = mycolors.black,
+            ["sideBarSectionHeader.foreground"] = mycolors.default,
 
-            ["statusBar.foreground"]            = mycolors.black,
+            ["statusBar.foreground"]            = mycolors.default,
             ["statusBar.background"]            = mycolors.linepanel,
-            ["statusBar.border"]                = mycolors.white,
-            ["statusBar.noFolderForeground"]    = mycolors.black,
+            ["statusBar.border"]                = mycolors.reverse,
+            ["statusBar.noFolderForeground"]    = mycolors.default,
             ["statusBar.noFolderBackground"]    = mycolors.linepanel,
-            ["statusBar.debuggingForeground"]   = mycolors.black,
+            ["statusBar.debuggingForeground"]   = mycolors.default,
             ["statusBar.debuggingBackground"]   = mycolors.linepanel,
 
-            ["notification.background"]         = mycolors.black,
+            ["notification.background"]         = mycolors.default,
         }
 
         local styles = {
 
             { scope = "context.whitespace",              settings = { } },
-            { scope = "context.default",                 settings = { foreground = mycolors.black } },
+            { scope = "context.default",                 settings = { foreground = mycolors.default } },
             { scope = "context.number",                  settings = { foreground = mycolors.cyan } },
             { scope = "context.comment",                 settings = { foreground = mycolors.yellow } },
             { scope = "context.keyword",                 settings = { foreground = mycolors.blue, fontStyle = "bold" } },
@@ -457,30 +508,30 @@ function scripts.vscode.generate(targetpath)
             { scope = "context.error",                   settings = { foreground = mycolors.red } },
             { scope = "context.label",                   settings = { foreground = mycolors.red, fontStyle = "bold"  } },
             { scope = "context.nothing",                 settings = { } },
-            { scope = "context.class",                   settings = { foreground = mycolors.black, fontStyle = "bold" } },
-            { scope = "context.function",                settings = { foreground = mycolors.black, fontStyle = "bold" } },
+            { scope = "context.class",                   settings = { foreground = mycolors.default, fontStyle = "bold" } },
+            { scope = "context.function",                settings = { foreground = mycolors.default, fontStyle = "bold" } },
             { scope = "context.constant",                settings = { foreground = mycolors.cyan, fontStyle = "bold" } },
             { scope = "context.operator",                settings = { foreground = mycolors.blue } },
             { scope = "context.regex",                   settings = { foreground = mycolors.magenta } },
             { scope = "context.preprocessor",            settings = { foreground = mycolors.yellow, fontStyle = "bold" } },
             { scope = "context.tag",                     settings = { foreground = mycolors.cyan } },
             { scope = "context.type",                    settings = { foreground = mycolors.blue } },
-            { scope = "context.variable",                settings = { foreground = mycolors.black } },
+            { scope = "context.variable",                settings = { foreground = mycolors.default } },
             { scope = "context.identifier",              settings = { } },
             { scope = "context.linenumber",              settings = { background = mycolors.linepanel } },
             { scope = "context.bracelight",              settings = { foreground = mycolors.orange, fontStyle = "bold" } },
             { scope = "context.bracebad",                settings = { foreground = mycolors.orange, fontStyle = "bold" } },
             { scope = "context.controlchar",             settings = { } },
-            { scope = "context.indentguide",             settings = { foreground = mycolors.linepanel, back = colors.white } },
-            { scope = "context.calltip",                 settings = { foreground = mycolors.white, back = colors.tippanel } },
+            { scope = "context.indentguide",             settings = { foreground = mycolors.linepanel, back = colors.reverse } },
+            { scope = "context.calltip",                 settings = { foreground = mycolors.reverse, back = colors.tippanel } },
             { scope = "context.invisible",               settings = { background = mycolors.orange } },
             { scope = "context.quote",                   settings = { foreground = mycolors.blue, fontStyle = "bold" } },
             { scope = "context.special",                 settings = { foreground = mycolors.blue } },
             { scope = "context.extra",                   settings = { foreground = mycolors.yellow } },
-            { scope = "context.embedded",                settings = { foreground = mycolors.black, fontStyle = "bold" } },
+            { scope = "context.embedded",                settings = { foreground = mycolors.default, fontStyle = "bold" } },
             { scope = "context.char",                    settings = { foreground = mycolors.magenta } },
             { scope = "context.reserved",                settings = { foreground = mycolors.magenta, fontStyle = "bold" } },
-            { scope = "context.definition",              settings = { foreground = mycolors.black, fontStyle = "bold" } },
+            { scope = "context.definition",              settings = { foreground = mycolors.default, fontStyle = "bold" } },
             { scope = "context.okay",                    settings = { foreground = mycolors.dark } },
             { scope = "context.warning",                 settings = { foreground = mycolors.orange } },
             { scope = "context.standout",                settings = { foreground = mycolors.orange, fontStyle = "bold" } },
@@ -492,12 +543,12 @@ function scripts.vscode.generate(targetpath)
             { scope = "context.plain",                   settings = { foreground = mycolors.dark, fontStyle = "bold" } },
             { scope = "context.user",                    settings = { foreground = mycolors.green } },
             { scope = "context.data",                    settings = { foreground = mycolors.cyan, fontStyle = "bold" } },
-            { scope = "context.text",                    settings = { foreground = mycolors.black } },
+            { scope = "context.text",                    settings = { foreground = mycolors.default } },
 
             { scope = { "emphasis" }, settings = { fontStyle = "italic" } },
             { scope = { "strong"   }, settings = { fontStyle = "bold"   } },
 
-            { scope = { "comment"  }, settings = { foreground = mycolors.black  } },
+            { scope = { "comment"  }, settings = { foreground = mycolors.default  } },
             { scope = { "string"   }, settings = { foreground = mycolors.magenta } },
 
             {
@@ -541,7 +592,7 @@ function scripts.vscode.generate(targetpath)
                     "entity.name.function.shell"
                 },
                 settings = {
-                    foreground = mycolors.black,
+                    foreground = mycolors.default,
                 }
             },
 
@@ -550,7 +601,7 @@ function scripts.vscode.generate(targetpath)
                     "entity.name.tag",
                 },
                 settings = {
-                    foreground = mycolors.black,
+                    foreground = mycolors.default,
                 }
             },
 
@@ -562,6 +613,8 @@ function scripts.vscode.generate(targetpath)
             colors      = colors,
             styles      = styles,
         }
+
+     -- registersettings()
 
     end
 
@@ -576,41 +629,43 @@ function scripts.vscode.generate(targetpath)
             clear            = true,
         }
 
+        -- chcp 65001 ; ...
+
         local tasks = {
             {
                 group   = "build",
                 label   = "process tex file",
                 type    = "shell",
-                command =                          "context     --autogenerate --autopdf ${file}",
-                windows = { command = "chcp 65001 ; context.exe --autogenerate --autopdf ${file}" },
+                command =             "context     --autogenerate --autopdf ${file}",
+                windows = { command = "context.exe --autogenerate --autopdf ${file}" },
             },
             {
                 group   = "build",
                 label   = "check tex file",
                 type    = "shell",
-                command =                          "mtxrun     --autogenerate --script check ${file}",
-                windows = { command = "chcp 65001 ; mtxrun.exe --autogenerate --script check ${file}" },
+                command =             "mtxrun     --autogenerate --script check ${file}",
+                windows = { command = "mtxrun.exe --autogenerate --script check ${file}" },
             },
             {
                 group   = "build",
                 label   = "identify fonts",
                 type    = "shell",
-                command =                          "mtxrun     --script fonts --reload --force",
-                windows = { command = "chcp 65001 ; mtxrun.exe --script fonts --reload --force" },
+                command =             "mtxrun     --script fonts --reload --force",
+                windows = { command = "mtxrun.exe --script fonts --reload --force" },
             },
             {
                 group   = "build",
                 label   = "process lua file",
                 type    = "shell",
-                command =                          "mtxrun     --script ${file}",
-                windows = { command = "chcp 65001 ; mtxrun.exe --script ${file}" },
+                command =             "mtxrun     --script ${file}",
+                windows = { command = "mtxrun.exe --script ${file}" },
             },
         }
 
         for i=1,#tasks do
             local task = tasks[i]
             if not task.windows then
-                task.windows = {  command = "chcp 65001 ; " .. task.command }
+                task.windows = {  command = task.command }
             end
             if not task.presentation then
                 task.presentation = presentation
@@ -697,7 +752,7 @@ function scripts.vscode.generate(targetpath)
         for i=1,#t do
             result[i] = string.gsub(t[i],".",escapes)
         end
-        return table.concat(result,"|")
+        return concat(result,"|")
     end
 
     local function capture(str)
@@ -869,12 +924,12 @@ function scripts.vscode.generate(targetpath)
         -- mp argument {...text}
         local function words(list)
             table.sort(list,sorter)
-            return "\\\\(" .. table.concat(list,"|") .. ")" .. "(?=[^a-zA-Z])"
+            return "\\\\(" .. concat(list,"|") .. ")" .. "(?=[^a-zA-Z])"
         end
 
         local function bwords(list)
             table.sort(list,sorter)
-            return "(\\\\(" .. table.concat(list,"|") .. "))\\s*(\\{)"
+            return "(\\\\(" .. concat(list,"|") .. "))\\s*(\\{)"
         end
 
         local function ewords()
@@ -883,7 +938,7 @@ function scripts.vscode.generate(targetpath)
 
         local function environments(list)
             table.sort(list,sorter)
-            last = table.concat(list,"|")
+            last = concat(list,"|")
             if #list > 1 then
                 last = "(?:" .. last .. ")"
             end
@@ -975,7 +1030,7 @@ function scripts.vscode.generate(targetpath)
 
                 comment = {
                     name  = style("context.comment", "comment"),
-                    match = texcomment,
+                    match = comment,
                 },
 
                 constant = {
@@ -1188,7 +1243,7 @@ function scripts.vscode.generate(targetpath)
 
         local function words(list)
             table.sort(list,sorter)
-            return "(" .. table.concat(list,"|") .. ")" .. "(?=[^a-zA-Z\\_@!?\127-\255])"
+            return "(" .. concat(list,"|") .. ")" .. "(?=[^a-zA-Z\\_@!?\127-\255])"
         end
 
         local capturedshortcuts          = oneof(mergedshortcuts)
@@ -1401,7 +1456,7 @@ function scripts.vscode.generate(targetpath)
 
         local function words(list)
             table.sort(list,sorter)
-            return "(" .. table.concat(list,"|") .. ")" .. "(?=[^a-zA-Z])"
+            return "(" .. concat(list,"|") .. ")" .. "(?=[^a-zA-Z])"
         end
 
         local capturedkeywords = words {
@@ -1642,7 +1697,7 @@ function scripts.vscode.generate(targetpath)
 
             category    = "cld",
             description = "ConTeXt CLD",
-            suffixes    = { "lua", "luc", "cld", "tuc", "luj", "lum", "tma", "lfg", "luv", "lui" },
+            suffixes    = { "lmt", "lua", "luc", "cld", "tuc", "luj", "lum", "tma", "lfg", "luv", "lui" },
             version     = lualexer.version,
             setup       = lualexer.setup,
 
@@ -2118,7 +2173,7 @@ function scripts.vscode.generate(targetpath)
 
         local function words(list)
             table.sort(list,sorter)
-            local str = table.concat(list,"|")
+            local str = concat(list,"|")
             return "(" .. str .. "|" .. string.upper(str) .. ")" .. "(?=[^a-zA-Z])"
         end
 
@@ -2501,7 +2556,7 @@ function scripts.vscode.generate(targetpath)
 
         local function words(list)
             table.sort(list,sorter)
-            return "\\b(" .. table.concat(list,"|") .. ")\\b"
+            return "\\b(" .. concat(list,"|") .. ")\\b"
         end
 
         local capturedkeywords = words { -- copied from cpp.lua
@@ -3157,10 +3212,272 @@ function scripts.vscode.generate(targetpath)
 
 end
 
+-- {name: 'inherits: \\setupframed'}
+
+function scripts.vscode.ls(forcedinterface)
+
+    local interfaces = forcedinterfaces or environment.files or userinterfaces
+    if not interfaces.en then
+        -- loaded as script so we have "cont-yes.*" as name
+        interfaces = { "en" }
+    end
+    --
+    local filename = "context-en.xml"
+    local xmlfile  = resolvers.findfile(filename) or ""
+    if xmlfile == "" then
+        report("unable to locate %a",filename)
+        return
+    end
+    --
+    local filename = "mult-def.lua"
+    local deffile  = resolvers.findfile(filename) or ""
+    if deffile == "" then
+        report("unable to locate %a",filename)
+        return
+    end
+    local interface = dofile(deffile)
+    if not interface or not next(interface) then
+        report("invalid file %a",filename)
+        return
+    end
+    local variables = interface.variables
+    local constants = interface.constants
+    local commands  = interface.commands
+    local elements  = interface.elements
+    --
+    local collected = { }
+    --
+    report("loading %a",xmlfile)
+    local xmlroot = xml.load(xmlfile)
+
+    local interfaces = { "en" }
+
+--     <cd:keywords list="yes">
+--      <cd:inherit name="setupalign"/>
+--     </cd:keywords>
+
+    local function arguments(e)
+        local p = { }
+        for e in xml.collected(e,"/cd:arguments/*") do
+            local tg = e.tg
+            if tg == "keywords" then
+                local a = { }
+                for e in xml.collected(e,"/*") do
+                    a[#a+1] = {
+                        name = e.at.type
+                    }
+                end
+                p[#p+1] = {
+                    type       = tg,
+                    attributes = #a > 0 and a or nil,
+                    optional   = e.at.optional == "yes" or nil
+                }
+            elseif tg == "assignments" then
+                local a = { }
+                for e in xml.collected(e,"/parameter") do
+                 -- local c = { e.at.name, "=" }
+                    local c = { }
+                    for e in xml.collected(e,"/constant") do
+                        c[#c+1] = e.at.type
+                    end
+                 -- if #c > 0 then
+                 --     a[#a+1] = {
+                 --         name = concat(c, " ") -- maybe "|"
+                 --     }
+                 -- end
+                    a[#a+1] = {
+                        name = e.at.name .. "=" .. concat(c, " ") -- maybe "|"
+                    }
+                end
+                p[#p+1] = {
+                    type       = tg,
+                    attributes = #a > 0 and a or nil,
+                    optional   = e.at.optional == "yes" or nil
+                }
+            else -- e.g. "content"
+                p[#p+1] = {
+                    type     = tg,
+                    optional = e.at.optional == "yes" or nil
+                }
+            end
+        end
+        return p
+    end
+
+    local function details(e, f)
+        local d = { "\\" .. f }
+        local n = 0
+        for e in xml.collected(e,"/cd:arguments/*") do
+            local tg = e.tg
+            if tg == "keywords" then
+                n = n + 1
+                if e.at.optional == "yes" then
+                    d[#d+1] = "[optional " .. n .. ":..,..]"
+                else
+                    d[#d+1] = "[mandate "  .. n .. ":..,..]"
+                end
+            elseif tg == "assignments" then
+                n = n + 1
+                if e.at.optional == "yes" then
+                    d[#d+1] = "[optional " .. n .. ":key=val,key=val,..]"
+                else
+                    d[#d+1] = "[mandate "  .. n .. ":key=val,key=val,..]"
+                end
+            else
+                d[#d+1] = "{ content }"
+            end
+        end
+        return concat(d, " ")
+    end
+
+    -- this one is a bit weird as it could be assembled in the languages server on the fly and
+    -- it bloats the file
+
+    local function documentation(c)
+        local d = { c.detail }
+        local p = c.params
+        if p then
+            local n = 0
+            for i=1,#p do
+                local pi = p[i]
+                local ti = pi.type
+                local ai = pi.attributes
+                if ti == "keywords" then
+                    n = n + 1
+                    if pi.optional then
+                        d[#d+1] = "[optional keywords " .. n .. "]"
+                    else
+                        d[#d+1] = "[mandate  keywords " .. n .. "]"
+                    end
+                    if ai then
+                        local t = { }
+                        for j=1,#ai do
+                            t[#t+1] = ai[j].name
+                        end
+                        if #t > 0 then
+                            d[#d+1] = concat(t," ")
+                        end
+                    end
+                elseif ti == "assignments" then
+                    n = n + 1
+                    if pi.optional then
+                        d[#d+1] = "[optional assignments " .. n .. "]"
+                    else
+                        d[#d+1] = "[mandate  assignments " .. n .. "]"
+                    end
+                    if ai then
+                        local t = { }
+                        for j=1,#ai do
+                            t[#t+1] = ai[j].name
+                        end
+                        if #t > 0 then
+                            d[#d+1] = concat(t,"\n")
+                        end
+                    end
+                else
+                    if pi.optional then
+                        d[#d+1] = "{ optional content }"
+                    else
+                        d[#d+1] = "{ mandate content }"
+                    end
+                end
+            end
+        end
+        c.documentation = concat(d,"\n")
+--         inspect(c.documentation)
+    end
+
+    if not xml.expand then
+        -- will be in next version
+        function xml.expand(root,pattern,whatever)
+            local collected = xml.applylpath(root,pattern)
+            if collected then
+                for c=1,#collected do
+                    local e = collected[c]
+                    local p = e.__p__
+                    if p then
+                        local d = p.dt
+                        local n = e.ni
+                        local t = whatever(e,p)
+                        if type(t) == "table" then
+                            d[n] = t[1]
+                            for i=2,#t do
+                                n = n + 1
+                                table.insert(d,n,t[i])
+                            end
+                        elseif t then
+                            d[n] = t
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    do
+        local c = { }
+        xml.expand(xmlroot,"/cd:interface/cd:interface/cd:command/**/inherit",function(e)
+            local f = c[e.at.name]
+            if not f then
+                f = xml.first(xmlroot,"/cd:interface/cd:interface/cd:command[@name='" .. e.at.name .. "']/cd:arguments")
+                c[e.at.name] = f
+            end
+            return f and f.dt
+        end)
+    end
+
+    for i=1,#interfaces do
+        local interface = interfaces[i]
+        local start = elements.start[interface] or elements.start.en
+        local stop  = elements.stop [interface] or elements.stop .en
+        for e in xml.collected(xmlroot,"cd:interface/cd:command") do
+            local at   = e.at
+            local name = at["name"] or ""
+            local type = at["type"]
+            if name ~= "" then
+                local c = commands[name]
+                local n = (c and (c[interface] or c.en)) or c or name
+                local sequence = xml.all(e,"/cd:sequence/*")
+                if at.generated == "yes" then
+                    -- skip (for now)
+                elseif type ~= "environment" then
+                    collected[#collected+1] = {
+                        name   = n,
+                        detail = details(e, n),
+                        params = arguments(e), -- why not "parameters"
+                    }
+                else
+                    local f = start .. n
+                    collected[#collected+1] = {
+                        name   = f,
+                        start  = f,
+                        stop   = stop  .. n,
+                        detail = details(e, f),
+                        params = arguments(e), -- why not "parameters"
+                    }
+                end
+            end
+        end
+    end
+    for i=1,#collected do
+        documentation(collected[i])
+    end
+    local jsonname = "vscode-context-ls.json"
+ -- local exmlname = "vscode-context-ls.xml"
+    report("")
+    report("vscode ls file saved: %s",jsonname)
+    report("")
+    io.savedata(jsonname,utilities.json.tojson(collected))
+ -- io.savedata(exmlname,tostring(xmlroot))
+end
+
 function scripts.vscode.start()
     local path = locate()
     if path then
-        local command = 'start "vs code context" code --reuse-window --ignore-gpu-blacklist --extensions-dir "' .. path .. '" --install-extension context'
+        local codecmd = environment.arguments.program or "code" -- can be codium
+     -- local command = 'start "vs code context" ' .. codecmd .. ' --reuse-window --ignore-gpu-blacklist --extensions-dir "' .. path .. '" --install-extension context'
+     -- local command = 'start "vs code context" ' .. codecmd .. ' --reuse-window --extensions-dir "' .. path .. '" --install-extension context'
+        local command = 'start "vs code context" ' .. codecmd .. ' --reuse-window --extensions-dir "' .. path .. '" --verbose --force --install-extension cdt.context'
         report("running command: %s",command)
         os.execute(command)
     end
@@ -3168,6 +3485,8 @@ end
 
 if environment.arguments.generate then
     scripts.vscode.generate()
+elseif environment.arguments.lsfile then
+    scripts.vscode.ls()
 elseif environment.arguments.start then
     scripts.vscode.start()
 elseif environment.arguments.exporthelp then
@@ -3176,4 +3495,6 @@ else
     application.help()
 end
 
-scripts.vscode.generate([[t:/vscode/data/context/extensions]])
+-- scripts.vscode.ls()
+
+-- scripts.vscode.generate([[t:/vscode/data/context/extensions]])

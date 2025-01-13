@@ -182,6 +182,11 @@
     <cd:define name="instance-mathmatrix">
         <cd:constant value="matrix"/>
         <cd:constant value="mathmatrix"/>
+        <cd:constant value="thematrix"/>
+    </cd:define>
+
+    <cd:define name="instance-simplematrix">
+        <cd:constant value="thematrix"/>
     </cd:define>
 
     <cd:define name="instance-mixedcolumns">
@@ -385,7 +390,7 @@
         <cd:constant value="overbracketunderbracket"/>
     </cd:define>
 
-    <cd:define name="instance-mathoverextensible">
+    <cd:define name="instance-mathovertextextensible">
         <!-- top -->
         <cd:constant value="overleftarrow"/>
         <cd:constant value="overrightarrow"/>
@@ -408,7 +413,7 @@
         <cd:constant value="overbrackettext"/>
     </cd:define>
 
-    <cd:define name="instance-mathunderextensible">
+    <cd:define name="instance-mathundertextextensible">
         <!-- bottom -->
         <cd:constant value="underleftarrow"/>
         <cd:constant value="underrightarrow"/>

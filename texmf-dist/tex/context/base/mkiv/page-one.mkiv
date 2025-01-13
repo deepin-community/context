@@ -63,6 +63,22 @@
 %      \fi
 %    \fi}
 
+% \unexpanded\def\page_one_command_set_vsize
+%   {\ifgridsnapping
+%      \ifcase\layoutlines
+%        \getrawnoflines\textheight
+%      \else
+%        \noflines\layoutlines
+%      \fi
+%      \global\vsize\noflines\openlineheight
+%    \else
+%      \global\vsize\textheight
+%    \fi
+%    \global\advance\vsize\d_page_adapts_delta
+%    % alternatively we could set it in builders.buildpage_filter
+%  % \ifdim\pagegoal<\maxdimen .. \fi
+%    \pagegoal\dimexpr\vsize-\d_page_floats_inserted_top-\d_page_floats_inserted_bottom\relax}
+
 \unexpanded\def\page_one_command_set_vsize
   {\ifgridsnapping
      \ifcase\layoutlines
@@ -75,14 +91,19 @@
      \global\vsize\textheight
    \fi
    \global\advance\vsize\d_page_adapts_delta
-   % alternatively we could set it in builders.buildpage_filter
- % \ifdim\pagegoal<\maxdimen .. \fi
-   \pagegoal\dimexpr\vsize-\d_page_floats_inserted_top-\d_page_floats_inserted_bottom\relax}
-
+ % \pagegoal\dimexpr\vsize-\d_page_floats_inserted_top-\d_page_floats_inserted_bottom\relax}
+ % per 2021/9/9 : otherwise weird notes overlap with side floats
+   \settotalinsertionheight
+   \pagegoal\dimexpr\vsize-\totalinsertionheight\relax}
 
 % 1 = partial page, 2 = whole page, 3 = partial page
 
-\setnewconstant\kindofpagetextareas\plustwo % \plusone can become default some day
+% We really need a setting! Todo, what key to use?
+
+\pushoverloadmode
+    \setnewconstant\kindofpagetextareas\plustwo % \plusone can become default some day
+    \overloaded\let\kindofpagetextareas\kindofpagetextareas
+\popoverloadmode
 
 \def\page_one_registered_text_area_a % two arguments: (un)vbox n
   {\ifconditional\c_page_areas_enabled
@@ -184,8 +205,7 @@
        \scratchoffset\ht\b_page_one_contents
      \fi
      \setbox\b_page_one_bottom_notes\hpack
-       {\checksinglecolumnfootnotes % why this check? ***
-        \lower\scratchoffset\vbox{\placebottomnotes\par\kern\zeropoint}}% kerns makes notes sit on bottom % pack ?
+       {\lower\scratchoffset\vbox{\placebottomnotes\par\kern\zeropoint}}% kerns makes notes sit on bottom % pack ?
      \smashbox\b_page_one_bottom_notes
      \ht\b_page_one_contents\zeropoint
      \page_one_registered_text_area_b
@@ -352,13 +372,13 @@
 
 \def\page_one_command_flush_bottom_insertions_indeed
   {\ifgridsnapping
-   % \floatparameter\c!bottombefore
+   % \rootfloatparameter\c!bottombefore
      \snaptogrid\hbox{\box\namedinsertionnumber\s!bottomfloat}%
-   % \floatparameter\c!bottomafter
+   % \rootfloatparameter\c!bottomafter
    \else
-     \floatparameter\c!bottombefore
+     \rootfloatparameter\c!bottombefore
      \unvbox\namedinsertionnumber\s!bottomfloat
-     \floatparameter\c!bottomafter
+     \rootfloatparameter\c!bottomafter
    \fi}
 
 \unexpanded\def\page_one_command_flush_floats
@@ -486,11 +506,24 @@
      \fi\fi
    \fi}
 
+% \def\page_one_place_float_here_indeed
+%   {\ifgridsnapping
+%      % otherwise real bad outcome
+%    \else
+%      \baselinecorrection % this has to be done better (and definitely not in column mode)
+%    \fi
+%    \doplacefloatbox
+%    \page_floats_report_total
+%    \dohandlenextfloatindent}
+
 \def\page_one_place_float_here_indeed
   {\ifgridsnapping
      % otherwise real bad outcome
    \else
-     \baselinecorrection % this has to be done better (and definitely not in column mode)
+    % this was not really applied (delayed)
+    % \baselinecorrection % this has to be done better (and definitely not in column mode)
+    % so we now use this:
+      \checkprevdepth
    \fi
    \doplacefloatbox
    \page_floats_report_total
